@@ -1,0 +1,41 @@
+/* Dashboard Layout Styles */
+.dashboard-wrapper {
+    min-height: 100vh;
+    background: #F5F5F5;
+}
+
+.dashboard-content {
+    margin-left: 250px;
+    margin-top: 64px;
+    padding: 40px;
+    transition: margin-left 0.3s ease;
+}
+
+.dashboard-content.sidebar-collapsed {
+    margin-left: 70px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-content {
+        margin-left: 0;
+        padding: 20px;
+    }
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    color: #245c4a;
+    margin-bottom: 10px;
+}
+
+p {
+    color: #7a8f88;
+}

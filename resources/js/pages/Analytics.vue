@@ -1,0 +1,21 @@
+<script setup lang="ts">
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Head } from '@inertiajs/vue3';
+</script>
+
+<template>
+    <Head title="Analytics" />
+
+    <AppLayout>
+        <div class="py-12">
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
+                    <div class="p-6 text-gray-900 dark:text-gray-100">
+                        <h1 class="text-2xl font-bold mb-4">Analytics</h1>
+                        <p>Analytics and data visualization coming soon...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>
