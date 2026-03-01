@@ -27,6 +27,10 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $user = $request->user();
                     
+                    // Set flag in session to indicate user just logged in
+                    // Dashboard pages will use this to clean browser history
+                    $request->session()->flash('just_logged_in', true);
+                    
                     // Vendor redirects to their tenant subdomain
                     if ($user->hasRole('vendor')) {
                         $tenant = \App\Models\Tenant::where('user_id', $user->id)->first();
@@ -103,11 +107,17 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureViews(): void
     {
-        Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
-            'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()),
-            'status' => $request->session()->get('status'),
-        ]));
+        Fortify::loginView(function (Request $request) {
+            // Redirect authenticated users to their dashboard
+            if ($request->user()) {
+                return redirect()->route('dashboard');
+            }
+            return Inertia::render('auth/Login', [
+                'canResetPassword' => Features::enabled(Features::resetPasswords()),
+                'canRegister' => Features::enabled(Features::registration()),
+                'status' => $request->session()->get('status'),
+            ]);
+        });
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [
             'email' => $request->email,
@@ -122,7 +132,13 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/Register'));
+        Fortify::registerView(function (Request $request) {
+            // Redirect authenticated users to their dashboard
+            if ($request->user()) {
+                return redirect()->route('dashboard');
+            }
+            return Inertia::render('auth/Register');
+        });
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/TwoFactorChallenge'));
 

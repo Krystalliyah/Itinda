@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { ref, onMounted } from 'vue';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,33 @@ defineProps<{
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+// Intercept form submission to clean up browser history
+const isSubmitting = ref(false);
+
+// Intercept form submission to clean up browser history
+const onBeforeSubmit = () => {
+    if (!isSubmitting.value) {
+        isSubmitting.value = true;
+        // CRITICAL: Replace the login form page in history BEFORE the redirect happens
+        // This prevents the login page from appearing in the back button history
+        // When the form submits (POST /login), the server redirects (302) to GET /dashboard
+        // But now the /login entry is replaced, so history becomes: [welcome] [dashboard]
+        window.history.replaceState(
+            { isLogin: true },
+            document.title,
+            window.location.href
+        );
+    }
+};
+
+// Hook into actual form submission
+onMounted(() => {
+    const form = document.querySelector('.it-form') as HTMLFormElement;
+    if (form) {
+        form.addEventListener('submit', onBeforeSubmit);
+    }
+});
 </script>
 
 <template>
@@ -124,6 +152,7 @@ defineProps<{
                 <Form
                     v-bind="store.form()"
                     :reset-on-success="['password']"
+                    :replace="true"
                     v-slot="{ errors, processing }"
                     class="it-form"
                 >

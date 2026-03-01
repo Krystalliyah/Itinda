@@ -55,6 +55,7 @@ const code = ref<string>('');
                     v-bind="store.form()"
                     class="space-y-4"
                     reset-on-error
+                    :replace="true"
                     @error="code = ''"
                     #default="{ errors, processing, clearErrors }"
                 >
@@ -102,6 +103,7 @@ const code = ref<string>('');
                     v-bind="store.form()"
                     class="space-y-4"
                     reset-on-error
+                    :replace="true"
                     #default="{ errors, processing, clearErrors }"
                 >
                     <Input
