@@ -75,6 +75,7 @@ const user = page.props.auth.user;
                             required
                             autocomplete="username"
                             placeholder="Email address"
+                            :aria-invalid="!!errors.email"
                         />
                         <InputError class="mt-2" :message="errors.email" />
                     </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Form, Head } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -14,11 +14,34 @@ import { store } from '@/routes/register';
 // Role selection modal state
 const showRoleModal = ref(true);
 const selectedRole = ref<'customer' | 'vendor' | null>(null);
+const isSubmitting = ref(false);
 
 function selectRole(role: 'customer' | 'vendor') {
     selectedRole.value = role;
     showRoleModal.value = false;
 }
+
+// Intercept form submission to clean up browser history
+const onBeforeSubmit = () => {
+    if (!isSubmitting.value) {
+        isSubmitting.value = true;
+        // Replace the register form page in history BEFORE the redirect happens
+        // This prevents the register page from appearing in the back button history
+        window.history.replaceState(
+            { isRegister: true },
+            document.title,
+            window.location.href
+        );
+    }
+};
+
+// Hook into actual form submission
+onMounted(() => {
+    const form = document.querySelector('.it-form') as HTMLFormElement;
+    if (form) {
+        form.addEventListener('submit', onBeforeSubmit);
+    }
+});
 </script>
 
 <template>
@@ -217,6 +240,7 @@ function selectRole(role: 'customer' | 'vendor') {
                 <Form
                     v-bind="store.form()"
                     :reset-on-success="['password', 'password_confirmation']"
+                    :replace="true"
                     v-slot="{ errors, processing }"
                     class="it-form"
                 >
@@ -250,7 +274,8 @@ function selectRole(role: 'customer' | 'vendor') {
                                 </svg>
                             </span>
                             <Input id="email" type="email" name="email" required
-                                :tabindex="2" autocomplete="email" placeholder="email@example.com" class="it-input" />
+                                :tabindex="2" autocomplete="email" placeholder="email@example.com" class="it-input"
+                                :aria-invalid="!!errors.email" />
                         </div>
                         <InputError :message="errors.email" class="it-field-error" />
                     </div>

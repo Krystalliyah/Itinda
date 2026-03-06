@@ -6,11 +6,15 @@ const page = usePage();
 const auth = computed(() => page.props.auth as { user: any; hasStore: boolean; storeIsApproved: boolean; });
 const isOwner = computed(() => auth.value.user?.role === 'vendor');
 const showFullNav = computed(() => auth.value.hasStore && auth.value.storeIsApproved);
+
+function isActive(path: string): boolean {
+    return page.url.startsWith(path);
+}
 </script>
 
 <template>
     <div class="nav-menu">
-        <Link href="/vendor/dashboard" class="nav-item" title="Dashboard">
+        <Link href="/vendor/dashboard" class="nav-item" :class="{ active: isActive('/vendor/dashboard') }" title="Dashboard">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -19,69 +23,66 @@ const showFullNav = computed(() => auth.value.hasStore && auth.value.storeIsAppr
         </Link>
 
         <template v-if="showFullNav">
-
-        <Link href="/vendor/products" class="nav-item" title="Products">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            Products
-        </Link>
-
-        <Link href="/vendor/inventory" class="nav-item" title="Inventory">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-            </svg>
-            Inventory
-        </Link>
-
-        <Link href="/vendor/orders" class="nav-item" title="Orders">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            Orders
-        </Link>
-
-        <!-- Owner-only menu items -->
-        <template v-if="isOwner">
-            <div class="nav-divider"></div>
-            
-            <div class="nav-section-label">Owner Option</div>
-
-            <Link href="/vendor/store-settings" class="nav-item" title="Store Management">
+            <Link href="/vendor/products" class="nav-item" :class="{ active: isActive('/vendor/products') }" title="Products">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
-                Store Management
+                Products
             </Link>
 
-            <Link href="/vendor/staff" class="nav-item" title="Staff Management">
+            <Link href="/vendor/inventory" class="nav-item" :class="{ active: isActive('/vendor/inventory') }" title="Inventory">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
-                Staff Management
+                Inventory
             </Link>
 
-            <Link href="/vendor/expenses" class="nav-item" title="Expenses">
+            <Link href="/vendor/orders" class="nav-item" :class="{ active: isActive('/vendor/orders') }" title="Orders">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
-                Expenses
+                Orders
             </Link>
 
-            <Link href="/vendor/analytics" class="nav-item" title="Analytics">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Analytics
-            </Link>
-        </template>
+            <template v-if="isOwner">
+                <div class="nav-divider"></div>
+                <div class="nav-section-label">Owner Option</div>
+
+                <Link href="/vendor/store-settings" class="nav-item" :class="{ active: isActive('/vendor/store-settings') }" title="Store Management">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Store Management
+                </Link>
+
+                <Link href="/vendor/staff" class="nav-item" :class="{ active: isActive('/vendor/staff') }" title="Staff Management">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Staff Management
+                </Link>
+
+                <Link href="/vendor/expenses" class="nav-item" :class="{ active: isActive('/vendor/expenses') }" title="Expenses">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Expenses
+                </Link>
+
+                <Link href="/vendor/analytics" class="nav-item" :class="{ active: isActive('/vendor/analytics') }" title="Analytics">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Analytics
+                </Link>
+            </template>
         </template>
     </div>
 </template>
@@ -105,18 +106,39 @@ const showFullNav = computed(() => auth.value.hasStore && auth.value.storeIsAppr
     text-decoration: none;
     transition: all 0.2s;
     font-family: 'Lato', sans-serif;
-}
-
-.nav-item:hover,
-.nav-item.active {
-    background: rgba(197, 160, 89, 0.1);
-    color: #C5A059;
+    position: relative;
 }
 
 .nav-item svg {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
+}
+
+/* Hover */
+.nav-item:hover {
+    background: rgba(197, 160, 89, 0.1);
+    color: #C5A059;
+}
+
+/* Active */
+.nav-item.active {
+    background: rgba(197, 160, 89, 0.15);
+    color: #C5A059;
+    font-weight: 700;
+}
+
+/* Gold accent bar on left edge */
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 55%;
+    background: #C5A059;
+    border-radius: 0 3px 3px 0;
 }
 
 .nav-divider {

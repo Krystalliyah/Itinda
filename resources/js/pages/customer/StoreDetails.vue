@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
@@ -561,5 +562,3 @@ const removeSelected = () => {
     </div>
 
 </template>
-
-

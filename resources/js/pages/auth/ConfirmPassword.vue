@@ -19,6 +19,7 @@ import { store } from '@/routes/password/confirm';
         <Form
             v-bind="store.form()"
             reset-on-success
+            :replace="true"
             v-slot="{ errors, processing }"
         >
             <div class="space-y-6">

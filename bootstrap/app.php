@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             RedirectBasedOnRole::class,
+            \App\Http\Middleware\PreventBackHistory::class,
         ]);
 
         $middleware->alias([

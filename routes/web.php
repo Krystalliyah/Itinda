@@ -7,6 +7,10 @@ use Laravel\Fortify\Features;
 // Pin the home route to the exact central domain
 Route::domain(config('app.domain'))->group(function () {
     Route::get('/', function () {
+        // Redirect authenticated users to their appropriate dashboard
+        if (auth()->check()) {
+            return redirect()->route('dashboard');
+        }
         return Inertia::render('Welcome', [
             'canRegister' => Features::enabled(Features::registration()),
         ]);
@@ -14,6 +18,7 @@ Route::domain(config('app.domain'))->group(function () {
 
     Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
         $user = auth()->user();
+        $justLoggedIn = request()->session()->get('just_logged_in', false);
 
         if ($user->hasRole('admin')) {
             return redirect()->route('admin.dashboard');
