@@ -82,6 +82,14 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+
+        // Dynamic username field (login_id vs email)
+        Fortify::username(function () {
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                return 'login_id';
+            }
+            return 'email';
+        });
     }
 
     /**
@@ -94,7 +102,13 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Custom redirect after login based on role
         Fortify::authenticateUsing(function (Request $request) {
-            $user = \App\Models\User::where('email', $request->email)->first();
+            // Determine which identifier to search by
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                $loginId = $request->input('login_id');
+                $user = \App\Models\User::where('login_id', $loginId)->first();
+            } else {
+                $user = \App\Models\User::where('email', $request->input('email'))->first();
+            }
 
             if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
                 return $user;
@@ -112,6 +126,15 @@ class FortifyServiceProvider extends ServiceProvider
             if ($request->user()) {
                 return redirect()->route('dashboard');
             }
+
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                // Tenant-specific admin login page
+                return Inertia::render('auth/LoginAdminTenant', [
+                    'status' => $request->session()->get('status'),
+                ]);
+            }
+
+            // Central login
             return Inertia::render('auth/Login', [
                 'canResetPassword' => Features::enabled(Features::resetPasswords()),
                 'canRegister' => Features::enabled(Features::registration()),

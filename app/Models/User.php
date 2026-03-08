@@ -15,9 +15,9 @@ class User extends Authenticatable
     use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
 
     /**
-     * Always use the central database connection for users
+     * Use central or tenant connection depending on tenancy initialization.
      */
-    protected $connection = 'mysql';
+    protected $connection = null;
 
     /**
      * The attributes that are mass assignable.
@@ -26,10 +26,18 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'login_id',
         'email',
         'password',
         'phone',
+        'is_admin',
     ];
+
+    /**
+     * Additional tenant fields used for tenant auth
+     */
+    protected $guarded = [];
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -54,7 +62,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function getConnectionName(): ?string
+    {
+        // Use tenant connection when tenancy is initialized, otherwise central 'mysql'
+        try {
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                return 'tenant';
+            }
+        } catch (\Throwable $e) {
+            // Ignore and fall back
+        }
+
+        return 'mysql';
     }
 
     protected static function booted(): void

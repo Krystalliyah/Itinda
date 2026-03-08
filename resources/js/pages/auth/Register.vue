@@ -109,7 +109,7 @@ onMounted(() => {
 
                         <p class="it-modal-login">
                             Already have an account?
-                            <TextLink :href="login()" class="it-modal-login-link">Log in</TextLink>
+                            <TextLink href="/login" class="it-modal-login-link">Log in</TextLink>
                         </p>
                     </div>
                 </div>

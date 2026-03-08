@@ -32,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'vendor.store_access' => \App\Http\Middleware\EnsureVendorHasStoreAccess::class,
             'vendor.is_approved' => \App\Http\Middleware\EnsureVendorIsApproved::class,
+            'vendor.is_admin' => \App\Http\Middleware\EnsureVendorIsAdmin::class,
+            'consume-tenant-auth-token' => \App\Http\Middleware\ConsumeTenantAuthToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

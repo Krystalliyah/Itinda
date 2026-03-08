@@ -28,7 +28,13 @@ class EnsureVendorIsApproved
         }
 
         // Check if they have an approved store
-        $tenant = Tenant::where('user_id', $user->id)->first();
+        // If on a tenant subdomain, use the current tenant directly
+        // Otherwise, look up by user_id (for central domain users)
+        if (tenancy()->initialized) {
+            $tenant = tenant();
+        } else {
+            $tenant = Tenant::where('user_id', $user->id)->first();
+        }
 
         if (! $tenant || ! $tenant->is_approved) {
             // If they are not approved, they can only see the dashboard setup page

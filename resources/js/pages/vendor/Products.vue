@@ -139,6 +139,7 @@ function deleteProduct(id: number) {
     router.delete(`/vendor/products/${id}`);
   }
 }
+
 </script>
 
 <template>

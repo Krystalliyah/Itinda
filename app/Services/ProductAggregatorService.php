@@ -122,4 +122,64 @@ class ProductAggregatorService
 
         return $allCategories->unique('name');
     }
+
+    /**
+     * Build proof panel data for customer dashboard testing.
+     *
+     * This loops through each approved tenant, enters its context,
+     * and attempts to count and sample products. Errors (missing tables,
+     * query failures) are captured without aborting the page.
+     * The resulting array is cached for 60 seconds to avoid hitting every
+     * tenant on every dashboard request.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function tenantProductsProof(): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('tenant_products_proof', 60, function () {
+            return Tenant::where('is_approved', true)
+                ->with('domains')
+                ->get()
+                ->map(function ($tenant) {
+                    $result = [
+                        'tenant_id'       => $tenant->id,
+                        'store_name'      => $tenant->name,
+                        'domain'          => $tenant->domains->first()->domain ?? null,
+                        'tenant_db'       => null,
+                        'products_count'  => 0,
+                        'sample_products' => [],
+                        'status'          => 'ok',
+                        'error_message'   => null,
+                    ];
+
+                    try {
+                        $tenant->run(function () use (&$result) {
+                            $result['tenant_db'] = DB::connection()->getDatabaseName();
+
+                            if (!\Schema::hasTable('products')) {
+                                throw new \Exception('products table does not exist');
+                            }
+
+                            $result['products_count'] = DB::table('products')->count();
+
+                            $result['sample_products'] = DB::table('products')
+                                ->select(['id', 'name', 'price'])
+                                ->limit(5)
+                                ->get()
+                                ->map(fn($p) => [
+                                    'id' => $p->id,
+                                    'name' => $p->name,
+                                    'price' => $p->price ?? null,
+                                ])
+                                ->toArray();
+                        });
+                    } catch (\Throwable $e) {
+                        $result['status'] = 'error';
+                        $result['error_message'] = $e->getMessage();
+                    }
+
+                    return $result;
+                })->toArray();
+        });
+    }
 }

@@ -11,7 +11,6 @@ use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
-use Stancl\Tenancy\Middleware;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -62,11 +61,13 @@ class TenancyServiceProvider extends ServiceProvider
             Events\InitializingTenancy::class => [],
             Events\TenancyInitialized::class => [
                 Listeners\BootstrapTenancy::class,
+                \App\Listeners\SetTenantSessionConnection::class,
             ],
 
             Events\EndingTenancy::class => [],
             Events\TenancyEnded::class => [
                 Listeners\RevertToCentralContext::class,
+                \App\Listeners\RevertToCentralSessionConnection::class,
             ],
 
             Events\BootstrappingTenancy::class => [],
@@ -114,8 +115,14 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->app->booted(function () {
             if (file_exists(base_path('routes/tenant.php'))) {
-                Route::namespace(static::$controllerNamespace)
-                    ->group(base_path('routes/tenant.php'));
+                $centralDomains = config('tenancy.central_domains', []);
+                $host = request()->getHost();
+                
+                // Only load tenant routes if not a central domain
+                if (!in_array($host, $centralDomains)) {
+                    Route::namespace(static::$controllerNamespace)
+                        ->group(base_path('routes/tenant.php'));
+                }
             }
         });
     }
