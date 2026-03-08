@@ -5,12 +5,18 @@ import VendorLayout from '@/layouts/VendorLayout.vue';
 
 type Product = {
   id: number;
-  name: string;
+  product_name: string;
   description: string | null;
-  price: number;
-  stock: number;
+  category_name: string | null;
+  barcode: string | null;
+  image_url?: string | null;
+  is_active: boolean;
   created_at: string;
-  image_url?: string | null; // optional if backend sends it
+};
+
+type CategoryOption = {
+  id: number;
+  category_name: string;
 };
 
 type PaginationLink = {
@@ -22,34 +28,68 @@ type PaginationLink = {
 const props = defineProps<{
   products: {
     data: Product[];
-    links?: PaginationLink[]; // Laravel paginator
+    links?: PaginationLink[];
     meta?: any;
   };
+  categories: CategoryOption[];
 }>();
 
 const showModal = ref(false);
 const editingProduct = ref<Product | null>(null);
 const search = ref('');
-
 const imagePreview = ref<string | null>(null);
+const categoryOpen = ref(false);
+const categoryBtnEl = ref<HTMLElement | null>(null);
+const categoryDropdownStyle = ref<Record<string, string>>({});
+
+const selectedCategoryLabel = computed(() => {
+  if (!form.category_id) return null;
+  return categories.value.find((c) => c.id === form.category_id)?.category_name ?? null;
+});
+
+function openCategoryDropdown() {
+  if (categoryBtnEl.value) {
+    const rect = categoryBtnEl.value.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropdownH = Math.min(220, categories.value.length * 36 + 8);
+    const showAbove = spaceBelow < dropdownH + 8;
+    categoryDropdownStyle.value = {
+      position: 'fixed',
+      left: rect.left + 'px',
+      width: rect.width + 'px',
+      ...(showAbove
+        ? { bottom: (window.innerHeight - rect.top) + 'px' }
+        : { top: rect.bottom + 4 + 'px' }),
+    };
+  }
+  categoryOpen.value = !categoryOpen.value;
+}
+
+function selectCategory(id: number) {
+  form.category_id = id;
+  categoryOpen.value = false;
+}
 
 const form = useForm<{
-  name: string;
+  product_name: string;
   description: string;
-  price: number | string;
-  stock: number | string;
+  category_id: number | string;
+  barcode: string;
   image: File | null;
+  is_active: boolean;
   _method?: 'put';
 }>({
-  name: '',
+  product_name: '',
   description: '',
-  price: 0,
-  stock: 0,
+  category_id: '',
+  barcode: '',
   image: null,
+  is_active: true,
 });
 
 const products = computed(() => props.products.data || []);
 const paginationLinks = computed(() => props.products.links || []);
+const categories = computed(() => props.categories || []);
 
 const filteredProducts = computed(() => {
   const q = search.value.trim().toLowerCase();
@@ -57,25 +97,34 @@ const filteredProducts = computed(() => {
 
   return products.value.filter((p) => {
     return (
-      p.name.toLowerCase().includes(q) ||
-      (p.description ?? '').toLowerCase().includes(q)
+      p.product_name.toLowerCase().includes(q) ||
+      (p.description ?? '').toLowerCase().includes(q) ||
+      (p.category_name ?? '').toLowerCase().includes(q) ||
+      (p.barcode ?? '').toLowerCase().includes(q)
     );
   });
 });
 
 const totalProducts = computed(() => products.value.length);
-const lowStockCount = computed(() => products.value.filter(p => (p.stock ?? 0) <= 5).length);
+const activeProductsCount = computed(() => products.value.filter((p) => p.is_active).length);
 
-function stockBadge(stock: number) {
-  if (stock <= 0) return { label: 'Out of stock', cls: 'bg-red-50 text-red-700 border border-red-200' };
-  if (stock <= 5) return { label: 'Low stock', cls: 'bg-amber-50 text-amber-700 border border-amber-200' };
-  return { label: 'In stock', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' };
+function productStatusBadge(isActive: boolean) {
+  return isActive
+    ? {
+        label: 'Active',
+        cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+      }
+    : {
+        label: 'Archived',
+        cls: 'bg-slate-100 text-slate-600 border border-slate-200',
+      };
 }
 
 function openCreateModal() {
   editingProduct.value = null;
   form.reset();
   form.clearErrors();
+  form.is_active = true;
   imagePreview.value = null;
   showModal.value = true;
 }
@@ -83,11 +132,13 @@ function openCreateModal() {
 function openEditModal(product: Product) {
   editingProduct.value = product;
   form.clearErrors();
-  form.name = product.name;
+  form.product_name = product.product_name;
   form.description = product.description || '';
-  form.price = product.price;
-  form.stock = product.stock;
+  form.category_id =
+    categories.value.find((c) => c.category_name === product.category_name)?.id ?? '';
+  form.barcode = product.barcode || '';
   form.image = null;
+  form.is_active = product.is_active;
   imagePreview.value = product.image_url || null;
   showModal.value = true;
 }
@@ -114,7 +165,6 @@ function onPickImage(e: Event) {
 
 function submit() {
   if (editingProduct.value) {
-    // For multipart + PUT, use POST + _method=put
     form.transform((data) => ({ ...data, _method: 'put' as const }));
 
     form.post(`/vendor/products/${editingProduct.value.id}`, {
@@ -139,7 +189,6 @@ function deleteProduct(id: number) {
     router.delete(`/vendor/products/${id}`);
   }
 }
-
 </script>
 
 <template>
@@ -147,16 +196,14 @@ function deleteProduct(id: number) {
 
   <VendorLayout>
     <div class="p-4 sm:p-6 flex flex-col gap-4">
-
-      <!-- Header -->
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
         <div>
           <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#245c4a">
-            <span style="color:#C5A059">✦</span> Inventory
+            <span style="color:#C5A059">✦</span> Catalog
           </p>
           <h1 class="text-2xl font-semibold tracking-tight" style="color:#245c4a">Products</h1>
           <p class="text-sm text-muted-foreground mt-1">
-            Manage products, pricing, images, and stock.
+            Manage product names, descriptions, categories, barcodes, and images.
           </p>
         </div>
 
@@ -169,40 +216,51 @@ function deleteProduct(id: number) {
         </button>
       </div>
 
-      <!-- Stats + Search -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div class="bg-white rounded-xl border border-border shadow-sm p-4">
-          <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Products (this page)</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Total Products (this page)
+          </p>
           <p class="text-3xl font-semibold mt-1" style="color:#245c4a">{{ totalProducts }}</p>
         </div>
 
         <div class="bg-white rounded-xl border border-border shadow-sm p-4">
-          <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Low Stock (≤ 5)</p>
-          <p class="text-3xl font-semibold mt-1" style="color:#C5A059">{{ lowStockCount }}</p>
-          <p class="text-xs text-muted-foreground mt-1">Keep stock updated to avoid missed orders.</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Active Products
+          </p>
+          <p class="text-3xl font-semibold mt-1" style="color:#C5A059">
+            {{ activeProductsCount }}
+          </p>
+          <p class="text-xs text-muted-foreground mt-1">
+            Active products can be used in store inventory.
+          </p>
         </div>
 
         <div class="bg-white rounded-xl border border-border shadow-sm p-4">
-          <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Search</label>
+          <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Search
+          </label>
           <input
             v-model="search"
-            placeholder="Search name or description..."
+            placeholder="Search name, description, category, or barcode..."
             class="mt-2 w-full px-3 py-2 rounded-md border border-border bg-white text-foreground focus:outline-none focus:ring-2"
             style="--tw-ring-color: rgba(36,92,74,.35);"
           />
           <p class="text-xs text-muted-foreground mt-2">
-            Showing <span class="font-semibold">{{ filteredProducts.length }}</span> of <span class="font-semibold">{{ totalProducts }}</span>
+            Showing <span class="font-semibold">{{ filteredProducts.length }}</span> of
+            <span class="font-semibold">{{ totalProducts }}</span>
           </p>
         </div>
       </div>
 
-      <!-- Empty state -->
       <div
         v-if="filteredProducts.length === 0"
         class="bg-white rounded-xl border border-border shadow-sm p-10 text-center"
       >
-        <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
-             style="background:hsl(0 0% 96.1%)">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+          style="background:hsl(0 0% 96.1%)"
+        >
           <span class="text-xl">📦</span>
         </div>
         <p class="text-sm font-medium text-foreground">No products found</p>
@@ -220,7 +278,6 @@ function deleteProduct(id: number) {
       </div>
 
       <template v-else>
-        <!-- ✅ Mobile/Tablet: Card View -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
           <div
             v-for="product in filteredProducts"
@@ -232,59 +289,67 @@ function deleteProduct(id: number) {
                 class="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
                 style="background:hsl(0 0% 96.1%); border:1px solid hsl(0 0% 92.1%)"
               >
-                <img v-if="product.image_url" :src="product.image_url" class="w-full h-full object-cover" alt="" />
+                <img
+                  v-if="product.image_url"
+                  :src="product.image_url"
+                  class="w-full h-full object-cover"
+                  alt=""
+                />
                 <span v-else class="text-lg">🖼️</span>
               </div>
 
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-foreground truncate">{{ product.name }}</p>
+                <p class="text-sm font-semibold text-foreground truncate">
+                  {{ product.product_name }}
+                </p>
                 <p class="text-xs text-muted-foreground mt-0.5 truncate">
                   {{ product.description || 'No description' }}
                 </p>
 
-                <div class="mt-2 flex items-center gap-2">
+                <div class="mt-2 flex flex-wrap items-center gap-2">
                   <span
                     class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
-                    :class="stockBadge(product.stock).cls"
+                    :class="productStatusBadge(product.is_active).cls"
                   >
-                    {{ stockBadge(product.stock).label }}
+                    {{ productStatusBadge(product.is_active).label }}
                   </span>
-                  <span class="text-xs text-muted-foreground">Stock: <span class="font-semibold text-foreground">{{ product.stock }}</span></span>
+                  <span class="text-xs text-muted-foreground">
+                    {{ product.category_name || 'Uncategorized' }}
+                  </span>
                 </div>
+
+                <p class="text-xs text-muted-foreground mt-2">
+                  Barcode: <span class="font-semibold text-foreground">{{ product.barcode || '—' }}</span>
+                </p>
               </div>
             </div>
 
-            <div class="mt-3 flex items-center justify-between">
-              <div>
-                <p class="text-xs text-muted-foreground">Price</p>
-                <p class="text-sm font-semibold text-foreground">₱{{ Number(product.price).toFixed(2) }}</p>
-              </div>
-              <div class="flex items-center justify-end gap-2">
-                <button
-                  @click="openEditModal(product)"
-                  class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-md border border-border bg-white hover:bg-accent"
-                  style="color:#245c4a"
-                >
-                  Edit
-                </button>
-                <button
-                  @click="deleteProduct(product.id)"
-                  class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-md border"
-                  style="border-color:#fecdd3;background:#fff1f2;color:#9f1239"
-                >
-                  Delete
-                </button>
-              </div>
+            <div class="mt-3 flex items-center justify-end gap-2">
+              <button
+                @click="openEditModal(product)"
+                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-md border border-border bg-white hover:bg-accent"
+                style="color:#245c4a"
+              >
+                Edit
+              </button>
+              <button
+                @click="deleteProduct(product.id)"
+                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-md border"
+                style="border-color:#fecdd3;background:#fff1f2;color:#9f1239"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- ✅ Desktop: Table View -->
         <div class="hidden lg:block bg-white rounded-xl border border-border shadow-sm overflow-hidden">
           <div class="px-5 py-4 border-b border-border flex items-start justify-between">
             <div>
-              <h2 class="text-sm font-semibold" style="color:#245c4a">Product List</h2>
-              <p class="text-xs text-muted-foreground mt-0.5">View and manage your products.</p>
+              <h2 class="text-sm font-semibold" style="color:#245c4a">Product Catalog</h2>
+              <p class="text-xs text-muted-foreground mt-0.5">
+                View and manage your product master records.
+              </p>
             </div>
             <div class="text-xs font-semibold px-2 py-1 rounded" style="background:#f5ead4;color:#7a5800">
               {{ filteredProducts.length }} shown
@@ -299,13 +364,13 @@ function deleteProduct(id: number) {
                     Product
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
-                    Description
+                    Category
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
-                    Price
+                    Barcode
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
-                    Stock
+                    Status
                   </th>
                   <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Actions
@@ -325,35 +390,41 @@ function deleteProduct(id: number) {
                         class="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
                         style="background:hsl(0 0% 96.1%); border:1px solid hsl(0 0% 92.1%)"
                       >
-                        <img v-if="product.image_url" :src="product.image_url" class="w-full h-full object-cover" alt="" />
+                        <img
+                          v-if="product.image_url"
+                          :src="product.image_url"
+                          class="w-full h-full object-cover"
+                          alt=""
+                        />
                         <span v-else class="text-sm">🖼️</span>
                       </div>
 
                       <div class="min-w-0">
-                        <p class="text-sm font-semibold text-foreground truncate">{{ product.name }}</p>
-                        <p class="text-xs text-muted-foreground mt-0.5">#{{ product.id }}</p>
+                        <p class="text-sm font-semibold text-foreground truncate">
+                          {{ product.product_name }}
+                        </p>
+                        <p class="text-xs text-muted-foreground mt-0.5 truncate">
+                          {{ product.description || 'No description' }}
+                        </p>
                       </div>
                     </div>
                   </td>
 
                   <td class="px-5 py-4 text-sm text-slate-600">
-                    {{ product.description || '—' }}
+                    {{ product.category_name || '—' }}
                   </td>
 
-                  <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                    ₱{{ Number(product.price).toFixed(2) }}
+                  <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
+                    {{ product.barcode || '—' }}
                   </td>
 
                   <td class="px-5 py-4 whitespace-nowrap">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm font-semibold text-slate-900">{{ product.stock }}</span>
-                      <span
-                        class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
-                        :class="stockBadge(product.stock).cls"
-                      >
-                        {{ stockBadge(product.stock).label }}
-                      </span>
-                    </div>
+                    <span
+                      class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
+                      :class="productStatusBadge(product.is_active).cls"
+                    >
+                      {{ productStatusBadge(product.is_active).label }}
+                    </span>
                   </td>
 
                   <td class="px-5 py-4 whitespace-nowrap text-right">
@@ -383,8 +454,10 @@ function deleteProduct(id: number) {
             </table>
           </div>
 
-          <!-- Pagination -->
-          <div v-if="paginationLinks.length" class="px-5 py-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div
+            v-if="paginationLinks.length"
+            class="px-5 py-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          >
             <p class="text-xs text-muted-foreground">
               Browse more products using pagination.
             </p>
@@ -411,8 +484,10 @@ function deleteProduct(id: number) {
           </div>
         </div>
 
-        <!-- Pagination (mobile too) -->
-        <div v-if="paginationLinks.length" class="lg:hidden bg-white rounded-xl border border-border shadow-sm p-4">
+        <div
+          v-if="paginationLinks.length"
+          class="lg:hidden bg-white rounded-xl border border-border shadow-sm p-4"
+        >
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <p class="text-xs text-muted-foreground">Pages</p>
             <nav class="inline-flex items-center gap-1 flex-wrap justify-end">
@@ -438,126 +513,250 @@ function deleteProduct(id: number) {
         </div>
       </template>
 
-      <!-- Modal -->
-      <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
-        <div class="absolute inset-0 bg-black/50" @click="closeModal"></div>
+      <!-- ===================== MODAL ===================== -->
+      <Teleport to="body">
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-start justify-center px-4 pt-16 pb-6 overflow-y-auto">
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-black/50" @click="closeModal" />
 
-        <div class="relative w-full max-w-lg bg-white rounded-xl border border-border shadow-lg overflow-hidden">
-          <div class="px-5 py-4 border-b border-border flex items-start justify-between">
-            <div>
-              <h2 class="text-sm font-semibold" style="color:#245c4a">
-                {{ editingProduct ? 'Edit Product' : 'Add Product' }}
-              </h2>
-              <p class="text-xs text-muted-foreground mt-0.5">
-                {{ editingProduct ? 'Update details and optional thumbnail.' : 'Create a new product with an optional thumbnail.' }}
-              </p>
-            </div>
-
-            <button type="button" @click="closeModal" class="text-xs font-semibold px-2 py-1 rounded" style="color:#6b7280">
-              ✕
-            </button>
-          </div>
-
-          <form @submit.prevent="submit" class="p-5 space-y-4">
-            <!-- Image uploader -->
-            <div class="flex items-start gap-4">
-              <div
-                class="w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0"
-                style="background:hsl(0 0% 96.1%); border:1px solid hsl(0 0% 92.1%)"
-              >
-                <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-cover" alt="" />
-                <span v-else class="text-lg">🖼️</span>
-              </div>
-
-              <div class="flex-1">
-                <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Thumbnail (optional)
-                </label>
-                <input type="file" accept="image/*" @change="onPickImage" class="block w-full text-xs" />
-                <p class="text-xs text-muted-foreground mt-1">JPG/PNG recommended (max 2MB).</p>
-                <p v-if="form.errors.image" class="text-xs mt-1" style="color:#9f1239">{{ form.errors.image }}</p>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                Product Name
-              </label>
-              <input
-                v-model="form.name"
-                required
-                class="w-full px-3 py-2 rounded-md border border-border bg-white text-foreground focus:outline-none focus:ring-2"
-                style="--tw-ring-color: rgba(36,92,74,.35);"
-              />
-              <p v-if="form.errors.name" class="text-xs mt-1" style="color:#9f1239">{{ form.errors.name }}</p>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                Description
-              </label>
-              <textarea
-                v-model="form.description"
-                rows="3"
-                class="w-full px-3 py-2 rounded-md border border-border bg-white text-foreground focus:outline-none focus:ring-2"
-                style="--tw-ring-color: rgba(36,92,74,.35);"
-              />
-              <p v-if="form.errors.description" class="text-xs mt-1" style="color:#9f1239">{{ form.errors.description }}</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Modal panel: flex column so header/footer stay fixed, body scrolls -->
+          <div
+            class="relative w-full max-w-lg bg-white rounded-xl border border-border shadow-xl flex flex-col"
+            style="max-height: calc(100vh - 88px);"
+          >
+            <!-- Header -->
+            <div class="px-5 py-4 border-b border-border flex items-start justify-between flex-shrink-0">
               <div>
-                <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Price (₱)
-                </label>
-                <input
-                  v-model="form.price"
-                  type="number"
-                  step="0.01"
-                  required
-                  class="w-full px-3 py-2 rounded-md border border-border bg-white text-foreground focus:outline-none focus:ring-2"
-                  style="--tw-ring-color: rgba(36,92,74,.35);"
-                />
-                <p v-if="form.errors.price" class="text-xs mt-1" style="color:#9f1239">{{ form.errors.price }}</p>
+                <h2 class="text-sm font-semibold" style="color:#245c4a">
+                  {{ editingProduct ? 'Edit Product' : 'Add Product' }}
+                </h2>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  {{ editingProduct
+                    ? 'Update product catalog details.'
+                    : 'Create a new product catalog entry.' }}
+                </p>
               </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Stock
-                </label>
-                <input
-                  v-model="form.stock"
-                  type="number"
-                  required
-                  class="w-full px-3 py-2 rounded-md border border-border bg-white text-foreground focus:outline-none focus:ring-2"
-                  style="--tw-ring-color: rgba(36,92,74,.35);"
-                />
-                <p v-if="form.errors.stock" class="text-xs mt-1" style="color:#9f1239">{{ form.errors.stock }}</p>
-              </div>
-            </div>
-
-            <div class="pt-2 flex items-center justify-end gap-2">
               <button
                 type="button"
                 @click="closeModal"
-                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-2 rounded-md border border-border bg-white text-foreground hover:bg-accent"
+                class="ml-4 flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
+                style="color:#6b7280"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Scrollable body -->
+            <div class="overflow-y-auto flex-1 px-5 py-5">
+              <form id="product-form" @submit.prevent="submit" class="flex flex-col gap-4">
+
+                <!-- Thumbnail -->
+                <div class="flex items-start gap-4 p-3 rounded-lg" style="background:hsl(0 0% 97%);">
+                  <div
+                    class="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
+                    style="background:hsl(0 0% 92%); border:1px solid hsl(0 0% 88%)"
+                  >
+                    <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-cover" alt="" />
+                    <span v-else class="text-xl">🖼️</span>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                      Thumbnail <span class="font-normal normal-case">(optional)</span>
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      @change="onPickImage"
+                      class="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-white file:text-slate-700 file:border file:border-border hover:file:bg-gray-50"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">JPG/PNG recommended (max 2MB).</p>
+                    <p v-if="form.errors.image" class="text-xs mt-1" style="color:#9f1239">
+                      {{ form.errors.image }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Product Name -->
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Product Name <span style="color:#9f1239">*</span>
+                  </label>
+                  <input
+                    v-model="form.product_name"
+                    required
+                    placeholder="e.g. Chocolate Bar"
+                    class="w-full px-3 py-2 rounded-md border border-border bg-white focus:outline-none focus:ring-2 text-sm"
+                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                  />
+                  <p v-if="form.errors.product_name" class="text-xs mt-1" style="color:#9f1239">
+                    {{ form.errors.product_name }}
+                  </p>
+                </div>
+
+                <!-- Category + Barcode row -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                      Category <span style="color:#9f1239">*</span>
+                    </label>
+                    <!-- Custom dropdown — uses fixed positioning so it escapes overflow:auto -->
+                    <div class="relative">
+                      <button
+                        type="button"
+                        ref="categoryBtnEl"
+                        @click="openCategoryDropdown"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-md border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                        :class="form.errors.category_id ? 'border-red-300' : 'border-border'"
+                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      >
+                        <span :style="selectedCategoryLabel ? 'color:#111827' : 'color:#6b7280'">
+                          {{ selectedCategoryLabel ?? 'Select category' }}
+                        </span>
+                        <svg
+                          class="w-4 h-4 text-muted-foreground transition-transform flex-shrink-0"
+                          :class="categoryOpen ? 'rotate-180' : ''"
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      <!-- Dropdown list — fixed so it escapes any overflow container -->
+                      <Teleport to="body">
+                        <div
+                          v-if="categoryOpen"
+                          class="fixed z-[9999] bg-white rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
+                          :style="{ ...categoryDropdownStyle, maxHeight: '220px' }"
+                          ref="categoryDropdownEl"
+                        >
+                          <button
+                            v-for="category in categories"
+                            :key="category.id"
+                            type="button"
+                            @click="selectCategory(category.id)"
+                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50"
+                            :class="form.category_id === category.id ? 'font-semibold' : ''"
+                            :style="form.category_id === category.id ? 'color:#245c4a' : 'color:#111827'"
+                          >
+                            <span class="flex items-center gap-2">
+                              <svg
+                                v-if="form.category_id === category.id"
+                                class="w-3.5 h-3.5 flex-shrink-0"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"
+                                style="color:#245c4a"
+                              >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span v-else class="w-3.5 flex-shrink-0" />
+                              {{ category.category_name }}
+                            </span>
+                          </button>
+                          <p v-if="categories.length === 0" class="px-3 py-2 text-xs text-muted-foreground">
+                            No categories available.
+                          </p>
+                        </div>
+                      </Teleport>
+
+                      <!-- Click-outside overlay -->
+                      <div
+                        v-if="categoryOpen"
+                        class="fixed inset-0 z-[9998]"
+                        @click="categoryOpen = false"
+                      />
+                    </div>
+                    <p v-if="form.errors.category_id" class="text-xs mt-1" style="color:#9f1239">
+                      {{ form.errors.category_id }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                      Barcode
+                    </label>
+                    <input
+                      v-model="form.barcode"
+                      placeholder="e.g. 4901234567890"
+                      class="w-full px-3 py-2 rounded-md border border-border bg-white focus:outline-none focus:ring-2 text-sm"
+                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    />
+                    <p v-if="form.errors.barcode" class="text-xs mt-1" style="color:#9f1239">
+                      {{ form.errors.barcode }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    v-model="form.description"
+                    rows="3"
+                    placeholder="Brief product description (optional)"
+                    class="w-full px-3 py-2 rounded-md border border-border bg-white focus:outline-none focus:ring-2 text-sm resize-none"
+                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                  />
+                  <p v-if="form.errors.description" class="text-xs mt-1" style="color:#9f1239">
+                    {{ form.errors.description }}
+                  </p>
+                </div>
+
+                <!-- Active toggle -->
+                <div
+                  class="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border"
+                  style="background:hsl(0 0% 98.5%);"
+                >
+                  <div>
+                    <p class="text-sm font-medium text-foreground">Active product</p>
+                    <p class="text-xs text-muted-foreground mt-0.5">
+                      Active products appear in store inventory.
+                    </p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer ml-4 flex-shrink-0">
+                    <input v-model="form.is_active" type="checkbox" class="sr-only peer" />
+                    <div
+                      class="w-10 h-5 rounded-full transition-colors peer-checked:bg-emerald-600 bg-gray-200 peer-focus:ring-2 peer-focus:ring-emerald-300"
+                    ></div>
+                    <div
+                      class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </label>
+                </div>
+
+              </form>
+            </div>
+
+            <!-- Footer actions — always visible -->
+            <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-xl">
+              <button
+                type="button"
+                @click="closeModal"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md border border-border bg-white hover:bg-gray-50 transition-colors"
+                style="color: #111827;"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
+                form="product-form"
                 :disabled="form.processing"
-                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-2 rounded-md text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 style="background:#245c4a"
               >
+                <svg v-if="form.processing" class="animate-spin -ml-0.5 mr-1.5 w-3 h-3 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
                 {{ editingProduct ? 'Update' : 'Create' }}
               </button>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
-
+      </Teleport>
     </div>
   </VendorLayout>
 </template>
