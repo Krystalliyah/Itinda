@@ -3,7 +3,12 @@ import { Head, usePage, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
 import InputError from '@/components/InputError.vue';
+import Sidebar from '@/components/Sidebar.vue';
+import VendorNav from '@/components/navigation/VendorNav.vue';
+import { useSidebar } from '@/composables/useSidebar';
+import Header from '@/components/Header.vue';
 
+const { isCollapsed } = useSidebar();
 const page = usePage();
 const auth = computed(() => page.props.auth as { user: any; hasStore: boolean; storeIsApproved: boolean });
 const hasStore = computed(() => auth.value.hasStore);
@@ -90,6 +95,12 @@ function stockClass(level: string) {
 
 <template>
   <Head title="Vendor Dashboard" />
+
+  <div class="dashboard-wrapper">
+    <Header />
+    <Sidebar role="vendor">
+            <VendorNav />
+        </Sidebar>
 
   <VendorLayout>
     <!-- ── No store yet ── -->
@@ -755,6 +766,7 @@ function stockClass(level: string) {
       </div>
     </Transition>
   </VendorLayout>
+  </div>
 </template>
 
 <style scoped>

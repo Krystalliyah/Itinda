@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
-import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
+// import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
 import PlaceholderPage from '@/components/PlaceholderPage.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
@@ -22,9 +22,6 @@ const contentClass = computed(() => ({
         <Header />
         <Sidebar role="vendor">
             <VendorNav />
-            <template #icons>
-                <VendorNavIcons />
-            </template>
         </Sidebar>
 
         <main :class="contentClass">

@@ -47,10 +47,10 @@
                         Vendors can efficiently manage their stores with powerful analytics tools.
                     </p>
                     <div class="mt-8 flex flex-wrap gap-4">
-                        <a href="/register/vendor" class="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition shadow-lg">
+                        <a href="/register?role=vendor" class="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition shadow-lg">
                             Start Selling
                         </a>
-                        <a href="/register/customer" class="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition">
+                        <a href="/register?role=customer" class="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition">
                             Start Shopping
                         </a>
                     </div>
@@ -199,10 +199,10 @@
             <h2 class="text-4xl font-bold text-white mb-6">Ready to Transform Local Commerce?</h2>
             <p class="text-xl text-indigo-100 mb-8">Join the platform that's connecting communities and empowering local businesses.</p>
             <div class="flex flex-wrap justify-center gap-4">
-                <a href="/register/vendor" class="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-50 transition">
-                    Become a Vendor
+                <a href="/register?role=vendor" class="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-50 transition">
+                    Start Selling
                 </a>
-                <a href="/register/customer" class="bg-transparent text-white px-8 py-4 rounded-lg text-lg font-semibold border-2 border-white hover:bg-indigo-700 transition">
+                <a href="/register?role=customer" class="bg-transparent text-white px-8 py-4 rounded-lg text-lg font-semibold border-2 border-white hover:bg-indigo-700 transition">
                     Start Shopping
                 </a>
             </div>

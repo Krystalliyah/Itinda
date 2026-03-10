@@ -4,7 +4,7 @@ import { ref, computed } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
-import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
+// import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
@@ -86,7 +86,6 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
         <Header />
         <Sidebar role="vendor">
             <VendorNav />
-            <template #icons><VendorNavIcons /></template>
         </Sidebar>
 
         <main :class="contentClass">

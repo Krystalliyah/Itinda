@@ -4,12 +4,22 @@ import { computed, ref } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import AdminNav from '@/components/navigation/AdminNav.vue';
-import AdminNavIcons from '@/components/navigation/AdminNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
-import { 
-    CheckCircleIcon, ClockIcon, TrashIcon, CheckIcon, PlusIcon, 
-    BuildingStorefrontIcon, GlobeAltIcon, XMarkIcon, EnvelopeIcon,
-    CalendarIcon, Squares2X2Icon, TableCellsIcon
+import StoreDetailsModal from '@/components/StoreDetailsModal.vue';
+import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
+import {
+    CheckCircleIcon,
+    ClockIcon,
+    TrashIcon,
+    CheckIcon,
+    PlusIcon,
+    BuildingStorefrontIcon,
+    GlobeAltIcon,
+    XMarkIcon,
+    CalendarIcon,
+    Squares2X2Icon,
+    TableCellsIcon,
+    EyeIcon,
 } from '@heroicons/vue/24/outline';
 
 interface Domain {
@@ -40,15 +50,21 @@ const { isCollapsed } = useSidebar();
 const showCreateForm = ref(false);
 const viewMode = ref<'cards' | 'table'>('table');
 
+const showStoreDetailsModal = ref(false);
+const selectedTenant = ref<Tenant | null>(null);
+
+const showApproveModal = ref(false);
+const tenantToApprove = ref<Tenant | null>(null);
+
 const contentClass = computed(() => ({
     'dashboard-content': true,
-    'sidebar-collapsed': isCollapsed.value
+    'sidebar-collapsed': isCollapsed.value,
 }));
 
 const form = useForm({
     name: '',
     email: '',
-    subdomain: ''
+    subdomain: '',
 });
 
 const submit = () => {
@@ -66,18 +82,33 @@ const deleteVendor = (id: string) => {
     }
 };
 
-const approveVendor = (id: string) => {
-    if (confirm('Approve this vendor? This will create their database.')) {
-        router.post(`/admin/vendors/${id}/approve`);
-    }
+const requestApproveVendor = (tenant: Tenant) => {
+    tenantToApprove.value = tenant;
+    showApproveModal.value = true;
+};
+
+const confirmApproveVendor = () => {
+    if (!tenantToApprove.value) return;
+
+    router.post(`/admin/vendors/${tenantToApprove.value.id}/approve`, {}, {
+        onSuccess: () => {
+            showApproveModal.value = false;
+            tenantToApprove.value = null;
+        },
+    });
+};
+
+const openStoreDetails = (tenant: Tenant) => {
+    selectedTenant.value = tenant;
+    showStoreDetailsModal.value = true;
 };
 
 const approvedVendors = computed(() =>
-    props.tenants?.data?.filter(t => t.is_approved) ?? []
+    props.tenants?.data?.filter((t) => t.is_approved) ?? [],
 );
 
 const pendingVendors = computed(() =>
-    props.tenants?.data?.filter(t => !t.is_approved) ?? []
+    props.tenants?.data?.filter((t) => !t.is_approved) ?? [],
 );
 
 const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
@@ -90,15 +121,10 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
         <Header />
         <Sidebar role="admin">
             <AdminNav />
-            <template #icons>
-                <AdminNavIcons />
-            </template>
         </Sidebar>
 
         <main :class="contentClass">
             <div class="page-container">
-
-                <!-- Page Header -->
                 <div class="page-header">
                     <div class="header-left">
                         <div class="page-title-wrapper">
@@ -111,7 +137,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="header-right">
                         <div class="stats-row">
                             <div class="stat-box stat-total">
@@ -136,7 +162,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                 </div>
                             </div>
                         </div>
-                        
+
                         <button @click="showCreateForm = !showCreateForm" class="btn-primary">
                             <PlusIcon v-if="!showCreateForm" class="btn-icon" />
                             <XMarkIcon v-else class="btn-icon" />
@@ -145,7 +171,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                     </div>
                 </div>
 
-                <!-- Create Form -->
                 <transition name="slide-fade">
                     <div v-if="showCreateForm" class="create-card">
                         <div class="create-header">
@@ -155,7 +180,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                 <p class="create-subtitle">Set up a new vendor store with isolated database</p>
                             </div>
                         </div>
-                        
+
                         <form @submit.prevent="submit" class="create-form">
                             <div class="form-grid">
                                 <div class="form-field">
@@ -169,7 +194,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     />
                                     <span v-if="form.errors.name" class="field-error">{{ form.errors.name }}</span>
                                 </div>
-                                
+
                                 <div class="form-field">
                                     <label class="field-label">Email Address</label>
                                     <input
@@ -181,7 +206,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     />
                                     <span v-if="form.errors.email" class="field-error">{{ form.errors.email }}</span>
                                 </div>
-                                
+
                                 <div class="form-field">
                                     <label class="field-label">Subdomain</label>
                                     <input
@@ -199,7 +224,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     <span v-if="form.errors.subdomain" class="field-error">{{ form.errors.subdomain }}</span>
                                 </div>
                             </div>
-                            
+
                             <div class="form-actions">
                                 <button type="button" @click="showCreateForm = false" class="btn-secondary">
                                     Cancel
@@ -213,7 +238,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                     </div>
                 </transition>
 
-                <!-- Active Vendors -->
                 <div class="section-card">
                     <div class="section-header">
                         <div class="section-title-wrapper">
@@ -221,17 +245,17 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                             <h2 class="section-title">Active Vendors</h2>
                             <span class="section-badge active-badge">{{ approvedVendors.length }}</span>
                         </div>
-                        
+
                         <div class="view-toggle">
-                            <button 
-                                @click="viewMode = 'table'" 
+                            <button
+                                @click="viewMode = 'table'"
                                 :class="['toggle-btn', { active: viewMode === 'table' }]"
                                 title="Table View"
                             >
                                 <TableCellsIcon class="toggle-icon" />
                             </button>
-                            <button 
-                                @click="viewMode = 'cards'" 
+                            <button
+                                @click="viewMode = 'cards'"
                                 :class="['toggle-btn', { active: viewMode === 'cards' }]"
                                 title="Card View"
                             >
@@ -240,7 +264,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                         </div>
                     </div>
 
-                    <!-- Table View -->
                     <div v-if="approvedVendors.length > 0 && viewMode === 'table'" class="table-container">
                         <table class="vendors-table">
                             <thead>
@@ -284,16 +307,25 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                         {{ new Date(tenant.created_at).toLocaleDateString() }}
                                     </td>
                                     <td>
-                                        <button @click="deleteVendor(tenant.id)" class="table-action-btn delete">
-                                            <TrashIcon class="action-icon" />
-                                        </button>
+                                        <div class="table-actions">
+                                            <button
+                                                @click="openStoreDetails(tenant)"
+                                                class="table-action-btn view"
+                                                title="View store details"
+                                            >
+                                                <EyeIcon class="action-icon" />
+                                            </button>
+
+                                            <button @click="deleteVendor(tenant.id)" class="table-action-btn delete">
+                                                <TrashIcon class="action-icon" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Card View -->
                     <div v-else-if="approvedVendors.length > 0 && viewMode === 'cards'" class="vendors-grid">
                         <div v-for="tenant in approvedVendors" :key="tenant.id" class="vendor-card active-card">
                             <div class="card-header-row">
@@ -305,7 +337,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     <p class="card-email">{{ tenant.email }}</p>
                                 </div>
                             </div>
-                            
+
                             <div class="card-details">
                                 <div class="detail-row">
                                     <GlobeAltIcon class="detail-icon" />
@@ -324,12 +356,22 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     <span class="detail-text">{{ new Date(tenant.created_at).toLocaleDateString() }}</span>
                                 </div>
                             </div>
-                            
+
                             <div class="card-footer">
                                 <span class="db-badge-small">tenant{{ tenant.id }}</span>
-                                <button @click="deleteVendor(tenant.id)" class="card-action-btn delete-btn">
-                                    <TrashIcon class="action-icon" />
-                                </button>
+                                <div class="card-actions">
+                                    <button
+                                        @click="openStoreDetails(tenant)"
+                                        class="card-action-btn view-btn"
+                                        title="View store details"
+                                    >
+                                        <EyeIcon class="action-icon" />
+                                    </button>
+
+                                    <button @click="deleteVendor(tenant.id)" class="card-action-btn delete-btn">
+                                        <TrashIcon class="action-icon" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -341,7 +383,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                     </div>
                 </div>
 
-                <!-- Pending Vendors -->
                 <div class="section-card">
                     <div class="section-header">
                         <div class="section-title-wrapper">
@@ -349,17 +390,17 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                             <h2 class="section-title">Pending Approval</h2>
                             <span class="section-badge pending-badge">{{ pendingVendors.length }}</span>
                         </div>
-                        
+
                         <div class="view-toggle">
-                            <button 
-                                @click="viewMode = 'table'" 
+                            <button
+                                @click="viewMode = 'table'"
                                 :class="['toggle-btn', { active: viewMode === 'table' }]"
                                 title="Table View"
                             >
                                 <TableCellsIcon class="toggle-icon" />
                             </button>
-                            <button 
-                                @click="viewMode = 'cards'" 
+                            <button
+                                @click="viewMode = 'cards'"
                                 :class="['toggle-btn', { active: viewMode === 'cards' }]"
                                 title="Card View"
                             >
@@ -368,7 +409,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                         </div>
                     </div>
 
-                    <!-- Table View -->
                     <div v-if="pendingVendors.length > 0 && viewMode === 'table'" class="table-container">
                         <table class="vendors-table">
                             <thead>
@@ -400,9 +440,22 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     </td>
                                     <td>
                                         <div class="table-actions">
-                                            <button @click="approveVendor(tenant.id)" class="table-action-btn approve">
+                                            <button
+                                                @click="openStoreDetails(tenant)"
+                                                class="table-action-btn view"
+                                                title="View store details"
+                                            >
+                                                <EyeIcon class="action-icon" />
+                                            </button>
+
+                                            <button
+                                                @click="requestApproveVendor(tenant)"
+                                                class="table-action-btn approve"
+                                                title="Approve vendor"
+                                            >
                                                 <CheckIcon class="action-icon" />
                                             </button>
+
                                             <button @click="deleteVendor(tenant.id)" class="table-action-btn delete">
                                                 <TrashIcon class="action-icon" />
                                             </button>
@@ -413,7 +466,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                         </table>
                     </div>
 
-                    <!-- Card View -->
                     <div v-else-if="pendingVendors.length > 0 && viewMode === 'cards'" class="vendors-grid">
                         <div v-for="tenant in pendingVendors" :key="tenant.id" class="vendor-card pending-card">
                             <div class="card-header-row">
@@ -425,7 +477,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     <p class="card-email">{{ tenant.email }}</p>
                                 </div>
                             </div>
-                            
+
                             <div class="card-details">
                                 <div class="detail-row">
                                     <GlobeAltIcon class="detail-icon" />
@@ -436,14 +488,29 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                     <span class="detail-text">{{ new Date(tenant.created_at).toLocaleDateString() }}</span>
                                 </div>
                             </div>
-                            
+
                             <div class="card-footer">
-                                <button @click="approveVendor(tenant.id)" class="card-action-btn approve-btn">
-                                    <CheckIcon class="action-icon" />
-                                </button>
-                                <button @click="deleteVendor(tenant.id)" class="card-action-btn delete-btn">
-                                    <TrashIcon class="action-icon" />
-                                </button>
+                                <div class="card-actions">
+                                    <button
+                                        @click="openStoreDetails(tenant)"
+                                        class="card-action-btn view-btn"
+                                        title="View store details"
+                                    >
+                                        <EyeIcon class="action-icon" />
+                                    </button>
+
+                                    <button
+                                        @click="requestApproveVendor(tenant)"
+                                        class="card-action-btn approve-btn"
+                                        title="Approve vendor"
+                                    >
+                                        <CheckIcon class="action-icon" />
+                                    </button>
+
+                                    <button @click="deleteVendor(tenant.id)" class="card-action-btn delete-btn">
+                                        <TrashIcon class="action-icon" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -454,8 +521,27 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                         <p class="empty-hint">All vendors have been reviewed</p>
                     </div>
                 </div>
-
             </div>
+
+            <StoreDetailsModal
+                :open="showStoreDetailsModal"
+                :tenant="selectedTenant"
+                @update:open="showStoreDetailsModal = $event"
+            />
+
+            <ConfirmationModal
+                v-model:open="showApproveModal"
+                title="Confirm Vendor Approval"
+                :description="
+                    tenantToApprove
+                        ? `Approve ${tenantToApprove.name}? This will create and prepare their tenant database.`
+                        : 'Approve this vendor? This will create and prepare their tenant database.'
+                        "
+                    confirm-text="Approve Vendor"
+                    cancel-text="Cancel"
+                    variant="destructive"
+                    @confirm="confirmApproveVendor"
+            />
         </main>
     </div>
 </template>
@@ -473,7 +559,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     min-height: 100vh;
 }
 
-/* Page Header */
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -571,7 +656,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     letter-spacing: 0.05em;
 }
 
-/* Buttons */
 .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -622,7 +706,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     height: 18px;
 }
 
-/* Create Card */
 .create-card {
     background: white;
     border-radius: 16px;
@@ -727,7 +810,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     justify-content: flex-end;
 }
 
-/* Section Card */
 .section-card {
     background: white;
     border-radius: 16px;
@@ -774,7 +856,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     color: #475569;
 }
 
-/* View Toggle */
 .view-toggle {
     display: flex;
     gap: 0.5rem;
@@ -809,7 +890,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     height: 20px;
 }
 
-/* Table View */
 .table-container {
     overflow-x: auto;
 }
@@ -941,6 +1021,18 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     transition: all 0.2s;
 }
 
+.table-action-btn.view {
+    background: #f8fafc;
+    color: #3b82f6;
+    border: 1px solid #e2e8f0;
+}
+
+.table-action-btn.view:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
 .table-action-btn.approve {
     background: #f8fafc;
     color: #10b981;
@@ -970,7 +1062,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     height: 16px;
 }
 
-/* Card View */
 .vendors-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1098,6 +1189,12 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     gap: 0.5rem;
 }
 
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .db-badge-small {
     padding: 0.25rem 0.5rem;
     background: #f1f5f9;
@@ -1119,6 +1216,18 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
+}
+
+.view-btn {
+    background: #f8fafc;
+    color: #3b82f6;
+    border: 1px solid #e2e8f0;
+}
+
+.view-btn:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
 }
 
 .approve-btn {
@@ -1145,7 +1254,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     border-color: #ef4444;
 }
 
-/* Empty State */
 .empty-state {
     text-align: center;
     padding: 3rem 1rem;
@@ -1171,7 +1279,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     margin: 0;
 }
 
-/* Animations */
 .slide-fade-enter-active {
     transition: all 0.3s ease-out;
 }
@@ -1190,7 +1297,6 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     opacity: 0;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
     .stats-row {
         display: none;
@@ -1201,21 +1307,21 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     .page-header {
         flex-direction: column;
     }
-    
+
     .header-right {
         width: 100%;
         justify-content: stretch;
     }
-    
+
     .btn-primary {
         flex: 1;
         justify-content: center;
     }
-    
+
     .vendors-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .section-header {
         flex-direction: column;
         align-items: flex-start;

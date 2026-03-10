@@ -43,7 +43,7 @@ const user = computed(() => page.props.auth?.user);
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
-    z-index: 999;
+    z-index: 40;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
