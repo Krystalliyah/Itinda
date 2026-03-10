@@ -30,20 +30,20 @@ const contentClass = computed(() => ({
 }));
 
 const tenantInfo = computed(() => (page.props as any).tenantInfo ?? (page.props as any).store ?? {});
-const storeName = computed(() => tenantInfo.value?.name ?? 'Storekoto Vendor Store');
+const storeName = computed(() => tenantInfo.value?.name ?? 'iTinda Vendor Store');
 
 const saveLabel = ref('Changes not yet published');
 
 const storeForm = ref({
     storeName: storeName.value,
-    storeSlug: tenantInfo.value?.slug ?? 'storekoto-vendor-store',
+    storeSlug: tenantInfo.value?.slug ?? 'itinda-vendor-store',
     tagline: 'Fresh, student-friendly favorites ready for quick campus pick-up.',
-    email: tenantInfo.value?.email ?? 'vendor@storekoto.test',
+    email: tenantInfo.value?.email ?? 'vendor@itinda.test',
     phone: tenantInfo.value?.phone ?? '+63 912 345 6789',
     pickupAddress: tenantInfo.value?.address ?? 'Main Campus Arcade, Ground Floor',
     pickupNotes: 'Please present your order receipt upon pick-up. Orders are typically ready within 20–30 minutes.',
     about: 'We serve affordable meals, drinks, and daily essentials tailored for fast and convenient campus pick-up.',
-    website: 'storekoto.app/store/vendor-store',
+    website: 'itinda.app/store/vendor-store',
     pickupLeadTime: '20–30 mins',
     orderNotice: '30 mins',
 });
@@ -172,7 +172,7 @@ const saveChanges = () => {
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Store slug</span>
                                     <div class="flex overflow-hidden rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] focus-within:border-[#245C4A] focus-within:ring-2 focus-within:ring-[#245C4A]/10">
                                         <span class="flex items-center border-r border-[#E5EEEA] bg-[#F3F7F5] px-3 text-xs text-[#70867D]">
-                                            storekoto.app/store/
+                                            itinda.app/store/
                                         </span>
                                         <input
                                             v-model="storeForm.storeSlug"

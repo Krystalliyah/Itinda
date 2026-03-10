@@ -36,8 +36,8 @@ class AddTenantToHosts extends Command
         $content = file_get_contents($hostsFile);
         
         // Add marker comments
-        $marker = "# Storekoto Tenants - Auto-generated";
-        $endMarker = "# End Storekoto Tenants";
+        $marker = "# iTinda Tenants - Auto-generated";
+        $endMarker = "# End iTinda Tenants";
         
         // Remove old entries
         $content = preg_replace("/$marker.*?$endMarker\n/s", '', $content);

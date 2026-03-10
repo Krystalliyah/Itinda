@@ -1,4 +1,4 @@
-# 🛒 Storekoto — Setup & Data Flow Guide
+# 🛒 iTinda — Setup & Data Flow Guide
 
 > For contributors cloning this repo. Read this before touching any code.
 
@@ -36,18 +36,18 @@ php artisan key:generate
 Open `.env` and set your database credentials:
 
 ```env
-APP_URL=http://storekoto.test
-APP_DOMAIN=storekoto.test
+APP_URL=http://itinda.test
+APP_DOMAIN=itinda.test
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=Storekoto         # Create this DB in MySQL first!
+DB_DATABASE=iTinda         # Create this DB in MySQL first!
 DB_USERNAME=root
 DB_PASSWORD=your_password
 ```
 
-> **Create the database first:** Run `CREATE DATABASE Storekoto;` in MySQL before the next step.
+> **Create the database first:** Run `CREATE DATABASE iTinda;` in MySQL before the next step.
 
 ### Run Migrations & Seed
 
@@ -163,7 +163,7 @@ public function store(Request $request)
 
     // Create the subdomain record
     $tenant->domains()->create([
-        'domain' => $data['subdomain'] . '.storekoto.test',
+        'domain' => $data['subdomain'] . '.itinda.test',
     ]);
 
     return redirect()->route('vendor.dashboard');
@@ -185,7 +185,7 @@ Inertia redirects back to the dashboard. `HandleInertiaRequests.php` automatical
 ## 🗂️ Where Things Live
 
 ```
-storekoto/
+itinda/
 ├── app/
 │   ├── Http/
 │   │   ├── Controllers/
@@ -229,7 +229,7 @@ storekoto/
 After seeding, you can log in with:
 
 ```
-Email:    admin@storekoto.test
+Email:    admin@itinda.test
 Password: (set in DatabaseSeeder.php)
 ```
 
@@ -242,7 +242,7 @@ Password: (set in DatabaseSeeder.php)
 composer run dev
 
 # OR individually:
-php artisan serve       # Laravel backend at http://storekoto.test
+php artisan serve       # Laravel backend at http://itinda.test
 npm run dev             # Vite frontend watcher
 php artisan queue:listen --tries=1   # Queue worker (needed for DB jobs)
 ```
@@ -255,5 +255,5 @@ php artisan queue:listen --tries=1   # Queue worker (needed for DB jobs)
 | ------------------------------ | ----------------------------------------------------------------------------------------- |
 | `No role assigned` after login | Run `php artisan db:seed` to create roles                                                 |
 | Tenant subdomain is 404        | Make sure the domain is in your hosts file and Herd is configured for wildcard subdomains |
-| `SQLSTATE` errors              | Check `.env` DB credentials, and that the `Storekoto` database exists                     |
+| `SQLSTATE` errors              | Check `.env` DB credentials, and that the `iTinda` database exists                     |
 | White page after deploy        | Run `npm run build` and `php artisan config:clear`                                        |

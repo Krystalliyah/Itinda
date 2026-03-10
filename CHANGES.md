@@ -1,6 +1,6 @@
 # Recent Changes Documentation
 
-This document summarizes the recent changes made to the Storekoto project as of March 5, 2026.
+This document summarizes the recent changes made to the iTinda project as of March 5, 2026.
 
 ## Overview
 The changes primarily focus on enhancing the product management system with image upload capabilities, improving tenant administration features, and fixing minor issues in migrations and seeders.

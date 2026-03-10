@@ -50,7 +50,7 @@ class StoreSetupController extends Controller
             'operating_hours' => $validated['operating_hours'],
         ]);
 
-        // Create domain: subdomain.storekoto.test
+        // Create domain: subdomain.itinda.test
         $tenant->domains()->create([
             'domain' => $validated['domain_slug'] . '.' . config('app.domain', 'localhost'),
         ]);

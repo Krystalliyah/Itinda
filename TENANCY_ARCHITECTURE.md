@@ -1,20 +1,20 @@
-# StoreKoto Multi-Tenancy Architecture
+# iTinda Multi-Tenancy Architecture
 
 ## Overview
-StoreKoto uses a hybrid multi-tenancy model where:
-- **Central Domain** (`storekoto.test`) - Admin and customer access
-- **Tenant Subdomains** (`ham.storekoto.test`, `acme.storekoto.test`) - Vendor management
+iTinda uses a hybrid multi-tenancy model where:
+- **Central Domain** (`itinda.test`) - Admin and customer access
+- **Tenant Subdomains** (`ham.itinda.test`, `acme.itinda.test`) - Vendor management
 
 ## User Roles & Access
 
 ### 1. Admin (Central Domain Only)
-- Access: `storekoto.test/admin`
+- Access: `itinda.test/admin`
 - Can create/manage tenants (vendors)
 - Each tenant gets a unique subdomain
 - Manages global system settings
 
 ### 2. Vendors (Tenant Subdomains)
-- Access: `{subdomain}.storekoto.test` (e.g., `ham.storekoto.test`)
+- Access: `{subdomain}.itinda.test` (e.g., `ham.itinda.test`)
 - Each vendor has isolated database
 - Manages their own:
   - Products
@@ -24,14 +24,14 @@ StoreKoto uses a hybrid multi-tenancy model where:
   - Suppliers
 
 ### 3. Customers (Central Domain)
-- Access: `storekoto.test/customer`
+- Access: `itinda.test/customer`
 - Browse products from ALL tenants
 - Compare products across vendors
 - Place orders (products from multiple vendors)
 
 ## Database Architecture
 
-### Central Database (`Storekoto`)
+### Central Database (`iTinda`)
 Tables:
 - `users` - All users (admin, vendors, customers)
 - `tenants` - Vendor/tenant records
@@ -66,7 +66,7 @@ POST /admin/tenants
 
 // System automatically:
 // 1. Creates tenant record in central DB
-// 2. Creates domain: ham.storekoto.test
+// 2. Creates domain: ham.itinda.test
 // 3. Creates database: tenantham
 // 4. Runs tenant migrations
 ```
@@ -74,9 +74,9 @@ POST /admin/tenants
 ### Vendor Access (Tenant Subdomain)
 
 ```
-1. Vendor visits: ham.storekoto.test
+1. Vendor visits: ham.itinda.test
 2. InitializeTenancyByDomain middleware:
-   - Reads hostname: ham.storekoto.test
+   - Reads hostname: ham.itinda.test
    - Looks up domain in central DB
    - Finds tenant: ham
    - Switches DB connection to: tenantham
@@ -87,7 +87,7 @@ POST /admin/tenants
 ### Customer Browsing (Central Domain)
 
 ```php
-// Customer visits: storekoto.test/customer/products
+// Customer visits: itinda.test/customer/products
 // ProductAggregatorService:
 // 1. Gets all tenants from central DB
 // 2. For each tenant:
@@ -104,7 +104,7 @@ POST /admin/tenants
 ### Configuration
 - `config/tenancy.php` - Tenancy settings
 - `config/database.php` - Database connections
-- `.env` - APP_DOMAIN=storekoto.test
+- `.env` - APP_DOMAIN=itinda.test
 
 ### Routes
 - `routes/web.php` - Central domain routes (pinned)
@@ -133,18 +133,18 @@ php artisan tenant:create-test ham "Ham Store" "ham@example.com"
 
 ### Access Points
 ```
-Admin:    http://storekoto.test/admin/tenants
-Vendor:   http://ham.storekoto.test/dashboard
-Customer: http://storekoto.test/customer/products
+Admin:    http://itinda.test/admin/tenants
+Vendor:   http://ham.itinda.test/dashboard
+Customer: http://itinda.test/customer/products
 ```
 
 ### Add to hosts file (Windows)
 ```
 C:\Windows\System32\drivers\etc\hosts
 
-127.0.0.1 storekoto.test
-127.0.0.1 ham.storekoto.test
-127.0.0.1 acme.storekoto.test
+127.0.0.1 itinda.test
+127.0.0.1 ham.itinda.test
+127.0.0.1 acme.itinda.test
 ```
 
 ## Important Notes

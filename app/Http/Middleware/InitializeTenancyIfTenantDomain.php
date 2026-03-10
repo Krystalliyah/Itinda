@@ -9,7 +9,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 /**
  * Conditionally initialize tenancy only when the current request
  * is on a tenant subdomain. If the request is from a central domain
- * (storekoto.test, localhost, etc.), tenancy is skipped entirely.
+ * (itinda.test, localhost, etc.), tenancy is skipped entirely.
  *
  * This middleware is added to Fortify so that auth routes (/login, 
  * /register, etc.) work correctly on BOTH central and tenant domains

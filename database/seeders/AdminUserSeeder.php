@@ -12,7 +12,7 @@ class AdminUserSeeder extends Seeder
     {
         // Create admin user (roles will be assigned separately)
         $admin = User::firstOrCreate(
-            ['email' => 'admin@storekoto.test'],
+            ['email' => 'admin@itinda.test'],
             [
                 'name' => 'Admin User',
                 'phone' => '09123456789',
@@ -28,6 +28,6 @@ class AdminUserSeeder extends Seeder
             $this->command->warn('⚠ Admin user created but role not assigned. Run: php artisan db:seed --class=RolesSeeder first');
         }
 
-        $this->command->info('Login: admin@storekoto.test / Password123!');
+        $this->command->info('Login: admin@itinda.test / Password123!');
     }
 }

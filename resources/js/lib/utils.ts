@@ -11,7 +11,7 @@ export function toUrl(href: NonNullable<InertiaLinkProps['href']>) {
     if (!url) return '';
 
     // If it's a protocol-relative or absolute URL pointing to our app
-    if (url.includes('storekoto.test')) {
+    if (url.includes('itinda.test')) {
         try {
             // Handle // domains by temporarily adding a protocol for the URL constructor
             const fullUrl = url.startsWith('//') ? `http:${url}` : url;

@@ -1,6 +1,6 @@
 # Reusable UI Components Documentation
 
-This document provides a comprehensive overview of all reusable UI components available in the StoreKoto application.
+This document provides a comprehensive overview of all reusable UI components available in the iTinda application.
 
 ## Table of Contents
 - [Modal Components](#modal-components)
