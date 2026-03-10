@@ -11,10 +11,17 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
-    // List the columns that are REAL database columns (not stored in the JSON `data` column)
     public static function getCustomColumns(): array
     {
-        return ['id', 'name', 'email', 'is_approved', 'user_id'];
+        return ['id', 'name', 'email', 'is_approved', 'user_id', 'operating_hours'];
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_approved' => 'boolean',
+            'operating_hours' => 'array',
+        ];
     }
 
     public function user()

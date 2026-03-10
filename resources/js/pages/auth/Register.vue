@@ -46,6 +46,20 @@ const onBeforeSubmit = () => {
     }
 };
 
+// Basic phone formatting for PH numbers
+const formatPhone = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    let value = input.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // Limit to 11 digits
+    if (value.length > 11) {
+        value = value.slice(0, 11);
+    }
+    
+    input.value = value;
+    // Update model if using v-model, but here we likely rely on native form
+};
+
 // Hook into actual form submission
 onMounted(() => {
     const form = document.querySelector('.it-form') as HTMLFormElement;
@@ -302,8 +316,11 @@ onMounted(() => {
                                 </svg>
                             </span>
                             <Input id="phone" type="tel" name="phone"
-                                :tabindex="3" autocomplete="tel" placeholder="+63 912 345 6789" class="it-input" />
+                                :tabindex="3" autocomplete="tel" placeholder="09123456789" class="it-input" 
+                                maxlength="11"
+                                @input="formatPhone" />
                         </div>
+                        <p class="it-field-hint">Format: 09XXXXXXXXX or +639XXXXXXXXX</p>
                         <InputError :message="errors.phone" class="it-field-error" />
                     </div>
 
@@ -320,6 +337,7 @@ onMounted(() => {
                             <Input id="password" type="password" name="password" required
                                 :tabindex="4" autocomplete="new-password" placeholder="Create a password" class="it-input" />
                         </div>
+                        <p class="it-field-hint">Min. 8 chars, mixed case, numbers & symbols</p>
                         <InputError :message="errors.password" class="it-field-error" />
                     </div>
 
@@ -397,6 +415,13 @@ onMounted(() => {
 
 .it-reg-root * { box-sizing: border-box; margin: 0; padding: 0; }
 .it-reg-root a { text-decoration: none; color: inherit; }
+
+.it-field-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    margin-left: 2px;
+}
 
 /* ════════════════════════════════════════════════════════════
    ROLE SELECTION MODAL

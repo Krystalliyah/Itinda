@@ -45,6 +45,16 @@ const lowStockItems = computed(() => (page.props as any).lowStockItems || []);
 /** ✅ Modal state */
 const showStoreSetupModal = ref(false);
 
+const defaultOperatingHours = {
+  monday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+  tuesday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+  wednesday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+  thursday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+  friday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+  saturday: { is_open: true, open_time: '09:00', close_time: '15:00' },
+  sunday: { is_open: false, open_time: '09:00', close_time: '15:00' },
+};
+
 /** ✅ Store setup form */
 const form = useForm({
   store_name: '',
@@ -52,7 +62,7 @@ const form = useForm({
   address: '',
   city: '',
   phone: '',
-  operating_hours: '',
+  operating_hours: JSON.parse(JSON.stringify(defaultOperatingHours)),
 });
 
 /** Optional: lock body scroll when modal is open */
@@ -715,25 +725,62 @@ function stockClass(level: string) {
                     id="phone"
                     v-model="form.phone"
                     type="tel"
-                    placeholder="+63 912 345 6789"
+                    maxlength="11"
+                    placeholder="09123456789"
+                    @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 11)"
                     class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
                   />
+                  <p class="text-[10px] text-gray-500 mt-1">Format: 09XXXXXXXXX</p>
                   <InputError :message="form.errors.phone" class="mt-1" />
                 </div>
               </div>
 
               <!-- Operating Hours -->
               <div>
-                <label for="operating_hours" class="block text-sm font-semibold text-gray-800 mb-1.5">
+                <label class="block text-sm font-semibold text-gray-800 mb-2">
                   Operating Hours
                 </label>
-                <input
-                  id="operating_hours"
-                  v-model="form.operating_hours"
-                  type="text"
-                  placeholder="e.g. Mon–Sat 8AM–8PM"
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
-                />
+                <div class="space-y-3 border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+                  <div
+                    v-for="(schedule, day) in form.operating_hours"
+                    :key="day"
+                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white border border-gray-100 rounded-lg shadow-sm transition-opacity hover:border-gray-200"
+                  >
+                    <!-- Day & Toggle -->
+                    <div class="flex items-center gap-3 w-32">
+                      <input
+                        type="checkbox"
+                        :id="'day-' + day"
+                        v-model="schedule.is_open"
+                        class="w-4 h-4 text-[#245c4a] rounded border-gray-300 focus:ring-[#245c4a]"
+                      />
+                      <label :for="'day-' + day" class="text-sm font-medium text-gray-700 capitalize cursor-pointer select-none">
+                        {{ day }}
+                      </label>
+                    </div>
+
+                    <!-- Time Inputs -->
+                    <div v-if="schedule.is_open" class="flex items-center gap-2 flex-1 sm:justify-end">
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="time"
+                          v-model="schedule.open_time"
+                          class="w-[120px] rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 focus:border-[#245c4a] focus:ring-1 focus:ring-[#245c4a] outline-none bg-white font-mono"
+                        />
+                        <span class="text-gray-400 text-sm">to</span>
+                        <input
+                          type="time"
+                          v-model="schedule.close_time"
+                          class="w-[120px] rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 focus:border-[#245c4a] focus:ring-1 focus:ring-[#245c4a] outline-none bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+                    <!-- Closed State -->
+                    <div v-else class="flex-1 text-sm text-gray-400 italic sm:text-right px-4 py-1.5">
+                      Closed
+                    </div>
+                  </div>
+                </div>
                 <InputError :message="form.errors.operating_hours" class="mt-1" />
               </div>
 

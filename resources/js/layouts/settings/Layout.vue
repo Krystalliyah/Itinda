@@ -56,7 +56,7 @@ const { isCurrentUrl } = useCurrentUrl();
                         ]"
                         as-child
                     >
-                        <Link :href="item.href">
+                        <Link :href="toUrl(item.href)">
                             <component :is="item.icon" class="h-4 w-4" />
                             {{ item.title }}
                         </Link>

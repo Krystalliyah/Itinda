@@ -42,12 +42,14 @@ Route::middleware([
 
     // Authentication pages on tenant
     Route::get('/login', function () {
-        return Inertia::render('auth/LoginAdminTenant');
+        return Inertia::render('auth/LoginTenant');
     })->name('login');
 
     Route::get('/vendor-admin/login', function () {
-        return Inertia::render('auth/LoginAdminTenant');
+        return Inertia::render('auth/LoginTenant');
     });
+
+    require __DIR__.'/settings.php';
 
     // Basic vendor routes (accessible to any vendor account or staff)
     Route::middleware(['auth', 'verified', 'role:vendor|staff'])->prefix('vendor')->name('vendor.')->group(function () {
@@ -66,6 +68,7 @@ Route::middleware([
                 'productCount' => Product::count(),
             ]);
         })->name('dashboard');
+        Route::get('/profile', fn() => inertia('vendor/Profile'))->name('profile');
         Route::post('/store/setup', [StoreSetupController::class, 'store'])->name('store.create');
     });
 

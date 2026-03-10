@@ -23,7 +23,7 @@ class CreateNewUser implements CreatesNewUsers
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
             'role' => ['required', 'in:customer,vendor'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'regex:/^(09|\+639)\d{9}$/'],
         ])->validate();
 
         $user = User::create([

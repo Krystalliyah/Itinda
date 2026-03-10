@@ -28,7 +28,7 @@ class TenantStoreAdminSeeder extends Seeder
                 'name' => 'Store Admin',
                 'login_id' => $loginId,
                 'email' => $email,
-                'password' => Hash::make('password'),
+                'password' => Hash::make('Password123!'),
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ]);
