@@ -26,6 +26,14 @@ function isActive(path: string): boolean {
             Dashboard
         </Link>
 
+        <Link href="/vendor/profile" class="nav-item" :class="{ active: isActive('/vendor/profile') }" title="Profile">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Profile
+        </Link>
+
         <template v-if="showFullNav">
             <Link v-if="hasPermission('manage-products')" href="/vendor/products" class="nav-item" :class="{ active: isActive('/vendor/products') }" title="Products">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -74,8 +74,8 @@
                             Vendors manage their entire store — inventory, expenses, analytics — all in one place.
                         </p>
                         <div class="it-hero-cta">
-                            <Link href="/register/vendor" class="it-btn-primary">Start Selling</Link>
-                            <Link href="/register/customer" class="it-btn-outline">Start Shopping</Link>
+                            <Link href="/register?role=vendor" class="it-btn-primary">Start Selling</Link>
+                            <Link href="/register?role=customer" class="it-btn-outline">Start Shopping</Link>
                         </div>
                       
                          <div class="it-hero-stats">
@@ -295,8 +295,8 @@
                     <h2>Ready to <span class="it-accent-gold">Transform</span><br />Local Commerce?</h2>
                     <p>Join the platform that's connecting communities and empowering local businesses to thrive.</p>
                     <div class="it-cta-btns">
-                        <Link href="/register/vendor" class="it-btn-cta-gold">Become a Vendor</Link>
-                        <Link href="/register/customer" class="it-btn-cta-outline">Start Shopping</Link>
+                        <Link href="/register?role=vendor" class="it-btn-cta-gold">Become a Vendor</Link>
+                        <Link href="/register?role=customer" class="it-btn-cta-outline">Start Shopping</Link>
                     </div>
                 </div>
             </div>

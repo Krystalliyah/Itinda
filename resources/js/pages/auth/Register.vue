@@ -16,6 +16,17 @@ const showRoleModal = ref(true);
 const selectedRole = ref<'customer' | 'vendor' | null>(null);
 const isSubmitting = ref(false);
 
+// Check URL parameters for pre-selected role (e.g., ?role=vendor)
+const urlParams = new URLSearchParams(window.location.search);
+const roleParam = urlParams.get('role');
+if (roleParam === 'vendor') {
+    selectedRole.value = 'vendor';
+    showRoleModal.value = false;
+} else if (roleParam === 'customer') {
+    selectedRole.value = 'customer';
+    showRoleModal.value = false;
+}
+
 function selectRole(role: 'customer' | 'vendor') {
     selectedRole.value = role;
     showRoleModal.value = false;

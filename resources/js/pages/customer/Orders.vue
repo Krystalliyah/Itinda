@@ -455,9 +455,6 @@ const cancelOrder = (orderId: number) => {
 
     <Sidebar role="customer">
       <CustomerNav />
-      <template #icons>
-        <CustomerNavIcons />
-      </template>
     </Sidebar>
 
     <main :class="contentClass">

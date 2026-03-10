@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import AdminNav from '@/components/navigation/AdminNav.vue';
-import AdminNavIcons from '@/components/navigation/AdminNavIcons.vue';
+// import AdminNavIcons from '@/components/navigation/AdminNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
 import { 
     BuildingStorefrontIcon, 
@@ -39,9 +39,6 @@ const contentClass = computed(() => ({
         <Header />
         <Sidebar role="admin">
             <AdminNav />
-            <template #icons>
-                <AdminNavIcons />
-            </template>
         </Sidebar>
 
         <main :class="contentClass">

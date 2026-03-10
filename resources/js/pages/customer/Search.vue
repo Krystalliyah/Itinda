@@ -22,9 +22,6 @@ const contentClass = computed(() => ({
         <Header />
         <Sidebar role="customer">
             <CustomerNav />
-            <template #icons>
-                <CustomerNavIcons />
-            </template>
         </Sidebar>
 
         <main :class="contentClass">
