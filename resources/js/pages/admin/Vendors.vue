@@ -163,80 +163,8 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                             </div>
                         </div>
 
-                        <button @click="showCreateForm = !showCreateForm" class="btn-primary">
-                            <PlusIcon v-if="!showCreateForm" class="btn-icon" />
-                            <XMarkIcon v-else class="btn-icon" />
-                            {{ showCreateForm ? 'Cancel' : 'New Vendor' }}
-                        </button>
                     </div>
                 </div>
-
-                <transition name="slide-fade">
-                    <div v-if="showCreateForm" class="create-card">
-                        <div class="create-header">
-                            <PlusIcon class="create-icon" />
-                            <div>
-                                <h2 class="create-title">Create New Vendor</h2>
-                                <p class="create-subtitle">Set up a new vendor store with isolated database</p>
-                            </div>
-                        </div>
-
-                        <form @submit.prevent="submit" class="create-form">
-                            <div class="form-grid">
-                                <div class="form-field">
-                                    <label class="field-label">Store Name</label>
-                                    <input
-                                        v-model="form.name"
-                                        type="text"
-                                        placeholder="e.g., Ham Store"
-                                        class="field-input"
-                                        required
-                                    />
-                                    <span v-if="form.errors.name" class="field-error">{{ form.errors.name }}</span>
-                                </div>
-
-                                <div class="form-field">
-                                    <label class="field-label">Email Address</label>
-                                    <input
-                                        v-model="form.email"
-                                        type="email"
-                                        placeholder="vendor@example.com"
-                                        class="field-input"
-                                        required
-                                    />
-                                    <span v-if="form.errors.email" class="field-error">{{ form.errors.email }}</span>
-                                </div>
-
-                                <div class="form-field">
-                                    <label class="field-label">Subdomain</label>
-                                    <input
-                                        v-model="form.subdomain"
-                                        type="text"
-                                        placeholder="hamstore"
-                                        pattern="[a-z0-9-]+"
-                                        class="field-input"
-                                        required
-                                    />
-                                    <div class="subdomain-preview">
-                                        <GlobeAltIcon class="preview-icon" />
-                                        <span>{{ form.subdomain || 'subdomain' }}.storekoto.test</span>
-                                    </div>
-                                    <span v-if="form.errors.subdomain" class="field-error">{{ form.errors.subdomain }}</span>
-                                </div>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="button" @click="showCreateForm = false" class="btn-secondary">
-                                    Cancel
-                                </button>
-                                <button type="submit" :disabled="form.processing" class="btn-primary">
-                                    <PlusIcon v-if="!form.processing" class="btn-icon" />
-                                    {{ form.processing ? 'Creating...' : 'Create Vendor' }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </transition>
 
                 <div class="section-card">
                     <div class="section-header">

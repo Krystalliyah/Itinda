@@ -1,6 +1,6 @@
 # Customer Dashboard Multi-Tenant Data Flow
 
-This document explains how the customer dashboard on the central domain retrieves product information from **every tenant database** in the Storekoto application. It covers:
+This document explains how the customer dashboard on the central domain retrieves product information from **every tenant database** in the iTinda application. It covers:
 
 - database structure and table relationships
 - service logic that switches tenant contexts

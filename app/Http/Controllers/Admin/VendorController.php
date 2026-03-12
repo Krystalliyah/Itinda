@@ -40,7 +40,7 @@ class VendorController extends Controller
             'is_approved' => false,
         ]);
 
-        // Create domain: subdomain.storekoto.test
+        // Create domain: subdomain.itinda.test
         $tenant->domains()->create([
             'domain' => $validated['subdomain'] . '.' . config('app.domain', 'localhost'),
         ]);

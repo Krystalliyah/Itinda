@@ -12,8 +12,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/reports', fn() => inertia('admin/Reports'))->name('reports');
     
     // Vendor management - simple CRUD and Approval
-    Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
-    Route::post('/vendors', [VendorController::class, 'store'])->name('vendors.store');
+    Route::apiResource('vendors', VendorController::class)
+        ->parameters(['vendors' => 'tenant'])
+        ->only(['index', 'store', 'destroy']);
     Route::post('/vendors/{tenant}/approve', [VendorController::class, 'approve'])->name('vendors.approve');
-    Route::delete('/vendors/{tenant}', [VendorController::class, 'destroy'])->name('vendors.destroy');
 });

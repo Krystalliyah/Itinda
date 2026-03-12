@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: "Storekoto"
+      MYSQL_DATABASE: "iTinda"
     ports:
       - "3306:3306"
     volumes:

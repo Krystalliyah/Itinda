@@ -129,7 +129,7 @@ class FortifyServiceProvider extends ServiceProvider
 
             if (function_exists('tenancy') && tenancy()->initialized) {
                 // Tenant-specific admin login page
-                return Inertia::render('auth/LoginAdminTenant', [
+                return Inertia::render('auth/LoginTenant', [
                     'status' => $request->session()->get('status'),
                 ]);
             }

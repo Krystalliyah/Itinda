@@ -62,7 +62,7 @@ const currentOrder: CurrentOrder = {
   id: 'SK-4021',
   store: 'Emerald Fresh Market',
   pickupTime: 'Today, 4:00 PM - 5:00 PM',
-  pickupLocation: 'StoreKoto Pickup Counter A',
+  pickupLocation: 'iTinda Pickup Counter A',
   status: 'Ready for pickup',
 };
 

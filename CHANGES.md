@@ -1,6 +1,6 @@
 # Recent Changes Documentation
 
-This document summarizes the recent changes made to the Storekoto project as of March 5, 2026.
+This document summarizes the recent changes made to the iTinda project as of March 5, 2026.
 
 ## Overview
 The changes primarily focus on enhancing the product management system with image upload capabilities, improving tenant administration features, and fixing minor issues in migrations and seeders.
@@ -15,7 +15,7 @@ The changes primarily focus on enhancing the product management system with imag
   - Created new migration `2026_03_05_064330_add_image_to_products_table.php` to add `image_path` column to products table.
 
 ### Tenant Administration Improvements
-- **Login Form Refactor**: Simplified `LoginAdminTenant.vue` to use `useForm` hook instead of the Form component for better consistency.
+- **Login Form Refactor**: Simplified `LoginTenant.vue` to use `useForm` hook instead of the Form component for better consistency.
 - **Seeder Enhancements**:
   - Updated `TenantRolesSeeder.php` to clear cached permissions and specify guard_name for roles.
   - Modified `TenantStoreAdminSeeder.php` to set `email_verified_at` timestamp when creating admin users.
@@ -35,7 +35,7 @@ The changes primarily focus on enhancing the product management system with imag
 - `database/migrations/tenant/2026_03_05_064330_add_image_to_products_table.php` (new)
 - `database/seeders/Tenant/TenantRolesSeeder.php`
 - `database/seeders/Tenant/TenantStoreAdminSeeder.php`
-- `resources/js/pages/auth/LoginAdminTenant.vue`
+- `resources/js/pages/auth/LoginTenant.vue`
 - `resources/js/pages/vendor/Products.vue`
 - `routes/tenant.php`
 

@@ -18,11 +18,24 @@ class StoreSetupController extends Controller
             'domain_slug' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9-]+$/', 'unique:domains,domain'],
             'address' => ['required', 'string'],
             'city' => ['nullable', 'string', 'max:100'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'operating_hours' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'regex:/^(09|\+639)\d{9}$/'],
+            'operating_hours' => ['required', 'array'],
+            'operating_hours.*.is_open' => ['required', 'boolean'],
+            'operating_hours.*.open_time' => ['nullable', 'string'],
+            'operating_hours.*.close_time' => ['nullable', 'string'],
         ]);
 
         $user = $request->user();
+
+        $defaultHours = [
+            'monday' => ['is_open' => true, 'open_time' => '08:00', 'close_time' => '18:00'],
+            'tuesday' => ['is_open' => true, 'open_time' => '08:00', 'close_time' => '18:00'],
+            'wednesday' => ['is_open' => true, 'open_time' => '08:00', 'close_time' => '18:00'],
+            'thursday' => ['is_open' => true, 'open_time' => '08:00', 'close_time' => '18:00'],
+            'friday' => ['is_open' => true, 'open_time' => '08:00', 'close_time' => '18:00'],
+            'saturday' => ['is_open' => true, 'open_time' => '09:00', 'close_time' => '15:00'],
+            'sunday' => ['is_open' => false, 'open_time' => '09:00', 'close_time' => '15:00'],
+        ];
 
         // Create tenant without auto-provisioning database
         $tenant = \App\Models\Tenant::create([
@@ -31,9 +44,13 @@ class StoreSetupController extends Controller
             'email' => $user->email,
             'user_id' => $user->id,
             'is_approved' => false,
+            'address' => $validated['address'],
+            'city' => $validated['city'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'operating_hours' => $validated['operating_hours'],
         ]);
 
-        // Create domain: subdomain.storekoto.test
+        // Create domain: subdomain.itinda.test
         $tenant->domains()->create([
             'domain' => $validated['domain_slug'] . '.' . config('app.domain', 'localhost'),
         ]);

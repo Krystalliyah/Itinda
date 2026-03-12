@@ -19,7 +19,7 @@ class SetTenantSessionConnection
         config(['session.connection' => 'tenant']);
         $currentTenant = tenant();
         if ($currentTenant) {
-            config(['session.cookie' => 'storekoto_session_' . $currentTenant->id]);
+            config(['session.cookie' => 'itinda_session_' . $currentTenant->id]);
         }
         */
     }
