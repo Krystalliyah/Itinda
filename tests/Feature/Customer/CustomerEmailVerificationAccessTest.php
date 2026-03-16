@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
 test('unverified customer can access customer profile page', function () {
@@ -12,6 +11,5 @@ test('unverified customer can access customer profile page', function () {
 
     $this->actingAs($user)
         ->get(route('customer.profile'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('customer/Profile'));
+        ->assertRedirect(route('verification.notice'));
 });
