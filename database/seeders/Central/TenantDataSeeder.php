@@ -12,9 +12,14 @@ class TenantDataSeeder extends Seeder
         $tenants = Tenant::where('is_approved', true)->get();
 
         foreach ($tenants as $tenant) {
-            $tenant->run(function () {
+
+            $this->command->info("Seeding tenant: {$tenant->id}");
+
+            $tenant->run(function () use ($tenant) {
+                fake()->seed(crc32($tenant->id)); 
                 (new \Database\Seeders\Tenant\TenantMockDataSeeder())->run();
             });
+
         }
     }
 }
