@@ -34,7 +34,7 @@ import { ChevronDown, Search, ShoppingCart, XCircle } from 'lucide-vue-next'
 type OrderStatus = 'pending' | 'confirmed' | 'ready' | 'completed' | 'cancelled'
 
 type Store = {
-  id: number
+  id: string
   name: string
   logo_url?: string | null
 }
@@ -58,7 +58,7 @@ type OrderItem = {
 type Order = {
   id: number
   customer_id: number
-  store_id: number
+  store_id: string
   order_number: string
   status: OrderStatus
   total_amount: number
@@ -116,7 +116,7 @@ const orders = ref<Order[]>([
   {
     id: 101,
     customer_id: 1,
-    store_id: 11,
+    store_id: 'store id',
     order_number: 'ORD-2026-00021',
     status: 'pending',
     total_amount: 785,
@@ -125,7 +125,7 @@ const orders = ref<Order[]>([
     created_at: '2026-02-25T13:45:00+08:00',
     updated_at: '2026-02-25T13:45:00+08:00',
     store: {
-      id: 11,
+      id: 'store id',
       name: 'Green Basket Grocery',
       logo_url:
         'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=128&q=60',
@@ -178,7 +178,7 @@ const orders = ref<Order[]>([
   {
     id: 102,
     customer_id: 1,
-    store_id: 21,
+    store_id: 'store id',
     order_number: 'ORD-2026-00018',
     status: 'confirmed',
     total_amount: 520,
@@ -187,7 +187,7 @@ const orders = ref<Order[]>([
     created_at: '2026-02-24T08:50:00+08:00',
     updated_at: '2026-02-24T09:11:00+08:00',
     store: {
-      id: 21,
+      id: 'store id',
       name: 'Bake & Brew',
       logo_url:
         'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=128&q=60',
@@ -226,7 +226,7 @@ const orders = ref<Order[]>([
   {
     id: 103,
     customer_id: 1,
-    store_id: 11,
+    store_id: 'store id',
     order_number: 'ORD-2026-00012',
     status: 'ready',
     total_amount: 310,
@@ -235,7 +235,7 @@ const orders = ref<Order[]>([
     created_at: '2026-02-20T15:20:00+08:00',
     updated_at: '2026-02-20T15:32:00+08:00',
     store: {
-      id: 11,
+      id: 'store id',
       name: 'Green Basket Grocery',
       logo_url:
         'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=128&q=60',
@@ -274,7 +274,7 @@ const orders = ref<Order[]>([
   {
     id: 104,
     customer_id: 1,
-    store_id: 31,
+    store_id: 'store id',
     order_number: 'ORD-2026-00005',
     status: 'completed',
     total_amount: 999,
@@ -283,7 +283,7 @@ const orders = ref<Order[]>([
     created_at: '2026-02-10T09:40:00+08:00',
     updated_at: '2026-02-10T17:15:00+08:00',
     store: {
-      id: 31,
+      id: 'store id',
       name: 'Daily Essentials',
       logo_url:
         'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=128&q=60',
@@ -308,7 +308,7 @@ const orders = ref<Order[]>([
   {
     id: 105,
     customer_id: 1,
-    store_id: 21,
+    store_id: 'store id',
     order_number: 'ORD-2026-00003',
     status: 'cancelled',
     total_amount: 420,
@@ -317,7 +317,7 @@ const orders = ref<Order[]>([
     created_at: '2026-02-08T12:10:00+08:00',
     updated_at: '2026-02-08T12:30:00+08:00',
     store: {
-      id: 21,
+      id: 'store id',
       name: 'Bake & Brew',
       logo_url:
         'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=128&q=60',

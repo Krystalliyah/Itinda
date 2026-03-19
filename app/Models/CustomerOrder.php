@@ -17,4 +17,9 @@ class CustomerOrder extends Model
         'status',
         'ordered_at',
     ];
+
+    protected $casts = [
+        'total' => 'decimal:2',
+        'ordered_at' => 'datetime',
+    ];
 }
