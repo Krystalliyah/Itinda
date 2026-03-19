@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\StoreController;
 
 Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
         Route::controller(\App\Http\Controllers\Customer\CustomerPageController::class)->group(function () {
@@ -12,4 +13,8 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
             Route::get('/profile', 'profile')->name('profile');
             Route::get('/cart', 'cart')->name('cart');
         });
+
+        // Stores Page API Routes
+        Route::get('/stores-data', [StoreController::class, 'index']);
+        Route::get('/stores-data/{id}', [StoreController::class, 'show']);
 });

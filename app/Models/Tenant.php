@@ -28,4 +28,15 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         return $this->belongsTo(User::class);
     }
+
+    protected $table = 'tenants';
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $casts = [
+        'data' => 'array',
+        'operating_hours' => 'array',
+        'is_approved' => 'boolean',
+    ];
 }
