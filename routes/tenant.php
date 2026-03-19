@@ -22,6 +22,9 @@ use Inertia\Inertia;
 
 
 use App\Http\Controllers\Vendor\ProductController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ReportsController;
+
 use App\Models\Product;
 
 Route::middleware([
@@ -105,4 +108,8 @@ Route::middleware([
         Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses')->middleware('permission:view-expenses');
         Route::get('/analytics', fn() => inertia('vendor/Analytics'))->name('analytics')->middleware('permission:view-analytics');
     });
+
+    Route::get('/admin/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
+    Route::post('/admin/categories', [CategoryController::class, 'store']);
+    Route::put('/admin/categories/{category}', [CategoryController::class, 'update']);
 });
