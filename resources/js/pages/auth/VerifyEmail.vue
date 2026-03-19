@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import '@/css/auth-verify.css';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
@@ -72,6 +73,3 @@ defineProps<{
     </div>
 </template>
 
-<style scoped>
-@import '../../../css/auth-verify.css';
-</style>

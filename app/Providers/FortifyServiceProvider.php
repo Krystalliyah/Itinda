@@ -22,6 +22,26 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(\Laravel\Fortify\Contracts\RegisterResponse::class, function () {
+            return new class implements \Laravel\Fortify\Contracts\RegisterResponse
+            {
+                public function toResponse($request)
+                {
+                    $user = $request->user();
+
+                    if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+                        return $request->wantsJson()
+                            ? response()->json(['two_factor' => false])
+                            : redirect()->route('verification.notice');
+                    }
+
+                    return $request->wantsJson()
+                        ? response()->json(['two_factor' => false])
+                        : redirect()->intended('/dashboard');
+                }
+            };
+        });
+
         // Override login redirect based on user role and tenancy
         $this->app->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, function () {
             return new class implements \Laravel\Fortify\Contracts\LoginResponse
@@ -32,6 +52,12 @@ class FortifyServiceProvider extends ServiceProvider
 
                     // Set flag in session to indicate user just logged in
                     $request->session()->flash('just_logged_in', true);
+
+                    if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+                        return $request->wantsJson()
+                            ? response()->json(['two_factor' => false])
+                            : redirect()->route('verification.notice');
+                    }
 
                     // If we are on a tenant subdomain, always redirect to vendor dashboard
                     if (function_exists('tenancy') && tenancy()->initialized) {

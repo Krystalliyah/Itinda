@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Store setup and dashboard (accessible while pending)
-Route::middleware(['auth', 'role:vendor'])->prefix('vendor')->name('vendor.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('vendor.')->group(function () {
     Route::get('/dashboard', fn () => inertia('vendor/Dashboard'))->name('dashboard');
 
     Route::get('/profile', function (Request $request) {

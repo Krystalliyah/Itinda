@@ -18,5 +18,5 @@ test('new users can register', function () {
 
     $response->assertSessionHasNoErrors();
     $this->assertAuthenticated();
-    $response->assertRedirect('/customer/dashboard');
+    $response->assertRedirect(route('verification.notice', absolute: false));
 });
