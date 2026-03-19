@@ -262,6 +262,15 @@ const contentClass = computed(() => ({
 }
 
 @media (max-width: 768px) {
+    .page-container {
+        padding: 1.25rem 1rem;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+        margin-bottom: 1.5rem;
+    }
     .stats-grid {
         grid-template-columns: 1fr;
     }

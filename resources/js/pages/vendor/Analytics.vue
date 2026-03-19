@@ -107,7 +107,7 @@ const formatPeso = (value: number) =>
         </Sidebar>
 
         <main :class="contentClass">
-            <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 <section
                     class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm dark:border-gray-700 dark:bg-slate-800"
                 >
@@ -119,7 +119,7 @@ const formatPeso = (value: number) =>
                                     Sales analytics
                                 </div>
 
-                                <h1 class="text-3xl font-semibold tracking-tight !text-white sm:text-4xl">
+                                <h1 class="text-2xl font-semibold tracking-tight !text-white sm:text-3xl lg:text-4xl">
                                     Track revenue, orders, and top-performing products
                                 </h1>
 
@@ -256,10 +256,10 @@ const formatPeso = (value: number) =>
                                     <BarChart3 class="h-3.5 w-3.5" />
                                     Revenue overview
                                 </div>
-                                <h2 class="text-xl font-semibold text-[#183D34] dark:text-slate-100">
+                                <h2 class="text-base sm:text-lg font-semibold text-[#183D34] dark:text-slate-100">
                                     Weekly revenue trend
                                 </h2>
-                                <p class="mt-1 text-sm text-[#6E817A] dark:text-slate-300">
+                                <p class="mt-1 text-xs sm:text-sm text-[#6E817A] dark:text-slate-300">
                                     Compare daily sales and quickly spot your strongest business days.
                                 </p>
                             </div>
@@ -307,10 +307,10 @@ const formatPeso = (value: number) =>
                                     <Package class="h-3.5 w-3.5" />
                                     Product performance
                                 </div>
-                                <h2 class="text-xl font-semibold text-[#183D34] dark:text-slate-100">
+                                <h2 class="text-base sm:text-lg font-semibold text-[#183D34] dark:text-slate-100">
                                     Top-selling products
                                 </h2>
-                                <p class="mt-1 text-sm text-[#6E817A] dark:text-slate-300">
+                                <p class="mt-1 text-xs sm:text-sm text-[#6E817A] dark:text-slate-300">
                                     Review which items are driving the most orders and revenue.
                                 </p>
                             </div>
@@ -388,8 +388,8 @@ const formatPeso = (value: number) =>
                             class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
                         >
                             <div class="mb-4 flex items-center gap-2">
-                                <ShoppingBag class="h-5 w-5 text-[#245C4A] dark:text-amber-200" />
-                                <h3 class="text-lg font-semibold text-[#183D34] dark:text-slate-100">
+                                <ShoppingBag class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A] dark:text-amber-200" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34] dark:text-slate-100">
                                     Category mix
                                 </h3>
                             </div>
@@ -419,8 +419,8 @@ const formatPeso = (value: number) =>
                             class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
                         >
                             <div class="mb-4 flex items-center gap-2">
-                                <Clock3 class="h-5 w-5 text-[#245C4A] dark:text-amber-200" />
-                                <h3 class="text-lg font-semibold text-[#183D34] dark:text-slate-100">
+                                <Clock3 class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A] dark:text-amber-200" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34] dark:text-slate-100">
                                     Peak pick-up windows
                                 </h3>
                             </div>
@@ -454,8 +454,8 @@ const formatPeso = (value: number) =>
                             class="rounded-[28px] border border-[#DCE8E1] bg-[#F7FAF8] p-5 shadow-sm dark:border-gray-700 dark:bg-slate-900"
                         >
                             <div class="mb-4 flex items-center gap-2">
-                                <TrendingUp class="h-5 w-5 text-[#245C4A] dark:text-amber-200" />
-                                <h3 class="text-lg font-semibold text-[#183D34] dark:text-slate-100">
+                                <TrendingUp class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A] dark:text-amber-200" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34] dark:text-slate-100">
                                     Quick insights
                                 </h3>
                             </div>

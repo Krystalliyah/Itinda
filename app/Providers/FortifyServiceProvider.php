@@ -29,12 +29,6 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $user = $request->user();
 
-                    if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail()) {
-                        return $request->wantsJson()
-                            ? response()->json(['two_factor' => false])
-                            : redirect()->route('verification.notice');
-                    }
-
                     return $request->wantsJson()
                         ? response()->json(['two_factor' => false])
                         : redirect()->intended('/dashboard');
@@ -52,12 +46,6 @@ class FortifyServiceProvider extends ServiceProvider
 
                     // Set flag in session to indicate user just logged in
                     $request->session()->flash('just_logged_in', true);
-
-                    if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail()) {
-                        return $request->wantsJson()
-                            ? response()->json(['two_factor' => false])
-                            : redirect()->route('verification.notice');
-                    }
 
                     // If we are on a tenant subdomain, always redirect to vendor dashboard
                     if (function_exists('tenancy') && tenancy()->initialized) {
@@ -101,6 +89,31 @@ class FortifyServiceProvider extends ServiceProvider
                     return $request->wantsJson()
                         ? response()->json(['two_factor' => false])
                         : redirect()->intended('/dashboard');
+                }
+            };
+        });
+
+        // Custom redirect after email verification based on user role
+        $this->app->singleton(\Laravel\Fortify\Contracts\VerifyEmailResponse::class, function () {
+            return new class implements \Laravel\Fortify\Contracts\VerifyEmailResponse
+            {
+                public function toResponse($request)
+                {
+                    $user = $request->user();
+
+                    if ($user->hasRole('vendor')) {
+                        return redirect()->intended('/vendor/dashboard?verified=1');
+                    }
+
+                    if ($user->hasRole('admin')) {
+                        return redirect()->intended('/admin/dashboard?verified=1');
+                    }
+
+                    if ($user->hasRole('customer')) {
+                        return redirect()->intended('/customer/dashboard?verified=1');
+                    }
+
+                    return redirect()->intended('/dashboard?verified=1');
                 }
             };
         });

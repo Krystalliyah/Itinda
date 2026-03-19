@@ -238,7 +238,7 @@ const statusClass = (status: ExpenseStatus) => {
         </Sidebar>
 
         <main :class="contentClass">
-            <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 <section
                     class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm dark:border-gray-700 dark:bg-slate-800"
                 >
@@ -250,7 +250,7 @@ const statusClass = (status: ExpenseStatus) => {
                     Expense tracking
                 </div>
 
-                <h1 class="text-3xl font-semibold tracking-tight !text-white sm:text-4xl">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight !text-white">
                     Keep store spending clear and organized
                 </h1>
 
@@ -373,7 +373,7 @@ const statusClass = (status: ExpenseStatus) => {
                     <section
                         class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-slate-800"
                     >
-                        <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="mb-5 flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
                                 <div
                                     class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#EDF6F1] px-3 py-1 text-xs font-semibold text-[#245C4A] dark:bg-amber-100/15 dark:text-amber-200"
@@ -381,28 +381,28 @@ const statusClass = (status: ExpenseStatus) => {
                                     <BadgeDollarSign class="h-3.5 w-3.5" />
                                     Expense records
                                 </div>
-                                <h2 class="text-xl font-semibold text-[#183D34] dark:text-slate-100">
+                                <h2 class="text-base sm:text-lg font-semibold text-[#183D34] dark:text-slate-100">
                                     Recent transactions
                                 </h2>
-                                <p class="mt-1 text-sm text-[#6E817A] dark:text-slate-300">
+                                <p class="mt-1 text-xs sm:text-sm text-[#6E817A] dark:text-slate-300">
                                     Review purchases, utilities, and operations expenses in one place.
                                 </p>
                             </div>
 
-                            <div class="flex flex-col gap-3 sm:flex-row">
-                                <div class="relative min-w-[220px]">
+                            <div class="flex flex-col gap-2 sm:gap-3 sm:flex-row">
+                                <div class="relative w-full sm:min-w-[220px]">
                                     <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6C817A]" />
                                     <input
                                         v-model="search"
                                         type="text"
                                         placeholder="Search expense..."
-                                            class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] pl-10 pr-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
+                                        class="h-10 sm:h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] pl-10 pr-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
                                     />
                                 </div>
 
                                 <select
                                     v-model="selectedCategory"
-                                        class="h-11 rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
+                                    class="h-10 sm:h-11 w-full sm:w-auto rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
                                 >
                                     <option v-for="category in categories" :key="category" :value="category">
                                         {{ category }}
@@ -411,7 +411,7 @@ const statusClass = (status: ExpenseStatus) => {
 
                                 <select
                                     v-model="selectedStatus"
-                                        class="h-11 rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
+                                    class="h-10 sm:h-11 w-full sm:w-auto rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
                                 >
                                     <option value="All">All status</option>
                                     <option value="Paid">Paid</option>

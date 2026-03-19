@@ -141,20 +141,20 @@ function hasBaseRole(staff: Staff) {
 
   <VendorLayout>
     <div class="p-4 sm:p-6 flex flex-col gap-4">
-      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#245c4a">
             <span style="color:#C5A059">✦</span> Security
           </p>
-          <h1 class="text-2xl font-semibold tracking-tight" style="color:#245c4a">Staff Management</h1>
-          <p class="text-sm text-muted-foreground mt-1">
+          <h1 class="text-xl sm:text-2xl font-semibold tracking-tight" style="color:#245c4a">Staff Management</h1>
+          <p class="text-xs sm:text-sm text-muted-foreground mt-1">
             Create staff accounts and customize what they can access.
           </p>
         </div>
 
         <button
           @click="openAddModal"
-          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
+          class="w-full sm:w-auto inline-flex items-center justify-center text-xs font-semibold px-4 py-2.5 rounded-xl text-white transition-opacity hover:opacity-90"
           style="background:#245c4a"
         >
           + Add Staff
@@ -163,18 +163,19 @@ function hasBaseRole(staff: Staff) {
 
       <!-- Staff List -->
       <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-border">
+        <div class="px-4 sm:px-5 py-3 sm:py-4 border-b border-border">
           <h2 class="text-sm font-semibold" style="color:#245c4a">Team Members</h2>
         </div>
 
-        <div class="w-full overflow-x-auto">
+        <!-- Desktop Table -->
+        <div class="hidden sm:block w-full overflow-x-auto">
           <table class="min-w-full border-collapse">
             <thead>
               <tr style="background:hsl(0 0% 96.1%)">
                 <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Staff</th>
                 <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Login ID / Email</th>
                 <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Current Access</th>
-                <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Actions</th>
+                <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -219,78 +220,188 @@ function hasBaseRole(staff: Staff) {
             </tbody>
           </table>
         </div>
+
+        <!-- Mobile Card list -->
+        <div class="sm:hidden divide-y divide-border">
+          <div v-for="member in staff" :key="member.id" class="p-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style="background:#245c4a">
+                  {{ member.name.charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-foreground">{{ member.name }}</p>
+                  <p class="text-xs text-muted-foreground">{{ member.login_id }}</p>
+                  <p class="text-xs text-muted-foreground">{{ member.email }}</p>
+                </div>
+              </div>
+              <span v-if="hasBaseRole(member)" class="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest shrink-0 mt-1">Owner</span>
+            </div>
+            <div class="flex flex-wrap gap-1 mb-3">
+              <span v-for="perm in member.permissions" :key="perm.id" class="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-100">
+                {{ getPermissionLabel(perm.name) }}
+              </span>
+              <span v-if="!member.permissions || member.permissions.length === 0" class="text-xs text-muted-foreground italic">No permissions set</span>
+            </div>
+            <div v-if="!hasBaseRole(member)" class="flex gap-2">
+              <button @click="openPermissionsModal(member)" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors" style="color:#245c4a">
+                Edit Permissions
+              </button>
+              <button @click="deleteStaff(member.id)" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors">
+                Remove
+              </button>
+            </div>
+          </div>
+          <div v-if="!staff || staff.length === 0" class="p-8 text-center text-muted-foreground italic text-sm">
+            No staff accounts found. Click '+ Add Staff' to create one.
+          </div>
+        </div>
       </div>
 
       <!-- Add Staff Modal -->
       <Teleport to="body">
-        <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
-          <div class="absolute inset-0 modal-backdrop" @click="showAddModal = false"></div>
-          <div class="relative w-full max-w-md modal-content rounded-xl shadow-2xl border border-emerald-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-emerald-50 flex justify-between items-center" style="background: #245c4a">
-              <h3 class="text-sm font-semibold text-white uppercase tracking-widest">New Staff Account</h3>
-              <button @click="showAddModal = false" class="text-emerald-100 hover:text-white transition-colors">✕</button>
+        <template v-if="showAddModal">
+          <!-- backdrop -->
+          <div class="fixed inset-0 z-50" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(3px)" @click="showAddModal = false"></div>
+          <!-- modal container matching product modal structure -->
+          <div class="fixed inset-0 z-50 flex items-start justify-center px-4 sm:px-6 pt-12 sm:pt-16 pb-6 overflow-y-auto">
+            <div class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+
+            <!-- header -->
+            <div class="px-5 py-4 border-b border-border flex items-start justify-between flex-shrink-0" style="background:#245c4a">
+              <h3 class="text-sm font-semibold text-white">New Staff Account</h3>
+              <button @click="showAddModal = false" class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-white/25 text-white leading-none text-base">✕</button>
             </div>
-            <form @submit.prevent="submitAdd" class="p-6 space-y-5">
-              <div>
-                <label class="block text-[10px] font-bold text-[#245c4a] uppercase tracking-widest mb-1.5 ml-1">Full Name</label>
-                <input v-model="addForm.name" type="text" placeholder="Enter full name" class="w-full px-4 py-2.5 rounded-lg border border-emerald-100 bg-emerald-50/30 text-slate-800 text-sm focus:ring-2 focus:ring-[#245c4a]/20 focus:border-[#245c4a] focus:outline-none transition-all" required />
-                <div v-if="addForm.errors.name" class="text-xs text-rose-500 mt-1">{{ addForm.errors.name }}</div>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-[#245c4a] uppercase tracking-widest mb-1.5 ml-1">Login ID</label>
-                <input v-model="addForm.login_id" @input="handleLoginIdInput" type="text" placeholder="Unique login ID" class="w-full px-4 py-2.5 rounded-lg border border-emerald-100 bg-emerald-50/30 text-slate-800 text-sm focus:ring-2 focus:ring-[#245c4a]/20 focus:border-[#245c4a] focus:outline-none transition-all" required />
-                <div v-if="addForm.errors.login_id" class="text-xs text-rose-500 mt-1">{{ addForm.errors.login_id }}</div>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-[#245c4a] uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
-                <input v-model="addForm.email" type="email" placeholder="staff@store.com" class="w-full px-4 py-2.5 rounded-lg border border-emerald-100 bg-emerald-50/30 text-slate-800 text-sm focus:ring-2 focus:ring-[#245c4a]/20 focus:border-[#245c4a] focus:outline-none transition-all" required />
-                <div v-if="addForm.errors.email" class="text-xs text-rose-500 mt-1">{{ addForm.errors.email }}</div>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-[#245c4a] uppercase tracking-widest mb-1.5 ml-1">Password</label>
-                <input v-model="addForm.password" type="password" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-lg border border-emerald-100 bg-emerald-50/30 text-slate-800 text-sm focus:ring-2 focus:ring-[#245c4a]/20 focus:border-[#245c4a] focus:outline-none transition-all" required />
-                <div v-if="addForm.errors.password" class="text-xs text-rose-500 mt-1">{{ addForm.errors.password }}</div>
-              </div>
-              <div class="pt-2">
-                <button type="submit" class="w-full py-3 rounded-lg text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-900/10 hover:shadow-emerald-900/20 transition-all active:scale-[0.98]" style="background:#245c4a" :disabled="addForm.processing">
-                  {{ addForm.processing ? 'Creating...' : 'Create Staff Account' }}
-                </button>
-              </div>
-            </form>
+
+            <!-- Scrollable body -->
+            <div class="overflow-y-auto flex-1 px-5 py-5">
+              <form id="staff-form" @submit.prevent="submitAdd" class="flex flex-col gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Full Name <span style="color:#9f1239">*</span></label>
+                  <input
+                    v-model="addForm.name"
+                    type="text"
+                    placeholder="e.g. Maria Santos"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    required
+                  />
+                  <div v-if="addForm.errors.name" class="text-xs text-rose-500 mt-1">{{ addForm.errors.name }}</div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Login ID <span style="color:#9f1239">*</span></label>
+                  <input
+                    v-model="addForm.login_id"
+                    @input="handleLoginIdInput"
+                    type="text"
+                    placeholder="Unique login identifier"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    required
+                  />
+                  <div v-if="addForm.errors.login_id" class="text-xs text-rose-500 mt-1">{{ addForm.errors.login_id }}</div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Email Address <span style="color:#9f1239">*</span></label>
+                  <input
+                    v-model="addForm.email"
+                    type="email"
+                    inputmode="email"
+                    placeholder="staff@yourstore.com"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    required
+                  />
+                  <div v-if="addForm.errors.email" class="text-xs text-rose-500 mt-1">{{ addForm.errors.email }}</div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Password <span style="color:#9f1239">*</span></label>
+                  <input
+                    v-model="addForm.password"
+                    type="password"
+                    placeholder="••••••••"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    required
+                  />
+                  <div v-if="addForm.errors.password" class="text-xs text-rose-500 mt-1">{{ addForm.errors.password }}</div>
+                </div>
+
+              </form>
+            </div>
+
+            <!-- Footer actions — always visible -->
+            <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-2xl">
+              <button
+                type="button"
+                @click="showAddModal = false"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors"
+                style="color: #111827;"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                form="staff-form"
+                :disabled="addForm.processing"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                style="background:#245c4a"
+              >
+                <svg v-if="addForm.processing" class="animate-spin -ml-0.5 mr-1.5 w-3 h-3 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                {{ addForm.processing ? 'Creating...' : 'Create Staff Account' }}
+              </button>
+            </div>
+            </div>
           </div>
-        </div>
+        </template>
       </Teleport>
+
 
       <!-- Permissions Modal -->
       <Teleport to="body">
-        <div v-if="showPermissionsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
-          <div class="absolute inset-0 modal-backdrop" @click="showPermissionsModal = false"></div>
-          <div class="relative w-full max-w-lg modal-content rounded-xl shadow-2xl border border-emerald-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-emerald-50 flex justify-between items-center" style="background:#245c4a">
+        <div v-if="showPermissionsModal" class="fixed inset-0 z-50 flex items-start justify-center px-4 sm:px-6 pt-12 sm:pt-16 pb-6 overflow-y-auto" style="background:rgba(0,0,0,0.45);backdrop-filter:blur(2px)">
+          <div class="absolute inset-0" @click="showPermissionsModal = false"></div>
+          <div class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <!-- header -->
+            <div class="px-5 py-4 border-b border-emerald-50 flex justify-between items-center shrink-0" style="background:#245c4a">
               <div>
                 <h3 class="text-sm font-semibold text-white uppercase tracking-widest">Access Controls</h3>
                 <p class="text-[10px] text-emerald-100 font-medium uppercase tracking-wider mt-0.5">{{ selectedStaff?.name }}</p>
               </div>
-              <button @click="showPermissionsModal = false" class="text-emerald-100 hover:text-white transition-colors">✕</button>
+              <button @click="showPermissionsModal = false" class="text-emerald-100 hover:text-white transition-colors text-lg leading-none">✕</button>
             </div>
-            <form @submit.prevent="submitPermissions" class="p-6">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
-                <div v-for="permission in availablePermissions" :key="permission.id" 
-                     @click="permissionsForm.permissions.includes(permission.name) ? permissionsForm.permissions = permissionsForm.permissions.filter(p => p !== permission.name) : permissionsForm.permissions.push(permission.name)"
-                     class="flex items-start gap-3 p-3 rounded-xl border border-emerald-50 hover:border-[#245c4a] hover:bg-emerald-50/50 transition-all cursor-pointer group"
-                     :class="permissionsForm.permissions.includes(permission.name) ? 'bg-emerald-50/80 border-[#245c4a]' : 'bg-white'">
-                  <div class="mt-0.5 relative flex items-center">
-                    <input type="checkbox" :id="'perm-'+permission.id" :value="permission.name" v-model="permissionsForm.permissions" class="h-4 w-4 rounded border-emerald-200 text-[#245c4a] focus:ring-[#245c4a]/20" @click.stop />
+            <form @submit.prevent="submitPermissions" class="flex flex-col flex-1 overflow-hidden">
+              <div class="overflow-y-auto flex-1 px-5 py-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-1">
+                  <div v-for="permission in availablePermissions" :key="permission.id"
+                       @click="permissionsForm.permissions.includes(permission.name) ? permissionsForm.permissions = permissionsForm.permissions.filter(p => p !== permission.name) : permissionsForm.permissions.push(permission.name)"
+                       class="flex items-start gap-3 p-3 rounded-xl border border-emerald-50 hover:border-[#245c4a] hover:bg-emerald-50/50 transition-all cursor-pointer group"
+                       :class="permissionsForm.permissions.includes(permission.name) ? 'bg-emerald-50/80 border-[#245c4a]' : 'bg-white'">
+                    <div class="mt-0.5 relative flex items-center">
+                      <input type="checkbox" :id="'perm-'+permission.id" :value="permission.name" v-model="permissionsForm.permissions" class="h-4 w-4 rounded border-emerald-200 text-[#245c4a] focus:ring-[#245c4a]/20" @click.stop />
+                    </div>
+                    <label :for="'perm-'+permission.id" class="text-xs font-bold text-slate-700 cursor-pointer flex-1 group-hover:text-[#245c4a] transition-colors" @click.stop>
+                      {{ getPermissionLabel(permission.name) }}
+                      <p class="text-[10px] text-slate-500 font-normal mt-0.5 leading-relaxed">{{ getPermissionDescription(permission.name) }}</p>
+                    </label>
                   </div>
-                  <label :for="'perm-'+permission.id" class="text-xs font-bold text-slate-700 cursor-pointer flex-1 group-hover:text-[#245c4a] transition-colors" @click.stop>
-                    {{ getPermissionLabel(permission.name) }}
-                    <p class="text-[10px] text-slate-500 font-normal mt-0.5 leading-relaxed">{{ getPermissionDescription(permission.name) }}</p>
-                  </label>
                 </div>
               </div>
-              <div class="pt-6 flex justify-end gap-3">
-                <button type="button" @click="showPermissionsModal = false" class="px-5 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
-                <button type="submit" class="px-6 py-2 text-xs font-bold text-white uppercase tracking-widest rounded-lg shadow-lg shadow-emerald-900/10 hover:shadow-emerald-900/20 transition-all active:scale-[0.98]" style="background:#245c4a" :disabled="permissionsForm.processing">
+              <!-- Footer actions -->
+              <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-2xl">
+                <button type="button" @click="showPermissionsModal = false" class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors" style="color: #111827;">Cancel</button>
+                <button type="submit" class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50" style="background:#245c4a" :disabled="permissionsForm.processing">
+                  <svg v-if="permissionsForm.processing" class="animate-spin -ml-0.5 mr-1.5 w-3 h-3 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
                   {{ permissionsForm.processing ? 'Saving...' : 'Update Permissions' }}
                 </button>
               </div>

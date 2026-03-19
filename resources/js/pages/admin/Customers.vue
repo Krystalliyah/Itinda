@@ -393,4 +393,16 @@ tr:hover td {
         display: none;
     }
 }
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1.25rem 1rem;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+}
+
 </style>

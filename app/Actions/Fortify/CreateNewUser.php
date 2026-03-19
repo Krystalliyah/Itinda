@@ -35,6 +35,8 @@ class CreateNewUser implements CreatesNewUsers
 
         $user->assignRole($input['role']);
 
+        $user->sendEmailVerificationNotification();
+
         return $user;
     }
 }

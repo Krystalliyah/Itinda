@@ -1232,6 +1232,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 @media (max-width: 768px) {
+    .page-container {
+        padding: 1.25rem 1rem;
+    }
     .page-header {
         flex-direction: column;
     }

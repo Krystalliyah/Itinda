@@ -541,8 +541,8 @@ function stockBarWidth(item: InventoryItem) {
 
 .mc-footer { display:flex; align-items:center; justify-content:space-between; }
 
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:1000; backdrop-filter:blur(2px); }
-.modal { background:#fff; border-radius:16px 16px 0 0; padding:24px; width:100%; box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation:slideUp 0.25s ease; max-height:92vh; overflow-y:auto; }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:1000; backdrop-filter:blur(2px); padding:0 16px; }
+.modal { background:#fff; border-radius:16px 16px 0 0; padding:24px 20px; width:100%; max-width:calc(100vw - 32px); box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation:slideUp 0.25s ease; max-height:92vh; overflow-y:auto; margin:0 auto; }
 @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
 .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .modal-title  { font-size:1.1rem; font-weight:700; color:#245c4a; margin:0; }
@@ -561,8 +561,8 @@ function stockBarWidth(item: InventoryItem) {
   .filter-bar  { flex-direction:row; align-items:center; }
   .search-wrap { flex:1; }
   .filter-row  { flex-wrap:nowrap; }
-  .modal-backdrop { align-items:center; }
-  .modal { border-radius:14px; max-width:480px; padding:28px; }
+  .modal-backdrop { align-items:center; padding:0; }
+  .modal { border-radius:14px; max-width:480px; padding:28px; margin:0; }
 }
 
 @media (max-width: 1200px) {

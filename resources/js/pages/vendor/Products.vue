@@ -216,7 +216,7 @@ function deleteProduct(id: number) {
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-white rounded-xl border border-border shadow-sm p-4">
           <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Total Products (this page)
@@ -235,18 +235,20 @@ function deleteProduct(id: number) {
             Active products can be used in store inventory.
           </p>
         </div>
+      </div>
 
-        <div class="bg-white rounded-xl border border-border shadow-sm p-4">
-          <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Search
-          </label>
+      <!-- Search Bar -->
+      <div class="bg-white rounded-xl border border-border shadow-sm px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex-1 min-w-0">
           <input
             v-model="search"
             placeholder="Search name, description, category, or barcode..."
-            class="mt-2 w-full px-3 py-2 rounded-xl border border-border bg-white text-foreground focus:outline-none focus:ring-2"
+            class="w-full px-4 py-2.5 rounded-xl border border-border bg-gray-50/50 text-foreground focus:outline-none focus:ring-2 focus:bg-white transition-colors text-sm"
             style="--tw-ring-color: rgba(36,92,74,.35);"
           />
-          <p class="text-xs text-muted-foreground mt-2">
+        </div>
+        <div class="sm:text-right flex-shrink-0">
+          <p class="text-xs text-muted-foreground bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
             Showing <span class="font-semibold">{{ filteredProducts.length }}</span> of
             <span class="font-semibold">{{ totalProducts }}</span>
           </p>
@@ -515,14 +517,13 @@ function deleteProduct(id: number) {
 
       <!-- ===================== MODAL ===================== -->
       <Teleport to="body">
-        <div v-if="showModal" class="fixed inset-0 z-50 flex items-start justify-center px-4 pt-16 pb-6 overflow-y-auto">
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-start justify-center px-4 sm:px-6 pt-12 sm:pt-16 pb-6 overflow-y-auto">
           <!-- Backdrop -->
           <div class="absolute inset-0 bg-black/50" @click="closeModal" />
 
           <!-- Modal panel: flex column so header/footer stay fixed, body scrolls -->
           <div
-            class="relative w-full max-w-lg bg-white rounded-xl border border-border shadow-xl flex flex-col"
-            style="max-height: calc(100vh - 88px);"
+            class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"
           >
             <!-- Header -->
             <div class="px-5 py-4 border-b border-border flex items-start justify-between flex-shrink-0">

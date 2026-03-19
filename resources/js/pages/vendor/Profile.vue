@@ -71,12 +71,12 @@ const initials = computed(() => {
         </Sidebar>
 
         <main :class="contentClass">
-            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 dark:bg-slate-900/60">
-                <div class="mb-5">
-                    <h1 class="text-2xl font-semibold tracking-tight text-[#163F35] dark:text-slate-100">
+            <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-5 lg:px-8 dark:bg-slate-900/60">
+                <div class="mb-4 sm:mb-5">
+                    <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-[#163F35] dark:text-slate-100">
                         My Profile
                     </h1>
-                    <p class="mt-1 text-sm text-[#5F766E] dark:text-slate-300">
+                    <p class="mt-1 text-xs sm:text-sm text-[#5F766E] dark:text-slate-300">
                         Manage your personal information, account details, and security settings.
                     </p>
                 </div>
@@ -98,7 +98,7 @@ const initials = computed(() => {
                                         <div class="min-w-0">
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <h2
-                                                    class="truncate text-2xl font-semibold tracking-tight text-[#163F35] dark:text-slate-100"
+                                                    class="truncate text-lg sm:text-2xl font-semibold tracking-tight text-[#163F35] dark:text-slate-100"
                                                 >
                                                     {{ user.name }}
                                                 </h2>

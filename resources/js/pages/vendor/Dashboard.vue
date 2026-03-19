@@ -254,7 +254,7 @@ function stockClass(level: string) {
       </div>
 
       <!-- Stat cards -->
-      <div class="grid grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Orders -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#245c4a,#3d7a5c)"></div>
@@ -339,7 +339,7 @@ function stockClass(level: string) {
       </div>
 
       <!-- Lower grid -->
-      <div class="grid gap-4" style="grid-template-columns:1fr 310px">
+      <div class="grid grid-cols-1 xl:grid-cols-[1fr_310px] gap-4">
         <!-- Recent Orders -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 shadow-sm overflow-hidden">
           <div class="px-5 py-4 flex items-start justify-between border-b border-border">
@@ -765,13 +765,13 @@ function stockClass(level: string) {
                         <input
                           type="time"
                           v-model="schedule.open_time"
-                          class="w-[120px] rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 focus:border-[#245c4a] focus:ring-1 focus:ring-[#245c4a] outline-none bg-white font-mono"
+                          class="w-[95px] sm:w-[120px] rounded-lg border border-gray-200 px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-700 focus:border-[#245c4a] focus:ring-1 focus:ring-[#245c4a] outline-none bg-white font-mono"
                         />
-                        <span class="text-gray-400 text-sm">to</span>
+                        <span class="text-gray-400 text-xs sm:text-sm">to</span>
                         <input
                           type="time"
                           v-model="schedule.close_time"
-                          class="w-[120px] rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 focus:border-[#245c4a] focus:ring-1 focus:ring-[#245c4a] outline-none bg-white font-mono"
+                          class="w-[95px] sm:w-[120px] rounded-lg border border-gray-200 px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-700 focus:border-[#245c4a] focus:ring-1 focus:ring-[#245c4a] outline-none bg-white font-mono"
                         />
                       </div>
                     </div>

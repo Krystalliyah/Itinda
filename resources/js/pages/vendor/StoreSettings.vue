@@ -94,7 +94,7 @@ const saveChanges = () => {
         </Sidebar>
 
         <main :class="contentClass">
-            <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
                 <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm">
     <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] px-5 py-7 sm:px-7 sm:py-8">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -104,7 +104,7 @@ const saveChanges = () => {
                     Store settings
                 </div>
 
-                <h1 class="text-3xl font-semibold tracking-tight !text-white sm:text-4xl">
+                <h1 class="text-2xl font-semibold tracking-tight !text-white sm:text-3xl lg:text-4xl">
                     {{ storeName }}
                 </h1>
 
@@ -135,22 +135,22 @@ const saveChanges = () => {
 
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
                     <div class="grid gap-6">
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm sm:p-6">
-                            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-6 shadow-sm">
+                            <div class="mb-5 flex flex-col gap-3">
                                 <div>
                                     <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#EDF6F1] px-3 py-1 text-xs font-semibold text-[#245C4A]">
                                         <Store class="h-3.5 w-3.5" />
                                         Storefront
                                     </div>
-                                    <h2 class="text-xl font-semibold text-[#183D34]">Basic information</h2>
-                                    <p class="mt-1 text-sm text-[#6E817A]">
+                                    <h2 class="text-base sm:text-lg font-semibold text-[#183D34]">Basic information</h2>
+                                    <p class="mt-1 text-xs sm:text-sm text-[#6E817A]">
                                         These details help customers quickly understand your store.
                                     </p>
                                 </div>
 
                                 <button
                                     type="button"
-                                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#245C4A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4B3C]"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#245C4A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4B3C]"
                                     @click="saveChanges"
                                 >
                                     <Save class="h-4 w-4" />
@@ -238,14 +238,14 @@ const saveChanges = () => {
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm sm:p-6">
-                            <div class="mb-6">
+                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-6 shadow-sm">
+                            <div class="mb-5">
                                 <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#FFF7EA] px-3 py-1 text-xs font-semibold text-[#A56D17]">
                                     <Clock3 class="h-3.5 w-3.5" />
                                     Pick-up operations
                                 </div>
-                                <h2 class="text-xl font-semibold text-[#183D34]">Schedule and order settings</h2>
-                                <p class="mt-1 text-sm text-[#6E817A]">
+                                <h2 class="text-base sm:text-lg font-semibold text-[#183D34]">Schedule and order settings</h2>
+                                <p class="mt-1 text-xs sm:text-sm text-[#6E817A]">
                                     Set the hours and notes customers see when ordering from your store.
                                 </p>
                             </div>
@@ -279,21 +279,19 @@ const saveChanges = () => {
                                 </label>
                             </div>
 
-                            <div class="mt-6 grid gap-3">
+                            <div class="mt-5 grid gap-3">
                                 <div
                                     v-for="day in hours"
                                     :key="day.day"
-                                    class="grid gap-3 rounded-2xl border border-[#E4ECE8] bg-[#FBFCFC] p-4 sm:grid-cols-[minmax(0,1fr)_128px_128px_auto] sm:items-center"
+                                    class="rounded-2xl border border-[#E4ECE8] bg-[#FBFCFC] p-3 sm:p-4"
                                 >
-                                    <div class="flex items-center justify-between gap-3 sm:block">
+                                    <!-- Day label + toggle row (always visible) -->
+                                    <div class="flex items-center justify-between gap-3 mb-3">
                                         <div>
-                                            <p class="font-semibold text-[#183D34]">{{ day.day }}</p>
-                                            <p class="text-sm text-[#74867F]">
-                                                {{ day.enabled ? 'Available for pick-up' : 'Closed' }}
-                                            </p>
+                                            <p class="text-sm font-semibold text-[#183D34]">{{ day.day }}</p>
+                                            <p class="text-xs text-[#74867F]">{{ day.enabled ? 'Open for pick-up' : 'Closed' }}</p>
                                         </div>
-
-                                        <label class="inline-flex items-center gap-2 sm:hidden">
+                                        <label class="inline-flex items-center gap-2">
                                             <span class="text-xs font-medium text-[#61766F]">Open</span>
                                             <input
                                                 v-model="day.enabled"
@@ -302,39 +300,32 @@ const saveChanges = () => {
                                             />
                                         </label>
                                     </div>
-
-                                    <input
-                                        v-model="day.open"
-                                        type="time"
-                                        :disabled="!day.enabled"
-                                        class="h-11 rounded-xl border border-[#D7E3DC] bg-white px-3 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
-                                    />
-
-                                    <input
-                                        v-model="day.close"
-                                        type="time"
-                                        :disabled="!day.enabled"
-                                        class="h-11 rounded-xl border border-[#D7E3DC] bg-white px-3 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
-                                    />
-
-                                    <label class="hidden items-center justify-end gap-2 sm:inline-flex">
-                                        <span class="text-sm font-medium text-[#61766F]">Open</span>
+                                    <!-- Time pickers row - always flex-row, gap, wraps if needed -->
+                                    <div class="flex items-center gap-2">
                                         <input
-                                            v-model="day.enabled"
-                                            type="checkbox"
-                                            class="h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]"
+                                            v-model="day.open"
+                                            type="time"
+                                            :disabled="!day.enabled"
+                                            class="flex-1 min-w-0 h-10 rounded-xl border border-[#D7E3DC] bg-white px-2 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
                                         />
-                                    </label>
+                                        <span class="text-xs text-[#74867F] shrink-0">to</span>
+                                        <input
+                                            v-model="day.close"
+                                            type="time"
+                                            :disabled="!day.enabled"
+                                            class="flex-1 min-w-0 h-10 rounded-xl border border-[#D7E3DC] bg-white px-2 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </section>
                     </div>
 
-                    <aside class="grid gap-6">
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm">
+                    <aside class="grid gap-6 order-first xl:order-last">
+                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <CheckCircle2 class="h-5 w-5 text-[#245C4A]" />
-                                <h3 class="text-lg font-semibold text-[#183D34]">Store readiness</h3>
+                                <CheckCircle2 class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Store readiness</h3>
                             </div>
 
                             <div class="mb-4 flex items-center justify-between">
@@ -365,10 +356,10 @@ const saveChanges = () => {
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm">
+                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <Settings2 class="h-5 w-5 text-[#245C4A]" />
-                                <h3 class="text-lg font-semibold text-[#183D34]">Store preferences</h3>
+                                <Settings2 class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Store preferences</h3>
                             </div>
 
                             <div class="space-y-3">
@@ -406,10 +397,10 @@ const saveChanges = () => {
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm">
+                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <Bell class="h-5 w-5 text-[#245C4A]" />
-                                <h3 class="text-lg font-semibold text-[#183D34]">Notifications</h3>
+                                <Bell class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Notifications</h3>
                             </div>
 
                             <div class="space-y-3">
@@ -431,10 +422,10 @@ const saveChanges = () => {
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-[#F7FAF8] p-5 shadow-sm">
+                        <section class="rounded-[28px] border border-[#DCE8E1] bg-[#F7FAF8] p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <ShieldCheck class="h-5 w-5 text-[#245C4A]" />
-                                <h3 class="text-lg font-semibold text-[#183D34]">Public preview</h3>
+                                <ShieldCheck class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Public preview</h3>
                             </div>
 
                             <div class="space-y-3 text-sm leading-6 text-[#6C8079]">
