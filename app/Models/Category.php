@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Category extends Model
 {
+    protected $connection = 'central';
+    
     protected $fillable = [
         'name',
         'slug',
