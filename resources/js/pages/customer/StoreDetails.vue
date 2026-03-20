@@ -347,10 +347,10 @@ onMounted(() => {
       <div @click="cartOpen = true" class="fixed bottom-6 right-6 z-50 cursor-pointer">
         <div class="relative h-14 w-14 rounded-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition">
           <ShoppingCart class="h-5 w-5" />
-          <span v-if="cartItems.length" class="absolute -top-1 -right-1 bg-[#C5A059] text-white text-xs h-5 w-5 rounded-full flex items-center justify-center">
-            {{ cartItems.length }}
-          </span>
         </div>
+        <span v-if="cartItems.length" class="absolute -top-1 -right-1 bg-[#C5A059] text-white text-xs h-5 w-5 rounded-full flex items-center justify-center">
+          {{ cartItems.length }}
+        </span>
       </div>
 
       <!-- Cart Modal -->
