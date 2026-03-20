@@ -17,6 +17,9 @@ declare module '@inertiajs/core' {
     interface PageProps extends InertiaPageProps, AppPageProps {}
 }
 
+// Global route function from Laravel
+declare function route(name: string, params?: any): string;
+
 declare module 'vue' {
     interface ComponentCustomProperties {
         $inertia: typeof Router;

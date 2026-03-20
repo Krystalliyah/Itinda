@@ -9,7 +9,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
     Route::get('/categories', fn() => inertia('admin/Categories'))->name('categories');
-    Route::get('/reports', fn() => inertia('admin/Reports'))->name('reports');
+    Route::get('/reports', [App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports');
     
     // Vendor management - simple CRUD and Approval
     Route::apiResource('vendors', VendorController::class)
