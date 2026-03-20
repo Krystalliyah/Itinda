@@ -17,9 +17,8 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::with(['children' => function ($q) {
-                            $q->withCount('products')->orderBy('name');
+                            $q->orderBy('name');
                         }])
-                        ->withCount('products')
                         ->parents()
                         ->orderBy('name')
                         ->get()
@@ -49,10 +48,25 @@ class CategoryController extends Controller
             $validated['color'] = $parent?->color ?? '#6366f1';
         }
 
-        Category::create($validated);
+        $category = Category::create($validated);
+
+        // Sync category to all tenant databases
+        foreach (\App\Models\Tenant::all() as $tenant) {
+            try {
+                $tenant->run(function () use ($validated, $category) {
+                    \Illuminate\Support\Facades\DB::table('categories')->updateOrCreate(
+                        ['id' => $category->id],
+                        array_merge($validated, ['created_at' => now(), 'updated_at' => now()])
+                    );
+                });
+            } catch (\Exception $e) {
+                \Log::error("Could not sync category {$category->id} to tenant {$tenant->id}: " . $e->getMessage());
+            }
+        }
 
         return back()->with('success', 'Category created successfully.');
     }
+
 
     /**
      * Update an existing category.
@@ -67,6 +81,19 @@ class CategoryController extends Controller
         ]);
 
         $category->update($validated);
+
+        // Sync update to all tenant databases
+        foreach (\App\Models\Tenant::all() as $tenant) {
+            try {
+                $tenant->run(function () use ($category, $validated) {
+                    \Illuminate\Support\Facades\DB::table('categories')
+                        ->where('id', $category->id)
+                        ->update(array_merge($validated, ['updated_at' => now()]));
+                });
+            } catch (\Exception $e) {
+                \Log::error("Could not sync category update {$category->id} to tenant {$tenant->id}: " . $e->getMessage());
+            }
+        }
 
         return back()->with('success', 'Category updated successfully.');
     }
@@ -83,7 +110,7 @@ class CategoryController extends Controller
             'description'   => $cat->description ?? '',
             'color'         => $cat->color ?? '#6366f1',
             'parent_id'     => $cat->parent_id,
-            'product_count' => $cat->products_count ?? 0,
+            'product_count' => 0, // Products are in tenant DB, not central
             'children'      => [],
         ];
 

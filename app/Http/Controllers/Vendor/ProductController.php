@@ -10,22 +10,66 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::latest()->paginate(15);
+        $products = Product::latest()
+            ->paginate(15)
+            ->through(function ($product) {
+                // Fetch category name from central database
+                $category = \Illuminate\Support\Facades\DB::connection('mysql')
+                    ->table('categories')
+                    ->where('id', $product->category_id)
+                    ->first();
+                
+                return [
+                    'id' => $product->id,
+                    'product_name' => $product->name,
+                    'description' => $product->description,
+                    'category_name' => $category?->name ?? null,
+                    'barcode' => $product->barcode,
+                    'image_url' => $product->image_path ? asset('storage/' . $product->image_path) : null,
+                    'is_active' => $product->is_active,
+                    'created_at' => $product->created_at,
+                ];
+            });
+        
+        // Fetch categories from central database
+        $categories = \Illuminate\Support\Facades\DB::connection('mysql')
+            ->table('categories')
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($cat) {
+                return [
+                    'id' => $cat->id,
+                    'category_name' => $cat->name,
+                ];
+            });
         
         return inertia('vendor/Products', [
             'products' => $products,
+            'categories' => $categories,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'category_id' => 'nullable|integer',
+            'barcode' => 'nullable|string',
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
+
+        // Map product_name to name for the model
+        $validated['name'] = $validated['product_name'];
+        unset($validated['product_name']);
+
+        // Convert category_id to integer if it exists
+        if (isset($validated['category_id']) && $validated['category_id'] !== '') {
+            $validated['category_id'] = (int) $validated['category_id'];
+        } else {
+            $validated['category_id'] = null;
+        }
 
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')->store('products', 'public');
@@ -39,16 +83,22 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'category_id' => 'nullable|integer',
+            'barcode' => 'nullable|string',
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        // Check if price is being modified and if user has permission
-        if ($product->price != $validated['price'] && !$request->user()->can('edit-prices') && !$request->user()->hasRole('vendor')) {
-            return back()->withErrors(['price' => 'You do not have permission to modify prices.']);
+        // Map product_name to name for the model
+        $validated['name'] = $validated['product_name'];
+        unset($validated['product_name']);
+
+        // Convert category_id to integer if it exists
+        if (isset($validated['category_id']) && $validated['category_id'] !== '') {
+            $validated['category_id'] = (int) $validated['category_id'];
+        } else {
+            $validated['category_id'] = null;
         }
 
         if ($request->hasFile('image')) {

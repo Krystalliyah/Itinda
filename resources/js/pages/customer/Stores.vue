@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
@@ -22,7 +22,6 @@ import {
   AvatarFallback
 } from '@/components/ui/avatar'
 
-
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
     'dashboard-content': true,
@@ -30,7 +29,7 @@ const contentClass = computed(() => ({
 }));
 
 interface Store {
-  id: number
+  id: string
   name: string
   address: string
   phone: string
@@ -40,48 +39,57 @@ interface Store {
   cover?: string
 }
 
-// Mock Data
-const stores = ref<Store[]>([
-  {
-    id: 1,
-    name: 'Emerald Fresh Market',
-    address: '123 Green Valley Rd, NY',
-    phone: '(123) 456-7890',
-    hours: 'Mon - Fri: 8AM - 8PM',
-    isOpen: true,
-    logo: '',
-    cover: 'https://picsum.photos/600/400?random=1',
-  },
-  {
-    id: 2,
-    name: 'Golden Harvest Grocery',
-    address: '45 Sunset Blvd, CA',
-    phone: '(987) 654-3210',
-    hours: 'Daily: 9AM - 6PM',
-    isOpen: false,
-    logo: '',
-    cover: 'https://picsum.photos/600/400?random=2',
-  },
-  {
-    id: 3,
-    name: 'Urban Organic Hub',
-    address: '78 City Center Ave, TX',
-    phone: '(555) 234-5678',
-    hours: 'Mon - Sat: 7AM - 9PM',
-    isOpen: true,
-    logo: '',
-    cover: 'https://picsum.photos/600/400?random=3',
-  },
-])
+// Real data from API
+const stores = ref<Store[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
 const search = ref('')
 const searchBy = ref<'name' | 'address'>('name')
-
 const filterStatus = ref<'all' | 'open'>('all')
+
+// Fetch stores from API
+const fetchStores = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await fetch('/customer/stores-data', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Map API response to component interface
+    stores.value = data.data.map((store: any) => ({
+      id: store.id,
+      name: store.name || 'Unnamed Store',
+      address: store.address || 'No address provided',
+      phone: store.phone || 'No phone provided',
+      hours: store.hours || 'Mon - Fri: 8AM - 5PM',
+      isOpen: store.isOpen || false,
+      logo: store.logo !== 'NA' ? store.logo : undefined,
+      cover: store.cover !== 'NA' ? store.cover : `https://picsum.photos/600/400?random=${store.id}`,
+    }))
+  } catch (err) {
+    console.error('Error fetching stores:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to load stores'
+  } finally {
+    loading.value = false
+  }
+}
 
 const filteredStores = computed(() => {
   return stores.value.filter(store => {
-
     const valueToSearch =
       searchBy.value === 'name'
         ? store.name
@@ -100,6 +108,10 @@ const filteredStores = computed(() => {
   })
 })
 
+// Load stores on component mount
+onMounted(() => {
+  fetchStores()
+})
 </script>
 
 <template>
@@ -185,8 +197,20 @@ const filteredStores = computed(() => {
             </div>
 
             <!-- Store Grid -->
+            <div v-if="loading" class="text-center py-12">
+                <p class="text-muted-foreground">Loading stores...</p>
+            </div>
+
+            <div v-else-if="error" class="text-center py-12">
+                <p class="text-red-600 mb-4">{{ error }}</p>
+                <Button @click="fetchStores" variant="outline">
+                    Try Again
+                </Button>
+            </div>
+
             <div
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                v-else
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
             <Card
                 v-for="store in filteredStores"

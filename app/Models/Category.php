@@ -33,6 +33,14 @@ class Category extends Model
     }
 
     /**
+     * Products in this category.
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
      * Scope: only root-level categories.
      */
     public function scopeParents($query)

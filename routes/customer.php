@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         // Stores Page API Routes
         Route::get('/stores-data', [StoreController::class, 'index']);
         Route::get('/stores-data/{id}', [StoreController::class, 'show']);
+        Route::get('/stores-data/{id}/products', [StoreController::class, 'products']);
 
         // Orders Page API Routes
         Route::get('/orders-data', [CustomerOrderController::class, 'index'])->name('orders.data');

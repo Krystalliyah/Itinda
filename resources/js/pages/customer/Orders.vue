@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar.vue'
@@ -112,248 +112,69 @@ const toggleExpanded = (orderId: number) => {
 }
 
 /** Mock data (replace later with Inertia props) */
-const orders = ref<Order[]>([
-  {
-    id: 101,
-    customer_id: 1,
-    store_id: 'store id',
-    order_number: 'ORD-2026-00021',
-    status: 'pending',
-    total_amount: 785,
-    pickup_date: null,
-    notes: 'Please pack separately if possible.',
-    created_at: '2026-02-25T13:45:00+08:00',
-    updated_at: '2026-02-25T13:45:00+08:00',
-    store: {
-      id: 'store id',
-      name: 'Green Basket Grocery',
-      logo_url:
-        'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=128&q=60',
-    },
-    items: [
-      {
-        id: 1,
-        inventory_id: 501,
-        quantity: 2,
-        created_at: '2026-02-25T13:45:10+08:00',
-        product: {
-          id: 9001,
-          name: 'Fresh Carrots (1kg)',
-          description: 'Crisp and sweet carrots, perfect for stews and salads.',
-          price: 120,
-          image_url:
-            'https://images.unsplash.com/photo-1582515073490-39981397c445?auto=format&fit=crop&w=256&q=60',
-        },
+const orders = ref<Order[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+// Fetch orders from API
+const fetchOrders = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await fetch('/customer/orders-data', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Map API response to component interface
+    orders.value = data.data.map((order: any) => ({
+      id: order.id,
+      customer_id: order.customer_id,
+      store_id: order.store_id,
+      order_number: order.order_number,
+      status: order.status,
+      total_amount: order.total_amount,
+      pickup_date: order.pickup_date,
+      notes: order.notes,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      store: {
+        id: order.store.id,
+        name: order.store.name,
+        logo_url: order.store.logo_url
       },
-      {
-        id: 2,
-        inventory_id: 502,
-        quantity: 1,
-        created_at: '2026-02-25T13:45:10+08:00',
+      items: order.items.map((item: any) => ({
+        id: item.id,
+        inventory_id: item.inventory_id,
+        quantity: item.quantity,
+        created_at: item.created_at,
         product: {
-          id: 9002,
-          name: 'Organic Eggs (12pcs)',
-          description: 'Farm-fresh eggs, rich yolks and great for baking.',
-          price: 265,
-          image_url:
-            'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-      {
-        id: 3,
-        inventory_id: 503,
-        quantity: 1,
-        created_at: '2026-02-25T13:45:10+08:00',
-        product: {
-          id: 9003,
-          name: 'Brown Rice (2kg)',
-          description: 'Healthy whole grain rice with a nutty flavor.',
-          price: 280,
-          image_url:
-            'https://images.unsplash.com/photo-1604909052743-94e07f05f6f1?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-    ],
-  },
-  {
-    id: 102,
-    customer_id: 1,
-    store_id: 'store id',
-    order_number: 'ORD-2026-00018',
-    status: 'confirmed',
-    total_amount: 520,
-    pickup_date: '2026-02-26T16:00:00+08:00',
-    notes: null,
-    created_at: '2026-02-24T08:50:00+08:00',
-    updated_at: '2026-02-24T09:11:00+08:00',
-    store: {
-      id: 'store id',
-      name: 'Bake & Brew',
-      logo_url:
-        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=128&q=60',
-    },
-    items: [
-      {
-        id: 4,
-        inventory_id: 601,
-        quantity: 2,
-        created_at: '2026-02-24T08:50:10+08:00',
-        product: {
-          id: 9101,
-          name: 'Sourdough Loaf',
-          description: 'Slow-fermented sourdough with a crispy crust.',
-          price: 180,
-          image_url:
-            'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-      {
-        id: 5,
-        inventory_id: 602,
-        quantity: 1,
-        created_at: '2026-02-24T08:50:10+08:00',
-        product: {
-          id: 9102,
-          name: 'Cold Brew (500ml)',
-          description: 'Smooth and strong cold brew coffee, lightly sweet.',
-          price: 160,
-          image_url:
-            'https://images.unsplash.com/photo-1528826194825-0d76c2b7c97b?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-    ],
-  },
-  {
-    id: 103,
-    customer_id: 1,
-    store_id: 'store id',
-    order_number: 'ORD-2026-00012',
-    status: 'ready',
-    total_amount: 310,
-    pickup_date: '2026-02-26T11:30:00+08:00',
-    notes: 'Call me when ready.',
-    created_at: '2026-02-20T15:20:00+08:00',
-    updated_at: '2026-02-20T15:32:00+08:00',
-    store: {
-      id: 'store id',
-      name: 'Green Basket Grocery',
-      logo_url:
-        'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=128&q=60',
-    },
-    items: [
-      {
-        id: 6,
-        inventory_id: 504,
-        quantity: 1,
-        created_at: '2026-02-20T15:20:10+08:00',
-        product: {
-          id: 9004,
-          name: 'Bananas (1kg)',
-          description: 'Ripe bananas, great for snacks and smoothies.',
-          price: 120,
-          image_url:
-            'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-      {
-        id: 7,
-        inventory_id: 505,
-        quantity: 1,
-        created_at: '2026-02-20T15:20:10+08:00',
-        product: {
-          id: 9005,
-          name: 'Peanut Butter (340g)',
-          description: 'Creamy peanut butter with no added preservatives.',
-          price: 190,
-          image_url:
-            'https://images.unsplash.com/photo-1615486364462-ef6363c1f52c?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-    ],
-  },
-  {
-    id: 104,
-    customer_id: 1,
-    store_id: 'store id',
-    order_number: 'ORD-2026-00005',
-    status: 'completed',
-    total_amount: 999,
-    pickup_date: '2026-02-10T17:00:00+08:00',
-    notes: null,
-    created_at: '2026-02-10T09:40:00+08:00',
-    updated_at: '2026-02-10T17:15:00+08:00',
-    store: {
-      id: 'store id',
-      name: 'Daily Essentials',
-      logo_url:
-        'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=128&q=60',
-    },
-    items: [
-      {
-        id: 8,
-        inventory_id: 701,
-        quantity: 3,
-        created_at: '2026-02-10T09:40:10+08:00',
-        product: {
-          id: 9201,
-          name: 'Toilet Paper (12 rolls)',
-          description: 'Soft, strong, and reliable everyday essentials.',
-          price: 333,
-          image_url:
-            'https://images.unsplash.com/photo-1583946099379-f9c9cb8bc030?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-    ],
-  },
-  {
-    id: 105,
-    customer_id: 1,
-    store_id: 'store id',
-    order_number: 'ORD-2026-00003',
-    status: 'cancelled',
-    total_amount: 420,
-    pickup_date: '2026-02-08T14:00:00+08:00',
-    notes: 'Wrong item selected.',
-    created_at: '2026-02-08T12:10:00+08:00',
-    updated_at: '2026-02-08T12:30:00+08:00',
-    store: {
-      id: 'store id',
-      name: 'Bake & Brew',
-      logo_url:
-        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=128&q=60',
-    },
-    items: [
-      {
-        id: 9,
-        inventory_id: 603,
-        quantity: 2,
-        created_at: '2026-02-08T12:10:10+08:00',
-        product: {
-          id: 9103,
-          name: 'Chocolate Muffin',
-          description: 'Moist chocolate muffin with dark chocolate chips.',
-          price: 105,
-          image_url:
-            'https://images.unsplash.com/photo-1509440159598-0249088772ff?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-      {
-        id: 10,
-        inventory_id: 604,
-        quantity: 2,
-        created_at: '2026-02-08T12:10:10+08:00',
-        product: {
-          id: 9104,
-          name: 'Cinnamon Roll',
-          description: 'Buttery cinnamon roll topped with cream cheese glaze.',
-          price: 105,
-          image_url:
-            'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=256&q=60',
-        },
-      },
-    ],
-  },
-])
+          id: item.product.id,
+          name: item.product.name,
+          description: item.product.description,
+          price: item.product.price,
+          image_url: item.product.image_url
+        }
+      }))
+    }))
+  } catch (err) {
+    console.error('Error fetching orders:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to load orders'
+  } finally {
+    loading.value = false
+  }
+}
 
 /** Filtering + sorting */
 const normalized = (v: string) => v.toLowerCase().trim()
@@ -445,6 +266,11 @@ const cancelOrder = (orderId: number) => {
       : o
   )
 }
+
+// Load orders on component mount
+onMounted(() => {
+  fetchOrders()
+})
 </script>
 
 <template>
@@ -556,7 +382,18 @@ const cancelOrder = (orderId: number) => {
 
         <!-- Orders List -->
         <div class="space-y-4">
-          <div v-if="filteredOrders.length === 0" class="rounded-xl border border-border p-8">
+          <div v-if="loading" class="text-center py-12">
+            <p class="text-muted-foreground">Loading orders...</p>
+          </div>
+
+          <div v-else-if="error" class="text-center py-12">
+            <p class="text-red-600 mb-4">{{ error }}</p>
+            <Button @click="fetchOrders" variant="outline">
+              Try Again
+            </Button>
+          </div>
+
+          <div v-else-if="filteredOrders.length === 0" class="rounded-xl border border-border p-8">
             <div class="flex items-center gap-3 text-muted-foreground">
               <Search class="h-5 w-5 opacity-70" />
               <p class="text-sm">
