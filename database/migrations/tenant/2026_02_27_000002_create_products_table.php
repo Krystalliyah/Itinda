@@ -15,7 +15,7 @@ class CreateProductsTable extends Migration
             $table->string('sku')->nullable()->index();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->unsignedBigInteger('category_id')->nullable();
             $table->decimal('price', 10, 2)->default(0);
             $table->integer('stock')->default(0);
             $table->boolean('is_active')->default(true);

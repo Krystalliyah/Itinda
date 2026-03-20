@@ -109,7 +109,12 @@ Route::middleware([
         Route::get('/analytics', fn() => inertia('vendor/Analytics'))->name('analytics')->middleware('permission:view-analytics');
     });
 
-    Route::get('/admin/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
-    Route::post('/admin/categories', [CategoryController::class, 'store']);
-    Route::put('/admin/categories/{category}', [CategoryController::class, 'update']);
+    Route::middleware(['auth', 'verified', 'role:vendor|staff'])->group(function () {
+        Route::get('/admin/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
+        Route::post('/admin/categories', [CategoryController::class, 'store']);
+        Route::put('/admin/categories/{category}', [CategoryController::class, 'update']);
+    });
+
+    // API Routes for vendors
+    Route::get('/api/categories', [App\Http\Controllers\Api\CategoryController::class, 'index']);
 });

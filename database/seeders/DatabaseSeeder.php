@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             RolesSeeder::class,
             AdminUserSeeder::class,
             CustomerSeeder::class,
-            \Database\Seeders\Central\VendorSeeder::class,
+            CategorySeeder::class,
+            // \Database\Seeders\Central\VendorSeeder::class, // Commented out - create vendors manually via admin panel
         ]);
         
     }
