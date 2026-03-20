@@ -36,7 +36,7 @@ class VendorSeeder extends Seeder
                 'name' => $faker->name(),
                 'email' => $email,
                 'phone' => $faker->phoneNumber(),
-                'password' => Hash::make('password'),
+                'password' => Hash::make('Password123!'), // Default password for all vendors
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]);
