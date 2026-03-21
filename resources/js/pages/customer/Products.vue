@@ -379,7 +379,7 @@ const filteredProducts = computed(() => {
             </div>
             
             <Link
-            href="/customer/orders"
+            href="/customer/cart"
             class="fixed bottom-6 right-6 z-50"
             >
             <div
