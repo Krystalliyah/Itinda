@@ -3,13 +3,13 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const page = usePage();
-const auth = computed(() => page.props.auth as { user: any; hasStore: boolean; storeIsApproved: boolean; roles: string[]; permissions: string[] });
+const auth = computed(() => page.props.auth as { user: any; hasStore: boolean; storeIsApproved: boolean; roles: string[]; permissions: string[]; tenant_id: string | null });
 
 function hasPermission(permission: string): boolean {
     return auth.value.permissions?.includes(permission) || auth.value.roles?.includes('vendor');
 }
 
-const showFullNav = computed(() => auth.value.hasStore && auth.value.storeIsApproved);
+const showFullNav = computed(() => auth.value.hasStore && auth.value.storeIsApproved && auth.value.tenant_id !== null);
 
 function isActive(path: string): boolean {
     return page.url.startsWith(path);

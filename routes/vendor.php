@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Vendor\StoreSetupController;
+use App\Http\Controllers\Vendor\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 // Store setup and dashboard (accessible while pending)
 Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('vendor.')->group(function () {
-    Route::get('/dashboard', fn() => inertia('vendor/Dashboard'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', fn() => inertia('vendor/Profile'))->name('profile');
     Route::post('/store/setup', [StoreSetupController::class, 'store'])->name('store.create');
 });
