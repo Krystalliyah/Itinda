@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import AdminNav from '@/components/navigation/AdminNav.vue';
-// import AdminNavIcons from '@/components/navigation/AdminNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
-import { 
-    UsersIcon, 
-    EnvelopeIcon, 
-    PhoneIcon, 
+import {
+    UsersIcon,
+    EnvelopeIcon,
+    PhoneIcon,
     CheckBadgeIcon,
-    XCircleIcon 
+    XCircleIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
 } from '@heroicons/vue/24/outline';
 
 interface Customer {
@@ -23,10 +24,32 @@ interface Customer {
     created_at: string;
 }
 
-interface Props {
-    customers: {
-        data: Customer[];
+// Exact shape of Laravel's paginator->toArray()
+interface PaginatedCustomers {
+    data: Customer[];
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    meta: {
+        current_page: number;
+        from: number;
+        last_page: number;
+        path: string;
+        per_page: number;
+        to: number;
+        total: number;
+        links: {
+            url: string | null;
+            label: string;
+            active: boolean;
+        }[];
     };
+}
+
+interface Props {
+    customers: Customer[] | PaginatedCustomers;
 }
 
 const props = defineProps<Props>();
@@ -37,13 +60,64 @@ const contentClass = computed(() => ({
     'sidebar-collapsed': isCollapsed.value
 }));
 
+// Normalize customer list
+const customerList = computed<Customer[]>(() => {
+    if (Array.isArray(props.customers)) {
+        return props.customers;
+    }
+    return props.customers?.data ?? [];
+});
+
+// Total count
+const totalCount = computed<number>(() => {
+    if (Array.isArray(props.customers)) {
+        return props.customers.length;
+    }
+    return props.customers?.meta?.total ?? props.customers?.data?.length ?? 0;
+});
+
+// Verified / unverified counts
 const verifiedCustomers = computed(() => 
-    props.customers?.data?.filter(c => c.email_verified_at) ?? []
+    customerList.value.filter(c => c.email_verified_at)
+);
+const unverifiedCustomers = computed(() => 
+    customerList.value.filter(c => !c.email_verified_at)
 );
 
-const unverifiedCustomers = computed(() => 
-    props.customers?.data?.filter(c => !c.email_verified_at) ?? []
+// Check if we have pagination data (presence of meta)
+const hasPagination = computed(() => 
+    !Array.isArray(props.customers) && props.customers?.meta != null
 );
+
+// Pagination helpers
+const currentPage = computed(() => 
+    hasPagination.value ? (props.customers as PaginatedCustomers).meta.current_page : 1
+);
+const lastPage = computed(() => 
+    hasPagination.value ? (props.customers as PaginatedCustomers).meta.last_page : 1
+);
+const path = computed(() => 
+    hasPagination.value ? (props.customers as PaginatedCustomers).meta.path : ''
+);
+
+// Generate page numbers to display (first, last, and around current)
+const displayedPages = computed(() => {
+    if (!hasPagination.value) return [];
+    const current = currentPage.value;
+    const last = lastPage.value;
+    const delta = 2; // pages before and after current
+    const range: number[] = [];
+    for (let i = 1; i <= last; i++) {
+        if (
+            i === 1 ||
+            i === last ||
+            (i >= current - delta && i <= current + delta)
+        ) {
+            range.push(i);
+        }
+    }
+    return range;
+});
 </script>
 
 <template>
@@ -83,10 +157,13 @@ const unverifiedCustomers = computed(() =>
                 <div class="card">
                     <div class="card-header">
                         <UsersIcon class="card-header-icon" />
-                        <h2>All Customers <span class="count-badge">{{ customers.data.length }}</span></h2>
+                        <h2>
+                            All Customers
+                            <span class="count-badge">{{ totalCount }}</span>
+                        </h2>
                     </div>
 
-                    <div v-if="customers.data.length > 0" class="table-responsive">
+                    <div v-if="customerList.length > 0" class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
@@ -99,7 +176,7 @@ const unverifiedCustomers = computed(() =>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="customer in customers.data" :key="customer.id">
+                                <tr v-for="customer in customerList" :key="customer.id">
                                     <td><span class="id-pill">{{ customer.id }}</span></td>
                                     <td>
                                         <div class="customer-name">{{ customer.name }}</div>
@@ -133,6 +210,54 @@ const unverifiedCustomers = computed(() =>
                                 </tr>
                             </tbody>
                         </table>
+
+                        <!-- Pagination (only shown when data is paginated) -->
+                        <div v-if="hasPagination" class="pagination-wrapper">
+                            <div class="pagination-info">
+                                Showing {{ (props.customers as PaginatedCustomers).meta.from }} to {{ (props.customers as PaginatedCustomers).meta.to }} of {{ (props.customers as PaginatedCustomers).meta.total }} results
+                            </div>
+                            <div class="pagination">
+                                <!-- Previous Page Link -->
+                                <Link
+                                    v-if="currentPage > 1"
+                                    :href="path + '?page=' + (currentPage - 1)"
+                                    class="pagination-item prev"
+                                >
+                                    <ChevronLeftIcon class="pagination-icon" />
+                                    Previous
+                                </Link>
+                                <span v-else class="pagination-item disabled">
+                                    <ChevronLeftIcon class="pagination-icon" />
+                                    Previous
+                                </span>
+
+                                <!-- Page Numbers -->
+                                <template v-for="page in displayedPages" :key="page">
+                                    <Link
+                                        v-if="page !== currentPage"
+                                        :href="path + '?page=' + page"
+                                        class="pagination-item"
+                                    >
+                                        {{ page }}
+                                    </Link>
+                                    <span v-else class="pagination-item active">{{ page }}</span>
+                                </template>
+
+                                <!-- Next Page Link -->
+                                <Link
+                                    v-if="currentPage < lastPage"
+                                    :href="path + '?page=' + (currentPage + 1)"
+                                    class="pagination-item next"
+                                >
+                                    Next
+                                    <ChevronRightIcon class="pagination-icon" />
+                                </Link>
+                                <span v-else class="pagination-item disabled">
+                                    Next
+                                    <ChevronRightIcon class="pagination-icon" />
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     <div v-else class="empty-state">
@@ -147,6 +272,7 @@ const unverifiedCustomers = computed(() =>
 </template>
 
 <style scoped>
+/* (Keep all your existing styles exactly as they were) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 * {
@@ -388,6 +514,67 @@ tr:hover td {
     margin: 0;
 }
 
+/* Pagination styles */
+.pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.pagination-info {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.pagination-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #334155;
+    background: white;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.pagination-item:hover:not(.disabled):not(.active) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.pagination-item.active {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.pagination-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    background: #f1f5f9;
+}
+
+.pagination-icon {
+    width: 16px;
+    height: 16px;
+}
+
 @media (max-width: 900px) {
     .header-stats {
         display: none;
@@ -403,6 +590,9 @@ tr:hover td {
         align-items: flex-start;
         gap: 0.85rem;
     }
+    .pagination-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
-
 </style>
