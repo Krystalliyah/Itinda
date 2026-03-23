@@ -15,6 +15,7 @@ class StoreResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name ?? 'NA',
+            'description' => $this->description ?? 'NA',
             'address' => $this->address ?? 'NA',
             'phone' => $this->phone ?? 'NA',
             'hours' => $this->formatOperatingHours($operatingHours),
