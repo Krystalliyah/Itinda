@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StoreController;
+use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CustomerOrderController;
 
 Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
@@ -19,6 +20,10 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::get('/stores-data', [StoreController::class, 'index']);
         Route::get('/stores-data/{id}', [StoreController::class, 'show']);
         Route::get('/stores-data/{id}/products', [StoreController::class, 'products']);
+        
+        // Products API Routes (with search, filter, sort)
+        Route::get('/products-data', [ProductController::class, 'index']);
+        Route::get('/products-data/store/{id}', [ProductController::class, 'storeProducts']);
         
         // Categories API Route
         Route::get('/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);

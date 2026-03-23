@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, usePage, router } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { watchDebounced } from '@vueuse/core';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
@@ -30,6 +31,11 @@ const categories = ref<any[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Filter state - declare before using in functions
+const searchProduct = ref('')
+const selectedCategory = ref<'all' | number>('all')
+const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
+
 // Fetch all categories from API
 const fetchCategories = async () => {
   try {
@@ -51,13 +57,31 @@ const fetchCategories = async () => {
   }
 }
 
-// Fetch all products from all stores via API
+// Fetch all products from all stores via API with filters
 const fetchAllProducts = async () => {
   try {
     loading.value = true
     error.value = null
     
-    const response = await fetch('/customer/stores-data', {
+    // Build query parameters
+    const params = new URLSearchParams()
+    
+    if (searchProduct.value) {
+      params.append('search', searchProduct.value)
+    }
+    
+    if (selectedCategory.value !== 'all') {
+      params.append('category_id', selectedCategory.value.toString())
+    }
+    
+    if (sortBy.value) {
+      params.append('sort_by', sortBy.value)
+    }
+    
+    const queryString = params.toString()
+    const url = `/customer/products-data${queryString ? '?' + queryString : ''}`
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -70,39 +94,9 @@ const fetchAllProducts = async () => {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
     
-    const storesData = await response.json()
-    const allProducts: any[] = []
+    const data = await response.json()
+    products.value = data.data || []
     
-    // Fetch products from each store
-    for (const store of storesData.data) {
-      try {
-        const productsResponse = await fetch(`/customer/stores-data/${store.id}/products`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        })
-        
-        if (productsResponse.ok) {
-          const productsData = await productsResponse.json()
-          const storeProducts = productsData.data.map((product: any) => ({
-            ...product,
-            store: {
-              id: store.id,
-              name: store.name,
-              logo: store.logo
-            }
-          }))
-          allProducts.push(...storeProducts)
-        }
-      } catch (err) {
-        console.error(`Error fetching products for store ${store.id}:`, err)
-      }
-    }
-    
-    products.value = allProducts
   } catch (err) {
     console.error('Error fetching products:', err)
     error.value = err instanceof Error ? err.message : 'Failed to load products'
@@ -116,9 +110,14 @@ onMounted(() => {
   fetchAllProducts()
 })
 
-const searchProduct = ref('')
-const selectedCategory = ref<'all' | number>('all')
-const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
+// Watch for filter changes and refetch (debounced for search)
+watchDebounced(searchProduct, () => {
+  fetchAllProducts()
+}, { debounce: 300 })
+
+watch([selectedCategory, sortBy], () => {
+  fetchAllProducts()
+})
 
 const addToCart = (product: any) => {
   router.post('/customer/cart/add', {
@@ -137,39 +136,8 @@ const addToCart = (product: any) => {
   })
 }
 
-const filteredProducts = computed(() => {
-  let result = products.value.filter(product => {
-
-    const matchesSearch =
-      product.product_name
-        .toLowerCase()
-        .includes(searchProduct.value.toLowerCase())
-
-    const matchesCategory =
-      selectedCategory.value === 'all'
-        ? true
-        : product.category_id === selectedCategory.value
-
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      product.is_active
-    )
-  })
-
-  // Sorting
-  if (sortBy.value === 'price_low') {
-    result.sort((a, b) => a.unit_price - b.unit_price)
-  } else if (sortBy.value === 'price_high') {
-    result.sort((a, b) => b.unit_price - a.unit_price)
-  } else {
-    result.sort((a, b) =>
-      a.product_name.localeCompare(b.product_name)
-    )
-  }
-
-  return result
-})
+// Products are already filtered and sorted by the API
+const filteredProducts = computed(() => products.value)
 
 </script>
 
