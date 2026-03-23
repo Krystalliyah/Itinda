@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, usePage, router } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, watch } from 'vue';
 import { watchDebounced } from '@vueuse/core';
 import Header from '@/components/Header.vue';
@@ -119,21 +119,38 @@ watch([selectedCategory, sortBy], () => {
   fetchAllProducts()
 })
 
-const addToCart = (product: any) => {
-  router.post('/customer/cart/add', {
-    store_id: product.store.id,
-    product_id: product.id,
-    quantity: 1
-  }, {
-    preserveScroll: true,
-    onSuccess: () => {
-      alert('Product added to cart!')
-    },
-    onError: (errors) => {
-      console.error('Errors:', errors)
-      alert('Failed to add to cart')
-    }
-  })
+const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { message, type }
+  toastTimer = setTimeout(() => { toast.value = null }, 3000)
+}
+
+const addToCart = async (product: any) => {
+  try {
+    const response = await fetch('/customer/cart/add', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      },
+      body: JSON.stringify({
+        store_id: product.store.id,
+        product_id: product.id,
+        quantity: 1,
+      }),
+    })
+
+    if (!response.ok) throw new Error('Failed to add to cart')
+    showToast(`"${product.product_name}" added to cart!`)
+  } catch (err) {
+    console.error(err)
+    showToast('Failed to add to cart. Please try again.', 'error')
+  }
 }
 
 // Products are already filtered and sorted by the API
@@ -325,11 +342,10 @@ const filteredProducts = computed(() => products.value)
                     <!-- Add Button -->
                     <Button
                     size="sm"
-                    :disabled="!product.is_available"
                     class="w-full mt-2 mb-4 bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
                     @click="addToCart(product)"
                     >
-                    Add to Cart
+                    {{ product.is_available ? '``Add to ``Cart' : 'Add to Cart (Low Stock)' }}
                     </Button>
 
                 </CardContent>
@@ -360,4 +376,32 @@ const filteredProducts = computed(() => products.value)
             </div>
         </main>
     </div>
+
+    <!-- Toast Notification -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="translate-y-4 opacity-0"
+        enter-to-class="translate-y-0 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="translate-y-0 opacity-100"
+        leave-to-class="translate-y-4 opacity-0"
+      >
+        <div
+          v-if="toast"
+          class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium"
+          :class="toast.type === 'success'
+            ? 'bg-[#245c4a] text-white'
+            : 'bg-red-600 text-white'"
+        >
+          <span v-if="toast.type === 'success'" class="text-lg">🛒</span>
+          <span v-else class="text-lg">⚠️</span>
+          {{ toast.message }}
+          <button
+            class="ml-2 opacity-70 hover:opacity-100 transition-opacity"
+            @click="toast = null"
+          >✕</button>
+        </div>
+      </Transition>
+    </Teleport>
 </template>

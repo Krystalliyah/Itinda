@@ -5,6 +5,7 @@ namespace App\Providers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use App\Models\Cart;
@@ -12,10 +13,6 @@ use App\Policies\CartPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
-    protected $policies = [
-        Cart::class => CartPolicy::class,
-    ];
-
     /**
      * Register any application services.
      */
@@ -29,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Cart::class, CartPolicy::class);
         $this->configureDefaults();
     }
 

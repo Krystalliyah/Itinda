@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -13,39 +14,53 @@ class CartController extends Controller
         $carts = Cart::where('user_id', auth()->id())
             ->get()
             ->groupBy('store_id')
-            ->map(function ($items) {
-                $storeId = $items->first()->store_id;
-                
-                // Get tenant and fetch products from tenant database
-                $tenant = \App\Models\Tenant::find($storeId);
-                
+            ->map(function ($items, $storeId) {
+                $tenant = Tenant::find($storeId);
+
                 $cartItems = $items->map(function ($item) use ($tenant) {
-                    // Fetch product from tenant database
                     $product = null;
                     if ($tenant) {
                         $product = $tenant->run(function () use ($item) {
                             return \App\Models\Product::find($item->product_id);
                         });
                     }
-                    
+
+                    // Product was deleted from tenant DB — skip it
+                    if (!$product) {
+                        return null;
+                    }
+
                     return [
-                        'id' => $item->id,
+                        'id'         => $item->id,
                         'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'product' => $product ? [
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'price' => $product->price,
+                        'quantity'   => $item->quantity,
+                        'product'    => [
+                            'id'         => $product->id,
+                            'name'       => $product->name,
+                            'price'      => (float) $product->price,
                             'image_path' => $product->image_path,
-                        ] : null
+                            'stock'      => $product->stock,
+                            'is_active'  => $product->is_active,
+                        ],
                     ];
-                })->values();
+                })->filter()->values(); // remove nulls (deleted products)
+
+                // Clean up orphaned cart rows whose product no longer exists
+                $validProductIds = $cartItems->pluck('product_id')->toArray();
+                Cart::where('user_id', auth()->id())
+                    ->where('store_id', $storeId)
+                    ->whereNotIn('product_id', $validProductIds)
+                    ->delete();
 
                 return [
-                    'store_id' => $storeId,
-                    'items' => $cartItems
+                    'store_id'   => $storeId,
+                    'store_name' => $tenant?->name ?? $storeId,
+                    'store_logo' => $tenant?->logo ?? null,
+                    'items'      => $cartItems,
                 ];
-            })->values();
+            })
+            ->filter(fn($group) => $group['items']->count() > 0) // drop empty stores
+            ->values();
 
         return response()->json(['data' => $carts]);
     }
@@ -53,28 +68,40 @@ class CartController extends Controller
     public function add(Request $request)
     {
         $validated = $request->validate([
-            'store_id' => 'required|string',
+            'store_id'   => 'required|string',
             'product_id' => 'required|integer',
-            'quantity' => 'required|integer|min:1',
+            'quantity'   => 'required|integer|min:1',
         ]);
 
-        $cart = Cart::updateOrCreate(
-            [
-                'user_id' => auth()->id(),
-                'store_id' => $validated['store_id'],
-                'product_id' => $validated['product_id'],
-            ],
-            [
-                'quantity' => $validated['quantity'],
-            ]
-        );
+        $cart = Cart::where([
+            'user_id'    => auth()->id(),
+            'store_id'   => $validated['store_id'],
+            'product_id' => $validated['product_id'],
+        ])->first();
 
-        return back()->with('success', 'Product added to cart');
+        if ($cart) {
+            // Increment existing quantity
+            $cart->increment('quantity', $validated['quantity']);
+        } else {
+            $cart = Cart::create([
+                'user_id'    => auth()->id(),
+                'store_id'   => $validated['store_id'],
+                'product_id' => $validated['product_id'],
+                'quantity'   => $validated['quantity'],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Product added to cart',
+            'data'    => $cart,
+        ]);
     }
 
     public function update(Request $request, Cart $cart)
     {
-        $this->authorize('update', $cart);
+        if ($cart->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -84,16 +111,33 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'Cart updated',
-            'data' => $cart
+            'data'    => $cart,
         ]);
     }
 
     public function destroy(Cart $cart)
     {
-        $this->authorize('delete', $cart);
+        if ($cart->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $cart->delete();
 
         return response()->json(['message' => 'Item removed from cart']);
+    }
+
+    public function destroyMany(Request $request)
+    {
+        $validated = $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+
+        Cart::where('user_id', auth()->id())
+            ->whereIn('id', $validated['ids'])
+            ->delete();
+
+        return response()->json(['message' => 'Items removed from cart']);
     }
 
     public function clear()

@@ -140,7 +140,7 @@ class ProductSeeder extends Seeder
                     'description' => 'Sample product for ' . $category->name,
                     'category_id' => $category->id,
                     'price' => fake()->randomFloat(2, 10, 500),
-                    'stock' => 0,
+                    'stock' => fake()->numberBetween(10, 100),
                     'image_path' => null,
                     'is_active' => $index !== 4,
                 ]);

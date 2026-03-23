@@ -9,6 +9,8 @@ type Product = {
   description: string | null;
   category_name: string | null;
   barcode: string | null;
+  price: number | null;
+  stock: number | null;
   image_url?: string | null;
   is_active: boolean;
   created_at: string;
@@ -75,6 +77,8 @@ const form = useForm<{
   description: string;
   category_id: number | string;
   barcode: string;
+  price: string;
+  stock: string;
   image: File | null;
   is_active: boolean;
   _method?: 'put';
@@ -83,6 +87,8 @@ const form = useForm<{
   description: '',
   category_id: '',
   barcode: '',
+  price: '',
+  stock: '0',
   image: null,
   is_active: true,
 });
@@ -137,6 +143,8 @@ function openEditModal(product: Product) {
   form.category_id =
     categories.value.find((c) => c.category_name === product.category_name)?.id ?? '';
   form.barcode = product.barcode || '';
+  form.price = product.price != null ? String(product.price) : '';
+  form.stock = product.stock != null ? String(product.stock) : '0';
   form.image = null;
   form.is_active = product.is_active;
   imagePreview.value = product.image_url || null;
@@ -165,7 +173,11 @@ function onPickImage(e: Event) {
 
 function submit() {
   if (editingProduct.value) {
-    form.transform((data) => ({ ...data, _method: 'put' as const }));
+    form.transform((data) => ({
+      ...data,
+      _method: 'put' as const,
+      is_active: data.is_active ? 1 : 0,
+    }));
 
     form.post(`/vendor/products/${editingProduct.value.id}`, {
       forceFormData: true,
@@ -174,7 +186,7 @@ function submit() {
   } else {
     form.transform((data) => {
       const { _method, ...rest } = data as any;
-      return rest;
+      return { ...rest, is_active: rest.is_active ? 1 : 0 };
     });
 
     form.post('/vendor/products', {
@@ -597,8 +609,7 @@ function deleteProduct(id: number) {
                 </div>
 
                 <!-- Category + Barcode row -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">                  <div>
                     <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                       Category <span style="color:#9f1239">*</span>
                     </label>
@@ -688,7 +699,53 @@ function deleteProduct(id: number) {
                   </div>
                 </div>
 
-                <!-- Description -->
+                <!-- Price + Stock row -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- Price -->
+                  <div>
+                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                      Price <span style="color:#9f1239">*</span>
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
+                      <input
+                        v-model="form.price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                        placeholder="0.00"
+                        class="w-full pl-7 pr-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
+                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      />
+                    </div>
+                    <p v-if="form.errors.price" class="text-xs mt-1" style="color:#9f1239">
+                      {{ form.errors.price }}
+                    </p>
+                  </div>
+
+                  <!-- Stock -->
+                  <div>
+                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                      Stock <span style="color:#9f1239">*</span>
+                    </label>
+                    <input
+                      v-model="form.stock"
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      placeholder="0"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
+                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    />
+                    <p v-if="form.errors.stock" class="text-xs mt-1" style="color:#9f1239">
+                      {{ form.errors.stock }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Description (original) -->
                 <div>
                   <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                     Description

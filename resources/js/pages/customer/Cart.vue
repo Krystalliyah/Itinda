@@ -11,7 +11,6 @@ import { useSidebar } from '@/composables/useSidebar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,7 +57,7 @@ type CartItem = {
   product: ProductInfo
   quantity: number
   selected: boolean
-  added_at: string // mock timestamp for sorting
+  added_at: string
 }
 
 const { isCollapsed } = useSidebar()
@@ -67,7 +66,6 @@ const contentClass = computed(() => ({
   'sidebar-collapsed': isCollapsed.value,
 }))
 
-/** Search (same vibe as Orders) */
 type SearchBy = 'product_name' | 'store_name'
 const search = ref('')
 const searchBy = ref<SearchBy>('product_name')
@@ -75,42 +73,39 @@ const searchByLabel = computed(() =>
   searchBy.value === 'product_name' ? 'Product Name' : 'Store Name'
 )
 
-/** Filter + Sort */
 type SortBy = 'recent' | 'price_asc' | 'price_desc' | 'name_asc'
 const sortBy = ref<SortBy>('recent')
 
-const shopFilter = ref<number | 'all'>('all') // simple filter by store
+const shopFilter = ref<number | 'all'>('all')
 
-/** Modal */
 const preorderOpen = ref(false)
 
-/** Mock cart data (replace later with props) */
 const cartItems = ref<CartItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-// Fetch cart from API
+const selectedIds = ref<number[]>([])
+
 const fetchCart = async () => {
   try {
     loading.value = true
     error.value = null
-    
+
     const response = await fetch('/customer/cart-data', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
+        'X-Requested-With': 'XMLHttpRequest',
+      },
     })
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    
+
     const data = await response.json()
-    
-    // Transform API response to component format
+
     const items: CartItem[] = []
     data.data.forEach((storeCart: any) => {
       storeCart.items.forEach((item: any) => {
@@ -118,25 +113,26 @@ const fetchCart = async () => {
           id: item.id,
           store: {
             id: storeCart.store_id,
-            name: storeCart.store_id,
+            name: storeCart.store_name ?? storeCart.store_id,
             description: '',
-            logo_url: null
+            logo_url: storeCart.store_logo ?? null,
           },
           product: {
             id: item.product.id,
             name: item.product.name,
             description: '',
             price: parseFloat(item.product.price),
-            image_url: item.product.image_path ? `/storage/${item.product.image_path}` : null
+            image_url: item.product.image_path ? `/storage/${item.product.image_path}` : null,
           },
           quantity: item.quantity,
           selected: false,
-          added_at: new Date().toISOString()
+          added_at: new Date().toISOString(),
         })
       })
     })
-    
+
     cartItems.value = items
+    selectedIds.value = []
   } catch (err) {
     console.error('Error fetching cart:', err)
     error.value = err instanceof Error ? err.message : 'Failed to load cart'
@@ -149,7 +145,6 @@ onMounted(() => {
   fetchCart()
 })
 
-/** Derived options */
 const stores = computed(() => {
   const map = new Map<number, StoreInfo>()
   for (const item of cartItems.value) {
@@ -158,15 +153,11 @@ const stores = computed(() => {
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
 })
 
-/** Helpers */
 const normalized = (v: string) => v.toLowerCase().trim()
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(
-    amount
-  )
+  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount)
 
-/** Filtering + sorting */
 const filteredSortedItems = computed(() => {
   const q = normalized(search.value)
   let list = [...cartItems.value]
@@ -193,7 +184,6 @@ const filteredSortedItems = computed(() => {
   return list
 })
 
-/** Group by store (after filters) */
 const groupedByStore = computed(() => {
   const groups = new Map<number, { store: StoreInfo; items: CartItem[] }>()
   for (const item of filteredSortedItems.value) {
@@ -202,85 +192,61 @@ const groupedByStore = computed(() => {
     groups.get(key)!.items.push(item)
   }
 
-  // stable order: store name asc
   return Array.from(groups.values()).sort((a, b) =>
     a.store.name.localeCompare(b.store.name)
   )
 })
 
-/** =========================
- *  SELECTION + TOTAL LOGIC
- *  ========================= */
+const selectedCount = computed(() => selectedIds.value.length)
 
-/** Global selected count */
-const selectedCount = computed(
-  () => cartItems.value.filter((i) => i.selected).length
+const allSelected = computed(() =>
+  cartItems.value.length > 0 &&
+  cartItems.value.every((i) => selectedIds.value.includes(i.id))
 )
 
-/** Global select all */
-const allSelected = computed({
-  get() {
-    return (
-      cartItems.value.length > 0 &&
-      selectedCount.value === cartItems.value.length
-    )
-  },
-  set(val: boolean) {
-    cartItems.value = cartItems.value.map((i) => ({
-      ...i,
-      selected: val,
-    }))
-  },
-})
+const toggleAllSelected = (val: boolean) => {
+  selectedIds.value = val ? cartItems.value.map((i) => i.id) : []
+}
 
-/** Store select all */
 const storeAllSelected = (storeId: number) => {
   const items = cartItems.value.filter((i) => i.store.id === storeId)
-  return items.length > 0 && items.every((i) => i.selected)
+  return items.length > 0 && items.every((i) => selectedIds.value.includes(i.id))
 }
 
 const setStoreSelected = (storeId: number, val: boolean) => {
-  cartItems.value = cartItems.value.map((i) =>
-    i.store.id === storeId ? { ...i, selected: val } : i
-  )
+  const storeIds = cartItems.value
+    .filter((i) => i.store.id === storeId)
+    .map((i) => i.id)
+
+  if (val) {
+    selectedIds.value = Array.from(new Set([...selectedIds.value, ...storeIds]))
+  } else {
+    selectedIds.value = selectedIds.value.filter((id) => !storeIds.includes(id))
+  }
 }
 
-/** Selected Grouped By Store */
 const selectedGroupedByStore = computed(() => {
   const groups = new Map<number, { store: StoreInfo; items: CartItem[] }>()
-
-  for (const item of cartItems.value.filter(i => i.selected)) {
+  for (const item of cartItems.value.filter((i) => selectedIds.value.includes(i.id))) {
     const key = item.store.id
-
-    if (!groups.has(key)) {
-      groups.set(key, { store: item.store, items: [] })
-    }
-
+    if (!groups.has(key)) groups.set(key, { store: item.store, items: [] })
     groups.get(key)!.items.push(item)
   }
-
   return Array.from(groups.values()).sort((a, b) =>
     a.store.name.localeCompare(b.store.name)
   )
 })
 
-/** Store subtotal (selected only) */
-const storeSubtotal = (storeId: number) => {
-  return cartItems.value
-    .filter((i) => i.store.id === storeId && i.selected)
+const storeSubtotal = (storeId: number) =>
+  cartItems.value
+    .filter((i) => i.store.id === storeId)
     .reduce((sum, i) => sum + i.product.price * i.quantity, 0)
-}
 
-/** Global total */
 const totalSelected = computed(() =>
   cartItems.value
-    .filter((i) => i.selected)
+    .filter((i) => selectedIds.value.includes(i.id))
     .reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 )
-
-/** =========================
- *  REMOVE LOGIC (MODAL ONLY)
- *  ========================= */
 
 const removeSelectedGlobal = () => {
   removeModalScope.value = 'global'
@@ -292,27 +258,93 @@ const removeSelectedStore = (storeId: number) => {
   removeModalOpen.value = true
 }
 
-/** Confirmation modal state */
 const removeModalOpen = ref(false)
 const removeModalScope = ref<'global' | number>('global')
 
-/** Item level */
 const toggleItemSelected = (id: number, val: boolean) => {
-  cartItems.value = cartItems.value.map((i) =>
-    i.id === id ? { ...i, selected: val } : i
-  )
+  if (val) {
+    if (!selectedIds.value.includes(id)) {
+      selectedIds.value = [...selectedIds.value, id]
+    }
+  } else {
+    selectedIds.value = selectedIds.value.filter((x) => x !== id)
+  }
 }
 
-const removeItem = (id: number) => {
+const csrfToken = () =>
+  (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? ''
+
+const jsonHeaders = () => ({
+  'Accept': 'application/json',
+  'Content-Type': 'application/json',
+  'X-Requested-With': 'XMLHttpRequest',
+  'X-CSRF-TOKEN': csrfToken(),
+})
+
+const removeItem = async (id: number) => {
   cartItems.value = cartItems.value.filter((i) => i.id !== id)
+  selectedIds.value = selectedIds.value.filter((x) => x !== id)
+  try {
+    const res = await fetch(`/customer/cart/${id}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch (err) {
+    console.error('Failed to remove item:', err)
+    await fetchCart()
+  }
 }
 
-const adjustQty = (id: number, delta: number) => {
-  cartItems.value = cartItems.value.map((i) => {
-    if (i.id !== id) return i
-    const nextQty = Math.max(1, i.quantity + delta)
-    return { ...i, quantity: nextQty }
-  })
+const adjustQty = async (id: number, delta: number) => {
+  const item = cartItems.value.find((i) => i.id === id)
+  if (!item) return
+  const nextQty = Math.max(1, item.quantity + delta)
+  cartItems.value = cartItems.value.map((i) =>
+    i.id === id ? { ...i, quantity: nextQty } : i
+  )
+  try {
+    const res = await fetch(`/customer/cart/${id}`, {
+      method: 'PUT',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ quantity: nextQty }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch (err) {
+    console.error('Failed to update quantity:', err)
+    await fetchCart()
+  }
+}
+
+const confirmRemoveSelected = async () => {
+  const ids = cartItems.value
+    .filter((i) =>
+      removeModalScope.value === 'global'
+        ? selectedIds.value.includes(i.id)
+        : selectedIds.value.includes(i.id) && i.store.id === removeModalScope.value
+    )
+    .map((i) => i.id)
+
+  if (ids.length === 0) {
+    removeModalOpen.value = false
+    return
+  }
+
+  cartItems.value = cartItems.value.filter((i) => !ids.includes(i.id))
+  selectedIds.value = selectedIds.value.filter((id) => !ids.includes(id))
+  removeModalOpen.value = false
+
+  try {
+    const res = await fetch('/customer/cart/bulk', {
+      method: 'DELETE',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ ids }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch (err) {
+    console.error('Failed to bulk remove:', err)
+    await fetchCart()
+  }
 }
 </script>
 
@@ -330,9 +362,7 @@ const adjustQty = (id: number, delta: number) => {
     </Sidebar>
 
     <main :class="contentClass">
-      <!-- pb so sticky bar doesn't overlap content -->
       <div class="p-6 space-y-6 pb-28">
-        <!-- Back link -->
         <div>
           <Link href="/customer/orders">
             <Button variant="ghost" class="gap-2 text-[#245c4a]">
@@ -342,7 +372,6 @@ const adjustQty = (id: number, delta: number) => {
           </Link>
         </div>
 
-        <!-- Page Title -->
         <div class="space-y-1">
           <h1 class="text-2xl font-semibold text-[#245c4a]">My Cart</h1>
           <p class="text-muted-foreground">
@@ -350,9 +379,7 @@ const adjustQty = (id: number, delta: number) => {
           </p>
         </div>
 
-        <!-- Search / Filter / Sort -->
         <div class="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-center md:justify-between">
-          <!-- Search (same pattern as Orders) -->
           <div class="flex w-full max-w-1xl gap-3">
             <DropdownMenu>
               <div class="relative w-full max-w-3xl cursor-pointer">
@@ -384,7 +411,6 @@ const adjustQty = (id: number, delta: number) => {
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- Sort -->
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <Button variant="outline" class="gap-2">
@@ -405,12 +431,10 @@ const adjustQty = (id: number, delta: number) => {
           </div>
         </div>
 
-        <!-- Loading State -->
         <div v-if="loading" class="text-center py-12">
           <p class="text-muted-foreground">Loading cart...</p>
         </div>
 
-        <!-- Error State -->
         <div v-else-if="error" class="text-center py-12">
           <p class="text-red-600 mb-4">{{ error }}</p>
           <Button @click="fetchCart" variant="outline">
@@ -418,7 +442,6 @@ const adjustQty = (id: number, delta: number) => {
           </Button>
         </div>
 
-        <!-- Empty State -->
         <Card v-else-if="cartItems.length === 0" class="rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle class="text-base">Your cart is empty</CardTitle>
@@ -444,7 +467,6 @@ const adjustQty = (id: number, delta: number) => {
           </CardContent>
         </Card>
 
-        <!-- Grouped Cart -->
         <div v-else class="space-y-4">
           <Card
             v-for="group in groupedByStore"
@@ -472,11 +494,12 @@ const adjustQty = (id: number, delta: number) => {
                   </div>
                 </div>
 
-                <!-- Shop select all -->
                 <div class="flex items-center gap-2">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     :checked="storeAllSelected(group.store.id)"
-                    @update:checked="(v: boolean) => setStoreSelected(group.store.id, v)"
+                    @change="setStoreSelected(group.store.id, ($event.target as HTMLInputElement).checked)"
+                    class="h-4 w-4 rounded border-gray-300"
                   />
                   <span class="text-xs text-muted-foreground">Select All</span>
                 </div>
@@ -484,21 +507,20 @@ const adjustQty = (id: number, delta: number) => {
             </CardHeader>
 
             <CardContent class="space-y-3">
-              <!-- Items table-like rows -->
               <div
                 v-for="item in group.items"
                 :key="item.id"
                 class="flex flex-col gap-2 rounded-lg border border-border p-2 sm:p-3 sm:flex-row sm:items-center sm:gap-3"
               >
-                <!-- checkbox -->
                 <div class="flex items-center gap-3">
-                  <Checkbox
-                    :checked="item.selected"
-                    @update:checked="(v: boolean) => toggleItemSelected(item.id, v)"
+                  <input
+                    type="checkbox"
+                    :checked="selectedIds.includes(item.id)"
+                    @change="toggleItemSelected(item.id, ($event.target as HTMLInputElement).checked)"
+                    class="h-4 w-4 rounded border-gray-300"
                   />
                 </div>
 
-                <!-- image -->
                 <div class="h-12 w-12 overflow-hidden rounded-lg bg-muted border border-border shrink-0 sm:h-14 sm:w-14">
                   <img
                     v-if="item.product.image_url"
@@ -509,7 +531,6 @@ const adjustQty = (id: number, delta: number) => {
                   />
                 </div>
 
-                <!-- details -->
                 <div class="min-w-0 flex-1 space-y-1">
                   <p class="text-sm font-medium">{{ item.product.name }}</p>
                   <p class="text-xs text-muted-foreground line-clamp-2">
@@ -518,7 +539,6 @@ const adjustQty = (id: number, delta: number) => {
                   <p class="text-sm font-semibold">{{ formatCurrency(item.product.price) }}</p>
                 </div>
 
-                <!-- qty + actions -->
                 <div class="flex items-center justify-between gap-1 sm:gap-2 sm:justify-end sm:min-w-[200px]">
                   <div class="flex items-center gap-2">
                     <Button
@@ -555,35 +575,30 @@ const adjustQty = (id: number, delta: number) => {
                   </Button>
                 </div>
               </div>
-              <!-- Store Footer -->
-                <div
-                class="flex items-center justify-between border-t border-border pt-3 mt-3"
-                >
-                <!-- Remove selected (store) -->
+
+              <div class="flex items-center justify-between border-t border-border pt-3 mt-3">
                 <Button
-                    variant="ghost"
-                    class="gap-2 text-red-600 hover:text-red-700"
-                    :disabled="storeSubtotal(group.store.id) === 0"
-                    @click="removeSelectedStore(group.store.id)"
+                  variant="ghost"
+                  class="gap-2 text-red-600 hover:text-red-700"
+                  :disabled="!cartItems.some(i => selectedIds.includes(i.id) && i.store.id === group.store.id)"
+                  @click="removeSelectedStore(group.store.id)"
                 >
-                    <Trash2 class="h-4 w-4" />
-                    Remove Selected
+                  <Trash2 class="h-4 w-4" />
+                  Remove Selected
                 </Button>
 
-                <!-- Subtotal -->
                 <div class="text-sm">
-                    <span class="text-muted-foreground">Subtotal:</span>
-                    <span class="ml-2 font-semibold text-[#245c4a]">
+                  <span class="text-muted-foreground">Subtotal:</span>
+                  <span class="ml-2 font-semibold text-[#245c4a]">
                     {{ formatCurrency(storeSubtotal(group.store.id)) }}
-                    </span>
+                  </span>
                 </div>
-                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      <!-- Sticky Bottom Bar -->
       <div
         class="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
       >
@@ -593,7 +608,12 @@ const adjustQty = (id: number, delta: number) => {
         >
           <div class="flex flex-wrap items-center gap-4">
             <div class="flex items-center gap-2">
-              <Checkbox v-model:checked="allSelected" />
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                @change="toggleAllSelected(($event.target as HTMLInputElement).checked)"
+                class="h-4 w-4 rounded border-gray-300"
+              />
               <span class="text-sm font-medium">Select all</span>
               <span class="text-xs text-muted-foreground">
                 ({{ selectedCount }} selected)
@@ -748,29 +768,29 @@ const adjustQty = (id: number, delta: number) => {
         </div>
       </div>
 
-        <!-- Remove Confirmation Modal -->
-        <Dialog v-model:open="removeModalOpen">
+      <Dialog v-model:open="removeModalOpen">
         <DialogContent class="sm:max-w-md">
-            <DialogHeader>
+          <DialogHeader>
             <DialogTitle>Remove Selected Items</DialogTitle>
             <DialogDescription>
-                This action cannot be undone. This will permanently remove all selected
-                items.
+              This action cannot be undone. This will permanently remove all selected
+              items.
             </DialogDescription>
-            </DialogHeader>
+          </DialogHeader>
 
-            <div class="flex justify-end gap-2 pt-4">
+          <div class="flex justify-end gap-2 pt-4">
             <Button variant="outline" @click="removeModalOpen = false">
-                Cancel
+              Cancel
             </Button>
             <Button
-                class="bg-red-600 text-white hover:bg-red-700"
+              class="bg-red-600 text-white hover:bg-red-700"
+              @click="confirmRemoveSelected"
             >
-                Remove All
+              Remove All
             </Button>
-            </div>
+          </div>
         </DialogContent>
-        </Dialog>
+      </Dialog>
     </main>
   </div>
 </template>
