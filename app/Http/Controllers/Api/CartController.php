@@ -68,9 +68,9 @@ class CartController extends Controller
     public function add(Request $request)
     {
         $validated = $request->validate([
-            'store_id' => ['required', 'string'],
-            'product_id' => ['required', 'integer'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'store_id'   => 'required|string',
+            'product_id' => 'required|integer',
+            'quantity'   => 'required|integer|min:1',
         ]);
 
         $cart = Cart::where([
@@ -91,13 +91,12 @@ class CartController extends Controller
             ]);
         }
 
-            return back()->with('success', 'Product added to cart.');
-        } catch (\Throwable $e) {
-            report($e);
-
-            return back()->with('error', 'Failed to add product to cart.');
-        }
+        return response()->json([
+            'message' => 'Product added to cart',
+            'data'    => $cart,
+        ]);
     }
+
 
     public function update(Request $request, Cart $cart)
     {
