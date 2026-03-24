@@ -140,14 +140,6 @@ const initials = computed(() => {
                                             </div>
                                         </div>
                                     </div>
-
-                                    <Button
-                                        variant="ghost"
-                                        class="h-10 border border-[#D8E4DD] bg-white text-[#17493D] hover:bg-[#EEF6F2] hover:text-[#10362D] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-50"
-                                    >
-                                        <PencilLine class="mr-2 h-4 w-4" />
-                                        Edit profile
-                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
