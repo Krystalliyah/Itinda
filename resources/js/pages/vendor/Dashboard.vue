@@ -571,8 +571,8 @@ function stockClass(level: string) {
             <div class="px-4 py-3 border-t border-border flex items-center justify-end gap-2">
               <a
                 href="/vendor/inventory"
-                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-xl border border-border bg-white transition-colors hover:bg-accent !opacity-100"
-                style="text-decoration:none; opacity:1 !important; background:hsl(0 0% 9%) !important;"
+                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-xl text-white transition-opacity hover:opacity-90"
+                style="background:hsl(0 0% 9%);text-decoration:none"
               >
                 View All
               </a>
