@@ -41,6 +41,13 @@ interface Props {
     recentVendors: VendorItem[];
     recentCustomers: CustomerItem[];
     pendingVendors: PendingVendor[];
+    healthScore: number;
+    healthComponents: {
+        activeVendorRatio: number;
+        emailVerificationRate: number;
+        newCustomersScore: number;
+        newVendorsScore: number;
+    };
 }
 
 const props = defineProps<Props>();
@@ -136,18 +143,14 @@ const donutDash = computed(() => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Platform health score                                               */
+/*  Platform health score — computed server-side via PlatformHealthService
+/*  Formula: (activeVendorRatio×40) + (emailVerificationRate×30)
+/*           + (newCustomersScore×20) + (newVendorsScore×10)          */
 /* ------------------------------------------------------------------ */
-const healthScore = computed(() => {
-    const activeRatio  = props.vendorStats.total ? props.vendorStats.active / props.vendorStats.total : 0;
-    const customerBump = Math.min(props.customerCount / 100, 1) * 20;
-    return Math.min(Math.round(activeRatio * 80 + customerBump), 100);
-});
-
 const healthLabel = computed(() => {
-    if (healthScore.value >= 80) return { text: 'Excellent',       color: '#10b981' };
-    if (healthScore.value >= 60) return { text: 'Good',            color: '#3b82f6' };
-    if (healthScore.value >= 40) return { text: 'Fair',            color: '#f59e0b' };
+    if (props.healthScore >= 80) return { text: 'Excellent',       color: '#10b981' };
+    if (props.healthScore >= 60) return { text: 'Good',            color: '#3b82f6' };
+    if (props.healthScore >= 40) return { text: 'Fair',            color: '#f59e0b' };
     return                              { text: 'Needs Attention', color: '#ef4444' };
 });
 
@@ -417,33 +420,35 @@ function initials(name: string) {
                                 </div>
                             </div>
                             <!-- Tooltip explaining the score -->
-                            <span class="info-tooltip" title="Based on active vendor ratio (80%) and customer base (20%)">ⓘ</span>
+                            <span class="info-tooltip" title="Active vendor ratio (40%) + Email verification rate (30%) + New customers this month (20%) + New vendors this month (10%)">ⓘ</span>
                         </div>
                         <div class="health-body">
                             <div class="health-score-row">
-                                <span class="health-score-num" :style="{ color: healthLabel.color }">{{ healthScore }}</span>
+                                <span class="health-score-num" :style="{ color: healthLabel.color }">{{ props.healthScore }}</span>
                                 <span class="health-score-den">/100</span>
                                 <span class="health-badge" :style="{ background: healthLabel.color + '1a', color: healthLabel.color }">
                                     {{ healthLabel.text }}
                                 </span>
                             </div>
                             <div class="health-bar-track">
-                                <div class="health-bar-fill" :style="{ width: healthScore + '%', background: healthLabel.color }"></div>
+                                <div class="health-bar-fill" :style="{ width: props.healthScore + '%', background: healthLabel.color }"></div>
                             </div>
                             <div class="health-metrics">
                                 <div class="hm-row">
                                     <span class="hm-label">Active vendor ratio</span>
-                                    <span class="hm-val">{{ vendorStats.total ? Math.round((vendorStats.active / vendorStats.total) * 100) : 0 }}%</span>
+                                    <span class="hm-val">{{ healthComponents.activeVendorRatio }}%</span>
                                 </div>
                                 <div class="hm-row">
-                                    <span class="hm-label">Pending queue</span>
-                                    <span class="hm-val" :style="{ color: vendorStats.pending > 0 ? '#f59e0b' : '#10b981' }">
-                                        {{ vendorStats.pending }} vendor{{ vendorStats.pending !== 1 ? 's' : '' }}
-                                    </span>
+                                    <span class="hm-label">Email verification rate</span>
+                                    <span class="hm-val">{{ healthComponents.emailVerificationRate }}%</span>
                                 </div>
                                 <div class="hm-row">
-                                    <span class="hm-label">Total customers</span>
-                                    <span class="hm-val">{{ customerCount }}</span>
+                                    <span class="hm-label">New customers this month</span>
+                                    <span class="hm-val">{{ healthComponents.newCustomersScore }}%</span>
+                                </div>
+                                <div class="hm-row">
+                                    <span class="hm-label">New vendors this month</span>
+                                    <span class="hm-val">{{ healthComponents.newVendorsScore }}%</span>
                                 </div>
                             </div>
                         </div>

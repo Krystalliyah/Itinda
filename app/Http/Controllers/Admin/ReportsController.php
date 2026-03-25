@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Services\PlatformHealthService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -112,24 +113,28 @@ class ReportsController extends Controller
         $unverifiedCustomers = $totalCustomers - $verifiedCustomers;
         $verificationRate = $totalCustomers > 0 ? round(($verifiedCustomers / $totalCustomers) * 100) : 0;
         
-        // Health score calculation (simple example)
-        $healthScore = min(100, round(
-            ($approvalRate * 0.4) + 
-            ($verificationRate * 0.3) + 
-            (min(100, $newCustomersThisMonth * 10) * 0.2) + 
-            (min(100, $newVendorsThisMonth * 10) * 0.1)
-        ));
+        // Health score — canonical formula via PlatformHealthService
+        $phs = PlatformHealthService::compute(
+            totalVendors:          $totalVendors,
+            activeVendors:         $activeVendors,
+            totalCustomers:        $totalCustomers,
+            verifiedCustomers:     $verifiedCustomers,
+            newCustomersThisMonth: $newCustomersThisMonth,
+            newVendorsThisMonth:   $newVendorsThisMonth,
+        );
+        $healthScore = $phs['score'];
         
         return Inertia::render('admin/Reports', [
             'overview' => [
-                'totalVendors' => $totalVendors,
-                'activeVendors' => $activeVendors,
-                'pendingVendors' => $pendingVendors,
-                'totalCustomers' => $totalCustomers,
-                'approvalRate' => $approvalRate,
-                'newVendorsThisMonth' => $newVendorsThisMonth,
-                'newCustomersThisMonth' => $newCustomersThisMonth,
-                'healthScore' => $healthScore,
+                'totalVendors'         => $totalVendors,
+                'activeVendors'        => $activeVendors,
+                'pendingVendors'       => $pendingVendors,
+                'totalCustomers'       => $totalCustomers,
+                'approvalRate'         => $approvalRate,
+                'newVendorsThisMonth'  => $newVendorsThisMonth,
+                'newCustomersThisMonth'=> $newCustomersThisMonth,
+                'healthScore'          => $healthScore,
+                'healthComponents'     => $phs['components'],
             ],
             'vendorPerformance' => [
                 'topVendors' => $topVendors,

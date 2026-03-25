@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\PlatformHealthService;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -17,7 +18,21 @@ class DashboardController extends Controller
             'total'   => Tenant::count(),
         ];
 
-        $customerCount = User::role('customer')->count();
+        $customerCount     = User::role('customer')->count();
+        $verifiedCustomers = User::role('customer')->whereNotNull('email_verified_at')->count();
+
+        $thisMonthStart        = now()->startOfMonth();
+        $newCustomersThisMonth = User::role('customer')->where('created_at', '>=', $thisMonthStart)->count();
+        $newVendorsThisMonth   = Tenant::where('created_at', '>=', $thisMonthStart)->count();
+
+        $phs = PlatformHealthService::compute(
+            totalVendors:          $vendorStats['total'],
+            activeVendors:         $vendorStats['active'],
+            totalCustomers:        $customerCount,
+            verifiedCustomers:     $verifiedCustomers,
+            newCustomersThisMonth: $newCustomersThisMonth,
+            newVendorsThisMonth:   $newVendorsThisMonth,
+        );
 
         // --- Vendor Growth: last 6 months ---
         $vendorGrowth = $this->getMonthlyGrowth(
@@ -81,6 +96,8 @@ class DashboardController extends Controller
             'recentVendors'   => $recentVendors,
             'recentCustomers' => $recentCustomers,
             'pendingVendors'  => $pendingVendors,
+            'healthScore'     => $phs['score'],
+            'healthComponents'=> $phs['components'],
         ]);
     }
 

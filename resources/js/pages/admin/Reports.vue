@@ -30,6 +30,12 @@ interface Props {
         totalCustomers: number; approvalRate: number
         newVendorsThisMonth: number; newCustomersThisMonth: number
         healthScore: number
+        healthComponents: {
+            activeVendorRatio: number;
+            emailVerificationRate: number;
+            newCustomersScore: number;
+            newVendorsScore: number;
+        }
     }
     vendorPerformance?: {
         topVendors: TopVendor[]
@@ -50,7 +56,11 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const ov  = computed(() => props.overview          ?? { totalVendors:0, activeVendors:0, pendingVendors:0, totalCustomers:0, approvalRate:0, newVendorsThisMonth:0, newCustomersThisMonth:0, healthScore:0 })
+const ov  = computed(() => props.overview ?? {
+    totalVendors:0, activeVendors:0, pendingVendors:0, totalCustomers:0,
+    approvalRate:0, newVendorsThisMonth:0, newCustomersThisMonth:0, healthScore:0,
+    healthComponents: { activeVendorRatio:0, emailVerificationRate:0, newCustomersScore:0, newVendorsScore:0 }
+})
 const vp  = computed(() => props.vendorPerformance ?? { topVendors:[], monthlyRegistrations:[], approvalFunnel:[] })
 const ca  = computed(() => props.customerActivity  ?? { totalCustomers:0, monthlySignups:[], verified:0, unverified:0, verificationRate:0, recentSignups:[] })
 const cb  = computed(() => props.categoryBreakdown ?? { breakdown:[], totalUnique:0 })
@@ -242,21 +252,19 @@ function formatDate(d: string | null) {
                                 <div class="health-rows">
                                     <div class="hrow">
                                         <span class="hrow-label">Active vendor ratio</span>
-                                        <span class="hrow-val">{{ ov.approvalRate }}%</span>
+                                        <span class="hrow-val">{{ ov.healthComponents.activeVendorRatio }}%</span>
                                     </div>
                                     <div class="hrow">
-                                        <span class="hrow-label">Pending queue</span>
-                                        <span class="hrow-val" :style="{ color: ov.pendingVendors > 0 ? '#f59e0b' : '#10b981' }">
-                                            {{ ov.pendingVendors }} vendor{{ ov.pendingVendors !== 1 ? 's' : '' }}
-                                        </span>
-                                    </div>
-                                    <div class="hrow">
-                                        <span class="hrow-label">New vendors this month</span>
-                                        <span class="hrow-val">{{ ov.newVendorsThisMonth }}</span>
+                                        <span class="hrow-label">Email verification rate</span>
+                                        <span class="hrow-val">{{ ov.healthComponents.emailVerificationRate }}%</span>
                                     </div>
                                     <div class="hrow">
                                         <span class="hrow-label">New customers this month</span>
-                                        <span class="hrow-val">{{ ov.newCustomersThisMonth }}</span>
+                                        <span class="hrow-val">{{ ov.newCustomersThisMonth }} ({{ ov.healthComponents.newCustomersScore }}%)</span>
+                                    </div>
+                                    <div class="hrow">
+                                        <span class="hrow-label">New vendors this month</span>
+                                        <span class="hrow-val">{{ ov.newVendorsThisMonth }} ({{ ov.healthComponents.newVendorsScore }}%)</span>
                                     </div>
                                 </div>
                             </div>
