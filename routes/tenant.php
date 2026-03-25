@@ -23,6 +23,8 @@ use App\Http\Controllers\Vendor\AnalyticsController;
 
 
 use App\Http\Controllers\Vendor\ProductController;
+use App\Http\Controllers\Vendor\InventoryController;
+use App\Http\Controllers\Vendor\OrderController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReportsController;
 
@@ -69,18 +71,59 @@ Route::middleware([
     // Basic vendor routes (accessible to any vendor account or staff)
     Route::middleware(['auth', 'verified', 'role:vendor|staff'])->prefix('vendor')->name('vendor.')->group(function () {
         Route::get('/dashboard', function() {
-            // Get products from THIS tenant's database
-            $products = Product::latest()->take(10)->get();
             $tenant = tenant();
+
+            $totalProducts  = \App\Models\Product::count();
+            $activeOrders   = \App\Models\Order::whereIn('status', ['pending','confirmed','preparing','ready'])->count();
+            $totalSales     = \App\Models\Order::where('status', 'completed')->sum('total');
+            $uniqueCustomers= \App\Models\Order::distinct('user_id')->count('user_id');
+
+            // Recent Orders — last 5 by placed_at, any status
+            $recentOrders = \App\Models\Order::with('items')
+                ->latest('placed_at')
+                ->take(5)
+                ->get()
+                ->map(fn($o) => [
+                    'id'            => $o->id,
+                    'order_number'  => $o->order_number,
+                    'status'        => $o->status,
+                    'total'         => (float) $o->total,
+                    'placed_at'     => $o->placed_at?->toISOString(),
+                    'items_summary' => $o->items->take(2)->map(fn($i) => "{$i->quantity}× {$i->product_name}")->join(', ')
+                        . ($o->items->count() > 2 ? ' +' . ($o->items->count() - 2) . ' more' : ''),
+                    'customer'      => ['name' => 'Customer #' . $o->user_id],
+                ]);
+
+            // Low Stock — products at or below reorder threshold (10)
+            $lowStockItems = \App\Models\Product::where('stock', '<=', 10)
+                ->where('is_active', true)
+                ->orderBy('stock')
+                ->take(5)
+                ->get()
+                ->map(fn($p) => [
+                    'id'           => $p->id,
+                    'name'         => $p->name,
+                    'sku'          => $p->sku ?? $p->barcode ?? '—',
+                    'stock'        => $p->stock,
+                    'stockPercent' => min(100, ($p->stock / 10) * 100),
+                    'level'        => $p->stock === 0 ? 'Critical' : 'Low',
+                    'emoji'        => '📦',
+                ]);
 
             return inertia('vendor/Dashboard', [
                 'tenantInfo' => [
-                    'id' => $tenant->id,
-                    'name' => $tenant->name,
-                    'database' => 'tenant' . $tenant->id,
+                    'id'       => $tenant->id,
+                    'name'     => $tenant->name,
+                    'database' => 'tenant_' . $tenant->id,
                 ],
-                'products' => $products,
-                'productCount' => Product::count(),
+                'stats' => [
+                    'orders'     => $activeOrders,
+                    'products'   => $totalProducts,
+                    'totalSales' => (float) $totalSales,
+                    'customers'  => $uniqueCustomers,
+                ],
+                'recentOrders'  => $recentOrders,
+                'lowStockItems' => $lowStockItems,
             ]);
         })->name('dashboard');
         Route::get('/profile', fn() => inertia('vendor/Profile'))->name('profile');
@@ -92,8 +135,13 @@ Route::middleware([
             Route::apiResource('products', ProductController::class)->except(['show']);
         });
         
-        Route::get('/inventory', fn() => inertia('vendor/Inventory'))->name('inventory')->middleware('permission:manage-inventory');
-        Route::get('/orders', fn() => inertia('vendor/Orders'))->name('orders')->middleware('permission:manage-orders');
+        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory')->middleware('permission:manage-inventory');
+        Route::put('/inventory/{product}', [InventoryController::class, 'update'])->name('inventory.update')->middleware('permission:manage-inventory');
+        Route::patch('/inventory/{product}/toggle', [InventoryController::class, 'toggleAvailability'])->name('inventory.toggle')->middleware('permission:manage-inventory');
+
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders')->middleware('permission:manage-orders');
+        Route::post('/orders/{order}/advance', [OrderController::class, 'advance'])->name('orders.advance')->middleware('permission:manage-orders');
+        Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel')->middleware('permission:manage-orders');
 
         // Management routes
         Route::get('/store-settings', fn() => inertia('vendor/StoreSettings'))->name('store.settings')->middleware('permission:manage-store-settings');

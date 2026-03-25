@@ -10,6 +10,9 @@ class ProductController extends Controller
 {
     public function index()
     {
+        $totalProducts  = Product::count();
+        $activeProducts = Product::where('is_active', true)->count();
+
         $products = Product::latest()
             ->paginate(15)
             ->through(function ($product) {
@@ -47,8 +50,10 @@ class ProductController extends Controller
             });
         
         return inertia('vendor/Products', [
-            'products' => $products,
-            'categories' => $categories,
+            'products'       => $products,
+            'categories'     => $categories,
+            'totalProducts'  => $totalProducts,
+            'activeProducts' => $activeProducts,
         ]);
     }
 
