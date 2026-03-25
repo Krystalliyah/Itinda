@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use App\Models\CustomerOrder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
@@ -146,5 +149,137 @@ class CartController extends Controller
         Cart::where('user_id', auth()->id())->delete();
 
         return response()->json(['message' => 'Cart cleared']);
+    }
+
+    public function preorder(Request $request)
+    {
+        $validated = $request->validate([
+            'cart_ids'   => 'required|array|min:1',
+            'cart_ids.*' => 'integer',
+        ]);
+
+        $user = auth()->user();
+
+        $cartItems = Cart::where('user_id', $user->id)
+            ->whereIn('id', $validated['cart_ids'])
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            return response()->json([
+                'message' => 'No valid cart items selected.',
+            ], 422);
+        }
+
+        $groupedByStore = $cartItems->groupBy('store_id');
+
+        $createdOrders = [];
+        $orderedCartIds = [];
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($groupedByStore as $storeId => $items) {
+                $tenant = Tenant::find($storeId);
+
+                if (!$tenant) {
+                    throw new \Exception("Store/tenant [{$storeId}] not found.");
+                }
+
+                $tenantOrderData = $tenant->run(function () use ($items, $user, $storeId) {
+                    $lineItems = [];
+                    $grandTotal = 0;
+
+                    foreach ($items as $cartItem) {
+                        $product = \App\Models\Product::find($cartItem->product_id);
+
+                        if (!$product) {
+                            throw new \Exception("Product {$cartItem->product_id} not found in store {$storeId}.");
+                        }
+
+                        if (!$product->is_active) {
+                            throw new \Exception("Product {$product->name} is inactive.");
+                        }
+
+                        if ($product->stock < $cartItem->quantity) {
+                            throw new \Exception("Insufficient stock for {$product->name}.");
+                        }
+
+                        $lineTotal = $product->price * $cartItem->quantity;
+                        $grandTotal += $lineTotal;
+
+                        $lineItems[] = [
+                            'product_id'   => $product->id,
+                            'product_name' => $product->name,
+                            'price'        => $product->price,
+                            'quantity'     => $cartItem->quantity,
+                            'total'        => $lineTotal,
+                        ];
+                    }
+
+                    $orderNumber = 'PO-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6));
+
+                    $order = \App\Models\Order::create([
+                        'user_id'      => $user->id, // central customer id
+                        'order_number' => $orderNumber,
+                        'total'        => $grandTotal,
+                        'status'       => 'pending',
+                        'placed_at'    => now(),
+                    ]);
+
+                    foreach ($lineItems as $line) {
+                        \App\Models\OrderItem::create([
+                            'order_id'     => $order->id,
+                            'product_id'   => $line['product_id'],
+                            'product_name' => $line['product_name'],
+                            'price'        => $line['price'],
+                            'quantity'     => $line['quantity'],
+                            'total'        => $line['total'],
+                        ]);
+
+                        // optional stock deduction now
+                        // \App\Models\Product::where('id', $line['product_id'])->decrement('stock', $line['quantity']);
+                    }
+
+                    return [
+                        'tenant_id'    => $storeId,
+                        'order_id'     => $order->id,
+                        'order_number' => $order->order_number,
+                        'total'        => $order->total,
+                        'status'       => $order->status,
+                        'ordered_at'   => $order->placed_at,
+                    ];
+                });
+
+                CustomerOrder::create([
+                    'user_id'      => $user->id,
+                    'tenant_id'    => $tenantOrderData['tenant_id'],
+                    'order_id'     => $tenantOrderData['order_id'],
+                    'order_number' => $tenantOrderData['order_number'],
+                    'total'        => $tenantOrderData['total'],
+                    'status'       => $tenantOrderData['status'],
+                    'ordered_at'   => $tenantOrderData['ordered_at'],
+                ]);
+
+                $createdOrders[] = $tenantOrderData;
+                $orderedCartIds = array_merge($orderedCartIds, $items->pluck('id')->toArray());
+            }
+
+            Cart::where('user_id', $user->id)
+                ->whereIn('id', $orderedCartIds)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Preorder placed successfully.',
+                'orders'  => $createdOrders,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

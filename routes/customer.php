@@ -36,6 +36,8 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::put('/cart/{cart}', [CartController::class, 'update']);
         Route::delete('/cart/{cart}', [CartController::class, 'destroy']);
         Route::delete('/cart', [CartController::class, 'clear']);
+        Route::delete('/cart/bulk', [CartController::class, 'destroyMany']);
+        Route::post('/cart/preorder', [CartController::class, 'preorder']);
 
         // Orders Page API Routes
         Route::get('/orders-data', [CustomerOrderController::class, 'index'])->name('orders.data');

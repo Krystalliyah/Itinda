@@ -35,6 +35,7 @@ import {
   Store,
   Trash2,
 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 type StoreInfo = {
   id: number
@@ -437,6 +438,44 @@ const confirmRemoveSelected = async () => {
   } catch (err) {
     console.error('Failed to bulk remove:', err)
     await fetchCart()
+  }
+}
+
+const preorderSubmitting = ref(false)
+
+const submitPreorder = async () => {
+  if (selectedIds.value.length === 0 || preorderSubmitting.value) return
+
+  try {
+    preorderSubmitting.value = true
+
+    const res = await fetch('/customer/cart/preorder', {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        cart_ids: selectedIds.value,
+      }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.message || `HTTP ${res.status}`)
+    }
+
+    preorderOpen.value = false
+    selectedIds.value = []
+
+    await fetchCart()
+
+    toast.success(data.message || 'Preorder placed successfully.')
+    // optional:
+    // window.location.href = '/customer/orders'
+  } catch (err) {
+    console.error('Failed to preorder:', err)
+    toast.error(err instanceof Error ? err.message : 'Failed to place preorder.')
+  } finally {
+    preorderSubmitting.value = false
   }
 }
 </script>
@@ -862,8 +901,11 @@ const confirmRemoveSelected = async () => {
 
                   <div class="flex justify-end gap-2">
                     <Button variant="outline" @click="preorderOpen = false">Cancel</Button>
-                    <Button class="bg-[#C5A059] text-black hover:bg-[#d9b87a]">
-                      Pre-Order
+                    <Button 
+                      class="bg-[#C5A059] text-black hover:bg-[#d9b87a]"
+                      :disabled="selectedIds.length === 0 || preorderSubmitting"
+                      @click="submitPreorder">
+                      {{ preorderSubmitting ? 'Submitting...' : 'Confirm Pre-Order' }}
                     </Button>
                   </div>
                 </div>
