@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useSidebar } from '@/composables/useSidebar';
+const { isCollapsed, isDrawerMode } = useSidebar();
 
 const page = usePage();
 const auth = computed(() => page.props.auth as { user: any; hasStore: boolean; storeIsApproved: boolean; roles: string[]; permissions: string[]; tenant_id: string | null });
@@ -113,7 +114,7 @@ function isActive(path: string): boolean {
                     </span>
                     <span v-show="!isCollapsed || isDrawerMode" class="nav-text">Analytics</span>
                 </Link>
-            </template>
+            </template> 
         </template>
     </div>
 </template>
@@ -195,5 +196,15 @@ function isActive(path: string): boolean {
     font-family: 'Lato', sans-serif;
     white-space: nowrap;
     overflow: hidden;
+}
+
+/* keep scrolling, hide scrollbar only when collapsed */
+.sidebar.collapsed .scroll-container {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE/Edge legacy */
+}
+
+.sidebar.collapsed .scroll-container::-webkit-scrollbar {
+  display: none;              /* Chrome/Safari */
 }
 </style>

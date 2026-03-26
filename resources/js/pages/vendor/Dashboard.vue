@@ -231,7 +231,7 @@ function stockClass(level: string) {
     <!-- ── Active dashboard ── -->
     <div v-else class="p-6 flex flex-col gap-5">
       <!-- Heading -->
-      <div class="flex items-start justify-between gap-5">
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p class="text-xs font-semibold uppercase tracking-widest mb-1 flex items-center gap-1" style="color:#245c4a">
             <span style="color:#C5A059">✦</span> Vendor Dashboard
@@ -243,7 +243,10 @@ function stockClass(level: string) {
         </div>
 
         <!-- Revenue summary -->
-        <div class="rounded-xl px-5 py-3.5 flex-shrink-0 shadow-md relative overflow-hidden" style="background:#245c4a;min-width:160px">
+        <div
+          class="w-full rounded-xl px-5 py-3.5 shadow-md relative overflow-hidden sm:w-auto sm:flex-shrink-0 sm:self-start"
+          style="background:#245c4a;min-width:160px"
+        >
           <div class="absolute -top-6 -right-6 w-20 h-20 rounded-full" style="background:radial-gradient(circle,rgba(197,160,89,.2) 0%,transparent 65%)"></div>
           <p class="text-xs font-semibold uppercase tracking-widest" style="color:rgba(197,160,89,0.6)">
             Monthly Revenue
@@ -571,8 +574,8 @@ function stockClass(level: string) {
             <div class="px-4 py-3 border-t border-border flex items-center justify-end gap-2">
               <a
                 href="/vendor/inventory"
-                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-xl border border-border bg-white transition-colors hover:bg-accent !opacity-100"
-                style="text-decoration:none; opacity:1 !important; background:hsl(0 0% 9%) !important;"
+                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-xl text-white transition-opacity hover:opacity-90"
+                style="background:hsl(0 0% 9%);text-decoration:none"
               >
                 View All
               </a>
