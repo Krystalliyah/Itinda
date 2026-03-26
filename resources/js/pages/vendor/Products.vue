@@ -34,6 +34,8 @@ const props = defineProps<{
     meta?: any;
   };
   categories: CategoryOption[];
+  totalProducts: number;
+  activeProducts: number;
 }>();
 
 const showModal = ref(false);
@@ -110,9 +112,6 @@ const filteredProducts = computed(() => {
     );
   });
 });
-
-const totalProducts = computed(() => products.value.length);
-const activeProductsCount = computed(() => products.value.filter((p) => p.is_active).length);
 
 function productStatusBadge(isActive: boolean) {
   return isActive
@@ -231,7 +230,7 @@ function deleteProduct(id: number) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-white rounded-xl border border-border shadow-sm p-4">
           <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Total Products (this page)
+            Total Products
           </p>
           <p class="text-3xl font-semibold mt-1" style="color:#245c4a">{{ totalProducts }}</p>
         </div>
@@ -241,7 +240,7 @@ function deleteProduct(id: number) {
             Active Products
           </p>
           <p class="text-3xl font-semibold mt-1" style="color:#C5A059">
-            {{ activeProductsCount }}
+            {{ activeProducts }}
           </p>
           <p class="text-xs text-muted-foreground mt-1">
             Active products can be used in store inventory.
@@ -263,8 +262,7 @@ function deleteProduct(id: number) {
           <p class="text-xs text-muted-foreground bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
             Showing <span class="font-semibold">{{ filteredProducts.length }}</span> of
             <span class="font-semibold">{{ totalProducts }}</span>
-          </p>
-        </div>
+          </p>        </div>
       </div>
 
       <div

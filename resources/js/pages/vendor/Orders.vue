@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
-// import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
@@ -17,20 +16,19 @@ type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed'
 
 interface OrderItem { product_name: string; quantity: number; unit_price: number; }
 interface Order {
-    id: number; order_number: string; customer_name: string; customer_phone: string;
+    id: number; order_number: string;
     status: OrderStatus; total_amount: number; is_paid: boolean;
-    pickup_date: string; notes: string; created_at: string; items: OrderItem[];
+    placed_at: string; created_at: string; items: OrderItem[];
 }
 
-const orders = ref<Order[]>([
-    { id:1, order_number:'ORD-2026-0041', customer_name:'Maria Santos',    customer_phone:'+63 917 123 4567', status:'pending',   total_amount:875,  is_paid:false, pickup_date:'2026-03-05 09:00', notes:'Please include extra napkins.', created_at:'2026-03-04 07:32', items:[{product_name:'Arabica Coffee Beans (1kg)',quantity:1,unit_price:580},{product_name:'Organic Honey (500g)',quantity:1,unit_price:295}] },
-    { id:2, order_number:'ORD-2026-0040', customer_name:'Juan dela Cruz',  customer_phone:'+63 918 765 4321', status:'confirmed', total_amount:520,  is_paid:true,  pickup_date:'2026-03-04 14:00', notes:'',                             created_at:'2026-03-04 06:15', items:[{product_name:'Whole Milk (1L)',quantity:4,unit_price:75},{product_name:'Sourdough Bread Loaf',quantity:2,unit_price:145}] },
-    { id:3, order_number:'ORD-2026-0039', customer_name:'Ana Reyes',       customer_phone:'+63 919 111 2233', status:'preparing', total_amount:1260, is_paid:true,  pickup_date:'2026-03-04 11:30', notes:'Ring doorbell on arrival.',     created_at:'2026-03-03 19:48', items:[{product_name:'Extra Virgin Olive Oil',quantity:2,unit_price:490},{product_name:'Free-Range Eggs (12pcs)',quantity:1,unit_price:130},{product_name:'Dark Chocolate Bar (100g)',quantity:1,unit_price:95}] },
-    { id:4, order_number:'ORD-2026-0038', customer_name:'Carlo Bautista',  customer_phone:'+63 912 555 7890', status:'ready',     total_amount:390,  is_paid:true,  pickup_date:'2026-03-04 10:00', notes:'',                             created_at:'2026-03-03 15:20', items:[{product_name:'Brown Rice (2kg)',quantity:2,unit_price:180},{product_name:'Almond Milk (1L)',quantity:1,unit_price:135}] },
-    { id:5, order_number:'ORD-2026-0037', customer_name:'Liza Gomez',      customer_phone:'+63 916 999 0011', status:'completed', total_amount:650,  is_paid:true,  pickup_date:'2026-03-03 16:00', notes:'',                             created_at:'2026-03-02 10:00', items:[{product_name:'Greek Yogurt (200g)',quantity:3,unit_price:65},{product_name:'Organic Honey (500g)',quantity:1,unit_price:320},{product_name:'Whole Milk (1L)',quantity:1,unit_price:75}] },
-    { id:6, order_number:'ORD-2026-0036', customer_name:'Ramon Villanueva',customer_phone:'+63 920 444 3322', status:'cancelled', total_amount:290,  is_paid:false, pickup_date:'2026-03-03 09:00', notes:'Customer requested cancellation.',created_at:'2026-03-02 08:11', items:[{product_name:'Almond Milk (1L)',quantity:2,unit_price:135}] },
-    { id:7, order_number:'ORD-2026-0035', customer_name:'Trisha Navarro',  customer_phone:'+63 915 222 8844', status:'pending',   total_amount:480,  is_paid:false, pickup_date:'2026-03-05 15:00', notes:'No plastic bags please.',       created_at:'2026-03-04 08:55', items:[{product_name:'Free-Range Eggs (12pcs)',quantity:2,unit_price:130},{product_name:'Brown Rice (2kg)',quantity:1,unit_price:180}] },
-]);
+interface Stats {
+    pending: number; active: number; completed: number; revenue: number;
+}
+
+const props = defineProps<{
+    orders: Order[];
+    stats: Stats;
+}>();
 
 const STATUS_CONFIG: Record<OrderStatus, { label:string; color:string; bg:string; next:OrderStatus|null }> = {
     pending:   { label:'Pending',   color:'#b45309', bg:'#fffbeb', next:'confirmed' },
@@ -49,52 +47,48 @@ const detailOrder   = ref<Order | null>(null);
 const confirmCancel = ref<Order | null>(null);
 
 const filtered = computed(() => {
-    let list = orders.value;
+    let list = props.orders;
     if (searchQuery.value) {
         const q = searchQuery.value.toLowerCase();
-        list = list.filter(o => o.order_number.toLowerCase().includes(q) || o.customer_name.toLowerCase().includes(q));
+        list = list.filter(o => o.order_number.toLowerCase().includes(q));
     }
-    if (filterStatus.value !== 'all')    list = list.filter(o => o.status === filterStatus.value);
-    if (filterPayment.value === 'paid')  list = list.filter(o => o.is_paid);
-    if (filterPayment.value === 'unpaid')list = list.filter(o => !o.is_paid);
+    if (filterStatus.value !== 'all')     list = list.filter(o => o.status === filterStatus.value);
+    if (filterPayment.value === 'paid')   list = list.filter(o => o.is_paid);
+    if (filterPayment.value === 'unpaid') list = list.filter(o => !o.is_paid);
     return list;
 });
 
-const stats = computed(() => ({
-    pending:   orders.value.filter(o => o.status === 'pending').length,
-    active:    orders.value.filter(o => ['confirmed','preparing','ready'].includes(o.status)).length,
-    completed: orders.value.filter(o => o.status === 'completed').length,
-    revenue:   orders.value.filter(o => o.status === 'completed' && o.is_paid).reduce((s,o) => s+o.total_amount, 0),
-}));
-
 const statusCountMap = computed(() => {
-    const m: Record<string,number> = { all: orders.value.length };
-    STATUS_ORDER.forEach(s => { m[s] = orders.value.filter(o => o.status === s).length; });
+    const m: Record<string,number> = { all: props.orders.length };
+    STATUS_ORDER.forEach(s => { m[s] = props.orders.filter(o => o.status === s).length; });
     return m;
 });
 
+function advanceStatus(order: Order) {
+    router.post(`/vendor/orders/${order.id}/advance`, {}, {
+        onSuccess: () => { if (detailOrder.value?.id === order.id) detailOrder.value = null; },
+    });
+}
+
+function cancelOrder(order: Order) {
+    router.post(`/vendor/orders/${order.id}/cancel`, {}, {
+        onSuccess: () => { confirmCancel.value = null; if (detailOrder.value?.id === order.id) detailOrder.value = null; },
+    });
+}
+
 function statusBadgeClass(status: OrderStatus): string {
     switch (status) {
-        case 'pending':
-            return 'bg-amber-50 text-amber-700 dark:bg-amber-100/15 dark:text-amber-200';
-        case 'confirmed':
-            return 'bg-blue-50 text-blue-700 dark:bg-amber-100/15 dark:text-amber-200';
-        case 'preparing':
-            return 'bg-violet-50 text-violet-700 dark:bg-amber-100/15 dark:text-amber-200';
-        case 'ready':
-            return 'bg-emerald-50 text-emerald-700 dark:bg-amber-100/15 dark:text-amber-200';
-        case 'completed':
-            return 'bg-emerald-50 text-emerald-700 dark:bg-amber-100/15 dark:text-amber-200';
-        case 'cancelled':
-            return 'bg-red-50 text-red-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'pending':   return 'bg-amber-50 text-amber-700';
+        case 'confirmed': return 'bg-blue-50 text-blue-700';
+        case 'preparing': return 'bg-violet-50 text-violet-700';
+        case 'ready':     return 'bg-emerald-50 text-emerald-700';
+        case 'completed': return 'bg-emerald-50 text-emerald-700';
+        case 'cancelled': return 'bg-red-50 text-red-700';
     }
 }
 
-function advanceStatus(order: Order) { const next = STATUS_CONFIG[order.status].next; if (next) order.status = next; }
-function cancelOrder(order: Order)   { order.status = 'cancelled'; confirmCancel.value = null; }
-function formatPrice(v: number)  { return '₱' + v.toLocaleString('en-PH', { minimumFractionDigits:2 }); }
-function formatDate(dt: string)  { return new Date(dt).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
-function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+function formatPrice(v: number | null | undefined) { return '₱' + (v ?? 0).toLocaleString('en-PH', { minimumFractionDigits:2 }); }
+function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; return new Date(dt).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
 </script>
 
 <template>
@@ -132,7 +126,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                     </div>
                     <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                         <div class="stat-icon bg-emerald-50 text-emerald-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-                        <div><p class="stat-label">Completed Today</p><p class="stat-value">{{ stats.completed }}</p></div>
+                        <div><p class="stat-label">Completed</p><p class="stat-value">{{ stats.completed }}</p></div>
                     </div>
                     <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                         <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
@@ -171,12 +165,12 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                     <table class="ord-table">
                         <thead>
                             <tr>
-                                <th>Order</th><th>Customer</th><th>Items</th><th>Pickup</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th>
+                                <th>Order</th><th>Placed At</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filtered.length === 0">
-                                <td colspan="8" class="empty-state">
+                                <td colspan="7" class="empty-state">
                                     <div class="empty-inner">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                         <p>No orders match your filters</p>
@@ -189,39 +183,21 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                                     <p class="order-time">{{ formatDate(order.created_at) }}</p>
                                 </td>
                                 <td>
-                                    <div class="customer-cell">
-                                        <div class="customer-avatar">{{ order.customer_name.charAt(0) }}</div>
-                                        <div><p class="customer-name">{{ order.customer_name }}</p><p class="customer-phone">{{ order.customer_phone }}</p></div>
-                                    </div>
+                                    <p class="order-time">{{ formatDate(order.placed_at) }}</p>
                                 </td>
                                 <td>
                                     <div class="items-preview">
-                                        <span
-                                            v-for="item in order.items.slice(0,2)"
-                                            :key="item.product_name"
-                                            class="item-chip bg-gray-100 text-gray-700 dark:bg-slate-900 dark:text-slate-200"
-                                        >
+                                        <span v-for="item in order.items.slice(0,2)" :key="item.product_name" class="item-chip bg-gray-100 text-gray-700 dark:bg-slate-900 dark:text-slate-200">
                                             {{ item.quantity }}× {{ item.product_name }}
                                         </span>
-                                        <span
-                                            v-if="order.items.length > 2"
-                                            class="item-chip item-chip--more bg-[#f0f9f6] text-[#245c4a] dark:bg-amber-100/15 dark:text-amber-200"
-                                        >
+                                        <span v-if="order.items.length > 2" class="item-chip item-chip--more bg-[#f0f9f6] text-[#245c4a]">
                                             +{{ order.items.length - 2 }} more
                                         </span>
                                     </div>
                                 </td>
-                                <td><div class="pickup-cell"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{{ formatPickup(order.pickup_date) }}</div></td>
                                 <td class="total-cell">{{ formatPrice(order.total_amount) }}</td>
                                 <td>
-                                    <span
-                                        class="payment-badge"
-                                        :class="[
-                                            order.is_paid
-                                                ? 'payment-badge--paid dark:bg-emerald-500/15 dark:text-emerald-300'
-                                                : 'payment-badge--unpaid dark:bg-red-500/15 dark:text-red-300',
-                                        ]"
-                                    >
+                                    <span class="payment-badge" :class="order.is_paid ? 'payment-badge--paid' : 'payment-badge--unpaid'">
                                         {{ order.is_paid ? 'Paid' : 'Unpaid' }}
                                     </span>
                                 </td>
@@ -250,40 +226,21 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                     </div>
 
                     <div v-for="order in filtered" :key="order.id" class="oc bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
-                        <!-- Order card header -->
                         <div class="oc-head">
                             <div>
                                 <p class="order-num">{{ order.order_number }}</p>
                                 <p class="order-time">{{ formatDate(order.created_at) }}</p>
                             </div>
                             <div class="oc-badges">
-                                <span class="status-badge" :class="statusBadgeClass(order.status)">
-                                    {{ STATUS_CONFIG[order.status].label }}
-                                </span>
-                                <span
-                                    class="payment-badge"
-                                    :class="[
-                                        order.is_paid
-                                            ? 'payment-badge--paid dark:bg-emerald-500/15 dark:text-emerald-300'
-                                            : 'payment-badge--unpaid dark:bg-red-500/15 dark:text-red-300',
-                                    ]"
-                                >
-                                    {{ order.is_paid ? 'Paid' : 'Unpaid' }}
-                                </span>
+                                <span class="status-badge" :class="statusBadgeClass(order.status)">{{ STATUS_CONFIG[order.status].label }}</span>
+                                <span class="payment-badge" :class="order.is_paid ? 'payment-badge--paid' : 'payment-badge--unpaid'">{{ order.is_paid ? 'Paid' : 'Unpaid' }}</span>
                             </div>
                         </div>
 
-                        <!-- Customer -->
-                        <div class="customer-cell oc-customer">
-                            <div class="customer-avatar">{{ order.customer_name.charAt(0) }}</div>
-                            <div><p class="customer-name">{{ order.customer_name }}</p><p class="customer-phone">{{ order.customer_phone }}</p></div>
-                        </div>
-
-                        <!-- Pickup + Total row -->
                         <div class="oc-meta">
                             <div class="oc-meta-item">
-                                <span class="oc-label">Pickup</span>
-                                <span class="oc-value">{{ formatPickup(order.pickup_date) }}</span>
+                                <span class="oc-label">Placed</span>
+                                <span class="oc-value">{{ formatDate(order.placed_at) }}</span>
                             </div>
                             <div class="oc-meta-item">
                                 <span class="oc-label">Total</span>
@@ -291,13 +248,11 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                             </div>
                         </div>
 
-                        <!-- Items list -->
                         <div class="oc-items">
                             <span v-for="item in order.items.slice(0,2)" :key="item.product_name" class="item-chip">{{ item.quantity }}× {{ item.product_name }}</span>
                             <span v-if="order.items.length > 2" class="item-chip item-chip--more">+{{ order.items.length - 2 }} more</span>
                         </div>
 
-                        <!-- Actions -->
                         <div class="oc-actions">
                             <button class="oc-view-btn" @click="detailOrder = order">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -342,23 +297,12 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 
                 <div class="detail-grid">
                     <div class="detail-section">
-                        <p class="section-label">Customer</p>
-                        <div class="customer-cell">
-                            <div class="customer-avatar customer-avatar--lg">{{ detailOrder.customer_name.charAt(0) }}</div>
-                            <div><p class="customer-name">{{ detailOrder.customer_name }}</p><p class="customer-phone">{{ detailOrder.customer_phone }}</p></div>
-                        </div>
-                    </div>
-                    <div class="detail-section">
-                        <p class="section-label">Pickup Time</p>
-                        <p class="detail-value">{{ formatPickup(detailOrder.pickup_date) }}</p>
+                        <p class="section-label">Placed At</p>
+                        <p class="detail-value">{{ formatDate(detailOrder.placed_at) }}</p>
                     </div>
                     <div class="detail-section">
                         <p class="section-label">Payment</p>
                         <span class="payment-badge" :class="detailOrder.is_paid?'payment-badge--paid':'payment-badge--unpaid'">{{ detailOrder.is_paid ? 'Paid' : 'Unpaid' }}</span>
-                    </div>
-                    <div v-if="detailOrder.notes" class="detail-section">
-                        <p class="section-label">Notes</p>
-                        <p class="detail-note">{{ detailOrder.notes }}</p>
                     </div>
                 </div>
 
@@ -394,7 +338,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
             <div class="modal modal--confirm">
                 <div class="confirm-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
                 <h2 class="confirm-title">Cancel Order?</h2>
-                <p class="confirm-body">Are you sure you want to cancel <strong>{{ confirmCancel.order_number }}</strong> for {{ confirmCancel.customer_name }}? This cannot be undone.</p>
+                <p class="confirm-body">Are you sure you want to cancel <strong>{{ confirmCancel.order_number }}</strong>? This cannot be undone.</p>
                 <div class="modal-footer">
                     <button class="btn-ghost" @click="confirmCancel = null">Keep Order</button>
                     <button class="btn-danger" @click="cancelOrder(confirmCancel!)">Yes, Cancel</button>

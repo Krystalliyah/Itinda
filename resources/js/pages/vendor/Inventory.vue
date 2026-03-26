@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
-// import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
@@ -20,23 +19,21 @@ interface InventoryItem {
   barcode: string;
   stock_level: number;
   unit_price: number;
-  cost_price: number;
   reorder_level: number;
   is_available: boolean;
 }
 
-const inventoryItems = ref<InventoryItem[]>([
-  { id: 1, product_name: 'Arabica Coffee Beans (1kg)', category: 'Beverages', barcode: 'BEV-001', stock_level: 5, unit_price: 580, cost_price: 390, reorder_level: 10, is_available: true },
-  { id: 2, product_name: 'Whole Milk (1L)', category: 'Dairy', barcode: 'DAI-012', stock_level: 42, unit_price: 75, cost_price: 55, reorder_level: 15, is_available: true },
-  { id: 3, product_name: 'Sourdough Bread Loaf', category: 'Bakery', barcode: 'BAK-003', stock_level: 0, unit_price: 145, cost_price: 90, reorder_level: 5, is_available: false },
-  { id: 4, product_name: 'Organic Honey (500g)', category: 'Condiments', barcode: 'CON-021', stock_level: 18, unit_price: 320, cost_price: 200, reorder_level: 8, is_available: true },
-  { id: 5, product_name: 'Almond Milk (1L)', category: 'Beverages', barcode: 'BEV-047', stock_level: 7, unit_price: 135, cost_price: 95, reorder_level: 10, is_available: true },
-  { id: 6, product_name: 'Free-Range Eggs (12pcs)', category: 'Dairy', barcode: 'DAI-008', stock_level: 24, unit_price: 130, cost_price: 95, reorder_level: 10, is_available: true },
-  { id: 7, product_name: 'Extra Virgin Olive Oil', category: 'Condiments', barcode: 'CON-005', stock_level: 3, unit_price: 490, cost_price: 330, reorder_level: 6, is_available: true },
-  { id: 8, product_name: 'Greek Yogurt (200g)', category: 'Dairy', barcode: 'DAI-031', stock_level: 0, unit_price: 65, cost_price: 42, reorder_level: 12, is_available: false },
-  { id: 9, product_name: 'Brown Rice (2kg)', category: 'Grains', barcode: 'GRN-009', stock_level: 55, unit_price: 180, cost_price: 120, reorder_level: 15, is_available: true },
-  { id: 10, product_name: 'Dark Chocolate Bar (100g)', category: 'Snacks', barcode: 'SNK-014', stock_level: 9, unit_price: 95, cost_price: 58, reorder_level: 10, is_available: true },
-]);
+interface Stats {
+  total: number;
+  outOfStock: number;
+  lowStock: number;
+  totalValue: number;
+}
+
+const props = defineProps<{
+  inventoryItems: InventoryItem[];
+  stats: Stats;
+}>();
 
 const searchQuery = ref('');
 const selectedCategory = ref('All');
@@ -45,18 +42,18 @@ const sortKey = ref<keyof InventoryItem>('product_name');
 const sortAsc = ref(true);
 const showEditModal = ref(false);
 const editTarget = ref<InventoryItem | null>(null);
-const editForm = ref({
+
+const editForm = useForm({
   stock_level: 0,
   unit_price: 0,
-  cost_price: 0,
   reorder_level: 0,
   is_available: true,
 });
 
-const categories = computed(() => ['All', ...new Set(inventoryItems.value.map((i) => i.category))]);
+const categories = computed(() => ['All', ...new Set(props.inventoryItems.map((i) => i.category))]);
 
 const filtered = computed(() => {
-  let items = inventoryItems.value;
+  let items = props.inventoryItems;
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     items = items.filter(
@@ -80,19 +77,9 @@ const filtered = computed(() => {
   });
 });
 
-const stats = computed(() => ({
-  total: inventoryItems.value.length,
-  outOfStock: inventoryItems.value.filter((i) => i.stock_level === 0).length,
-  lowStock: inventoryItems.value.filter((i) => i.stock_level > 0 && i.stock_level <= i.reorder_level).length,
-  totalValue: inventoryItems.value.reduce((s, i) => s + i.stock_level * i.unit_price, 0),
-}));
-
 function setSort(key: keyof InventoryItem) {
   if (sortKey.value === key) sortAsc.value = !sortAsc.value;
-  else {
-    sortKey.value = key;
-    sortAsc.value = true;
-  }
+  else { sortKey.value = key; sortAsc.value = true; }
 }
 
 function stockStatus(item: InventoryItem): 'out' | 'low' | 'ok' {
@@ -103,34 +90,32 @@ function stockStatus(item: InventoryItem): 'out' | 'low' | 'ok' {
 
 function openEdit(item: InventoryItem) {
   editTarget.value = item;
-  editForm.value = {
-    stock_level: item.stock_level,
-    unit_price: item.unit_price,
-    cost_price: item.cost_price,
-    reorder_level: item.reorder_level,
-    is_available: item.is_available,
-  };
+  editForm.stock_level   = item.stock_level;
+  editForm.unit_price    = item.unit_price;
+  editForm.reorder_level = item.reorder_level;
+  editForm.is_available  = item.is_available;
   showEditModal.value = true;
 }
 
 function saveEdit() {
   if (!editTarget.value) return;
-  const idx = inventoryItems.value.findIndex((i) => i.id === editTarget.value!.id);
-  if (idx !== -1) inventoryItems.value[idx] = { ...inventoryItems.value[idx], ...editForm.value };
-  showEditModal.value = false;
+  editForm.put(`/vendor/inventory/${editTarget.value.id}`, {
+    onSuccess: () => { showEditModal.value = false; },
+  });
 }
 
 function toggleAvailability(item: InventoryItem) {
-  item.is_available = !item.is_available;
+  router.patch(`/vendor/inventory/${item.id}/toggle`);
 }
 
-function formatPrice(v: number) {
-  return '₱' + v.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+function formatPrice(v: number | null | undefined) {
+  return '₱' + (v ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 }
 
 function margin(item: InventoryItem) {
-  if (!item.cost_price || item.unit_price <= 0) return 0;
-  return Math.round(((item.unit_price - item.cost_price) / item.unit_price) * 100);
+  if (item.unit_price <= 0) return 0;
+  // margin shown as % of price (no cost_price in schema, show placeholder)
+  return 0;
 }
 
 function stockBarWidth(item: InventoryItem) {
@@ -153,10 +138,6 @@ function stockBarWidth(item: InventoryItem) {
             <h1 class="inv-title">Inventory</h1>
             <p class="inv-sub">Monitor stock levels, pricing, reorder points, and store availability</p>
           </div>
-          <button class="btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span class="btn-label">Add Inventory Item</span>
-          </button>
         </div>
 
         <div class="stat-grid">
@@ -254,7 +235,6 @@ function stockBarWidth(item: InventoryItem) {
                 </td>
                 <td>
                   <p class="price-main">{{ formatPrice(item.unit_price) }}</p>
-                  <p class="price-cost">Cost: {{ formatPrice(item.cost_price) }}</p>
                 </td>
                 <td>
                   <span
@@ -335,10 +315,6 @@ function stockBarWidth(item: InventoryItem) {
                 <span class="mc-label">Unit Price</span>
                 <span class="mc-price-val">{{ formatPrice(item.unit_price) }}</span>
               </div>
-              <div class="mc-price-item">
-                <span class="mc-label">Cost Price</span>
-                <span class="mc-price-val">{{ formatPrice(item.cost_price) }}</span>
-              </div>
             </div>
 
             <div class="mc-footer">
@@ -374,7 +350,6 @@ function stockBarWidth(item: InventoryItem) {
           <label class="field-label">Stock Level<input type="number" v-model.number="editForm.stock_level" class="field-input" min="0" /></label>
           <label class="field-label">Reorder Level<input type="number" v-model.number="editForm.reorder_level" class="field-input" min="0" /></label>
           <label class="field-label">Unit Price (₱)<input type="number" v-model.number="editForm.unit_price" class="field-input" min="0" step="0.01" /></label>
-          <label class="field-label">Cost Price (₱)<input type="number" v-model.number="editForm.cost_price" class="field-input" min="0" step="0.01" /></label>
         </div>
         <label class="field-label availability-toggle">
           <span>Available for sale</span>
@@ -382,7 +357,9 @@ function stockBarWidth(item: InventoryItem) {
         </label>
         <div class="modal-footer">
           <button class="btn-ghost" @click="showEditModal = false">Cancel</button>
-          <button class="btn-primary" @click="saveEdit">Save Changes</button>
+          <button class="btn-primary" :disabled="editForm.processing" @click="saveEdit">
+            {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
+          </button>
         </div>
       </div>
     </div>
