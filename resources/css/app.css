@@ -245,3 +245,18 @@ h1 {
 p {
     color: var(--brand-muted) !important;
 }
+
+
+/* Sonner Toast Customization for toaster/sweet alerts*/
+[data-sonner-toaster] {
+    z-index: 99999 !important;
+  --normal-bg: #ffffff;
+  --normal-text: #245c4a;
+  --normal-border: rgba(197, 160, 89, 0.2);
+  --success-bg: #f5ead4;
+  --success-text: #1b4d3e;
+  --error-bg: #fff1f2;
+  --error-text: #ef4444;
+  --warning-bg: #fff7ed;
+  --warning-text: #c5a059;
+}

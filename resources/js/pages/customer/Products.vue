@@ -18,6 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
+
 const { isCollapsed } = useSidebar();
 const page = usePage();
 const contentClass = computed(() => ({
@@ -345,7 +346,7 @@ const filteredProducts = computed(() => products.value)
                     class="w-full mt-2 mb-4 bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
                     @click="addToCart(product)"
                     >
-                    {{ product.is_available ? '``Add to ``Cart' : 'Add to Cart (Low Stock)' }}
+                    {{ product.is_available ? 'Add to Cart' : 'Add to Cart (Low Stock)' }}
                     </Button>
 
                 </CardContent>

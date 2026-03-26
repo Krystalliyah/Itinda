@@ -48,6 +48,7 @@ class VendorSeeder extends Seeder
             $tenant = Tenant::create([
                 'id' => $subdomain,
                 'name' => $storeName,
+                'description' => $faker->sentence(),
                 'email' => $email,
                 'is_approved' => false,
                 'user_id' => $user->id,

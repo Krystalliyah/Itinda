@@ -59,6 +59,7 @@ const defaultOperatingHours = {
 const form = useForm({
   store_name: '',
   domain_slug: '',
+  description: '',
   address: '',
   city: '',
   phone: '',
@@ -688,6 +689,21 @@ function stockClass(level: string) {
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Letters, numbers, and hyphens only.</p>
                 <InputError :message="form.errors.domain_slug" class="mt-1" />
+              </div>
+
+              <!-- Description -->
+              <div>
+                <label for="description" class="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  v-model="form.description"
+                  placeholder="Describe your store, products, or services"
+                  rows="2"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition resize-none"
+                ></textarea>
+                <InputError :message="form.errors.description" class="mt-1" />
               </div>
 
               <!-- Address -->

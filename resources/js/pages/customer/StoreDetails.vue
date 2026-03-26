@@ -31,6 +31,7 @@ const props = defineProps<{
 // Real Store Data
 const store = ref({
   name: '',
+  description: '',
   address: '',
   phone: '',
   hours: '',
@@ -66,6 +67,7 @@ const fetchStoreDetails = async () => {
     // Map API response to component interface
     store.value = {
       name: data.data.name || 'Unnamed Store',
+      description: data.data.description || 'No description provided',
       address: data.data.address || 'No address provided',
       phone: data.data.phone || 'No phone provided',
       hours: data.data.hours || 'Mon - Fri: 8AM - 5PM',
@@ -252,6 +254,10 @@ onMounted(() => {
                 {{ store.isOpen ? 'Open' : 'Closed' }}
               </span>
             </div>
+
+            <p v-if="store.description" class="text-base leading-relaxed text-muted-foreground">
+              {{ store.description }}
+            </p>
 
             <div class="pt-4 border-t border-border">
               <p class="text-sm text-muted-foreground">

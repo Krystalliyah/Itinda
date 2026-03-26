@@ -15,6 +15,7 @@ class StoreResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name ?? 'NA',
+            'description' => $this->description ?? 'NA',
             'address' => $this->address ?? 'NA',
             'phone' => $this->phone ?? 'NA',
             'hours' => $this->formatOperatingHours($operatingHours),
@@ -26,38 +27,118 @@ class StoreResource extends JsonResource
 
     private function formatOperatingHours($operatingHours): string
     {
+        $default = 'No data available';
+
         if (empty($operatingHours) || !is_array($operatingHours)) {
-            return 'Mon - Fri: 8AM - 5PM';
+            return $default;
         }
 
         $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $labels = [
+            'monday' => 'Mon',
+            'tuesday' => 'Tue',
+            'wednesday' => 'Wed',
+            'thursday' => 'Thu',
+            'friday' => 'Fri',
+            'saturday' => 'Sat',
+            'sunday' => 'Sun',
+        ];
 
-        $formattedDays = [];
+        $normalized = [];
 
         foreach ($days as $day) {
-            if (!isset($operatingHours[$day])) {
+            if (
+                !isset($operatingHours[$day]) ||
+                !isset($operatingHours[$day]['is_open']) ||
+                !$operatingHours[$day]['is_open']
+            ) {
+                $normalized[$day] = 'closed';
                 continue;
             }
 
-            $schedule = $operatingHours[$day];
+            $open = $this->formatTime($operatingHours[$day]['open_time'] ?? null);
+            $close = $this->formatTime($operatingHours[$day]['close_time'] ?? null);
 
-            if (!isset($schedule['is_open']) || !$schedule['is_open']) {
+            if (!$open || !$close) {
+                $normalized[$day] = 'closed';
                 continue;
             }
 
-            $open = $this->formatTime($schedule['open_time'] ?? null);
-            $close = $this->formatTime($schedule['close_time'] ?? null);
+            $normalized[$day] = $open . ' - ' . $close;
+        }
 
-            if ($open && $close) {
-                $formattedDays[] = ucfirst(substr($day, 0, 3)) . ': ' . $open . ' - ' . $close;
+        $groups = [];
+        $startDay = null;
+        $endDay = null;
+        $currentHours = null;
+
+        foreach ($days as $day) {
+            $hours = $normalized[$day];
+
+            // skip closed days entirely
+            if ($hours === 'closed') {
+                if ($currentHours !== null) {
+                    $groups[] = [
+                        'start' => $startDay,
+                        'end' => $endDay,
+                        'hours' => $currentHours,
+                    ];
+                    $startDay = null;
+                    $endDay = null;
+                    $currentHours = null;
+                }
+                continue;
             }
+
+            if ($currentHours === null) {
+                $startDay = $day;
+                $endDay = $day;
+                $currentHours = $hours;
+                continue;
+            }
+
+            if ($hours === $currentHours) {
+                $endDay = $day;
+                continue;
+            }
+
+            $groups[] = [
+                'start' => $startDay,
+                'end' => $endDay,
+                'hours' => $currentHours,
+            ];
+
+            $startDay = $day;
+            $endDay = $day;
+            $currentHours = $hours;
         }
 
-        if (empty($formattedDays)) {
-            return 'Mon - Fri: 8AM - 5PM';
+        if ($currentHours !== null) {
+            $groups[] = [
+                'start' => $startDay,
+                'end' => $endDay,
+                'hours' => $currentHours,
+            ];
         }
 
-        return implode(', ', $formattedDays);
+        if (empty($groups)) {
+            return $default;
+        }
+
+        $formatted = [];
+
+        foreach ($groups as $group) {
+            $startLabel = $labels[$group['start']];
+            $endLabel = $labels[$group['end']];
+
+            $dayRange = $group['start'] === $group['end']
+                ? $startLabel
+                : $startLabel . ' - ' . $endLabel;
+
+            $formatted[] = $dayRange . ': ' . $group['hours'];
+        }
+
+        return implode(', ', $formatted);
     }
 
     private function checkIfOpen($operatingHours): bool

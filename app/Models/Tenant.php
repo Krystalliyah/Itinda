@@ -13,7 +13,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     public static function getCustomColumns(): array
     {
-        return ['id', 'name', 'email', 'is_approved', 'user_id', 'operating_hours'];
+        return ['id', 'name', 'email', 'description', 'address', 'phone', 'is_approved', 'user_id', 'operating_hours'];
     }
 
     protected function casts(): array

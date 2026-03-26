@@ -16,6 +16,7 @@ class StoreSetupController extends Controller
         $validated = $request->validate([
             'store_name' => ['required', 'string', 'max:255'],
             'domain_slug' => ['required', 'string', 'max:63', 'regex:/^[a-z0-9-]+$/', 'unique:domains,domain'],
+            'description' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string'],
             'city' => ['nullable', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'regex:/^(09|\+639)\d{9}$/'],
@@ -44,6 +45,7 @@ class StoreSetupController extends Controller
             'email' => $user->email,
             'user_id' => $user->id,
             'is_approved' => false,
+            'description' => $validated['description'],
             'address' => $validated['address'],
             'city' => $validated['city'] ?? null,
             'phone' => $validated['phone'] ?? null,
