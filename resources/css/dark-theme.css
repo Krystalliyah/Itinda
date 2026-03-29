@@ -551,3 +551,76 @@
 .dark .donut-body svg text {
     fill: #f1f5f9 !important;  /* Light text for dark mode */
 }
+
+/* ========================================
+   ADMIN PAGES - DARK MODE
+   ======================================== */
+
+.dark .page-container {
+    background-color: #0f172a !important;
+}
+
+.dark .page-container .card,
+.dark .page-container .section-card,
+.dark .page-container .stat-card,
+.dark .page-container .stat-box,
+.dark .page-container .create-card,
+.dark .page-container .vendor-card,
+.dark .page-container .chart-card,
+.dark .page-container .donut-card,
+.dark .page-container .health-card,
+.dark .page-container .pending-card {
+    background-color: #1e293b !important;
+    border-color: #374151 !important;
+    color: #f1f5f9 !important;
+}
+
+/* Fix text colors inside admin cards */
+.dark .page-container .stat-label, 
+.dark .page-container .card-subtitle,
+.dark .page-container .page-subtitle,
+.dark .page-container .empty-text,
+.dark .page-container .empty-hint,
+.dark .page-container .table-muted,
+.dark .page-container .item-meta,
+.dark .page-container .hm-label {
+    color: #94a3b8 !important;
+}
+
+.dark .page-container h1,
+.dark .page-container h2,
+.dark .page-container h3,
+.dark .page-container .page-title,
+.dark .page-container .section-title,
+.dark .page-container .stat-value,
+.dark .page-container .card-title,
+.dark .page-container .item-name,
+.dark .page-container .table-vendor-name,
+.dark .page-container .hm-val,
+.dark .page-container .ds-val {
+    color: #f1f5f9 !important;
+}
+
+/* Fix admin table borders and backgrounds */
+.dark .page-container table {
+    background-color: #1e293b !important;
+}
+.dark .page-container table th {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+    border-color: #475569 !important;
+}
+
+.dark .page-container table td,
+.dark .page-container .item-row {
+    border-color: #374151 !important;
+    color: #e2e8f0 !important;
+}
+.dark .page-container .item-row:hover {
+    background-color: #334155 !important;
+}
+
+/* Dark mode chart/donuts logic fixing text */
+.dark .trend-svg text {
+    fill: #f1f5f9 !important;
+}
