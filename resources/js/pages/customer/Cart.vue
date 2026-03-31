@@ -259,6 +259,32 @@ const removeSelectedStore = (storeId: number) => {
   removeModalOpen.value = true
 }
 
+const clearAllOpen = ref(false)
+
+const confirmClearAll = async () => {
+  // Dismiss any undo toast (delete already fired)
+  if (pendingDelete.value) {
+    clearTimeout(pendingDelete.value.timeoutId)
+    pendingDelete.value = null
+    undoVisible.value = false
+  }
+
+  cartItems.value = []
+  selectedIds.value = []
+  clearAllOpen.value = false
+
+  try {
+    const res = await fetch('/customer/cart', {
+      method: 'DELETE',
+      headers: jsonHeaders(),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch (err) {
+    console.error('Failed to clear cart:', err)
+    await fetchCart()
+  }
+}
+
 const removeModalOpen = ref(false)
 const removeModalScope = ref<'global' | number>('global')
 
@@ -282,112 +308,98 @@ const jsonHeaders = () => ({
   'X-CSRF-TOKEN': csrfToken(),
 })
 
-type PendingDelete = {
+type UndoItem = {
   item: CartItem
   index: number
-  selectedBeforeDelete: boolean
+  selectedBefore: boolean
   timeoutId: ReturnType<typeof setTimeout>
 }
 
-const pendingDelete = ref<PendingDelete | null>(null)
+const pendingDelete = ref<UndoItem | null>(null)
 const undoVisible = ref(false)
 const undoMessage = ref('')
-const DELETE_DELAY_MS = 5000
+const UNDO_TOAST_MS = 5000
 
-const commitRemoveItem = async (id: number) => {
-  const res = await fetch(`/customer/cart/${id}`, {
-    method: 'DELETE',
-    headers: jsonHeaders(),
-  })
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`)
-  }
-}
-
-const removeItem = (id: number) => {
+const removeItem = async (id: number) => {
   const index = cartItems.value.findIndex((i) => i.id === id)
   if (index === -1) return
 
   const item = cartItems.value[index]
-  const selectedBeforeDelete = selectedIds.value.includes(id)
+  const selectedBefore = selectedIds.value.includes(id)
 
-  // If another delete is already pending, commit it first
+  // Dismiss any previous undo toast (its delete already fired)
   if (pendingDelete.value) {
     clearTimeout(pendingDelete.value.timeoutId)
-    void finalizePendingDelete()
+    pendingDelete.value = null
+    undoVisible.value = false
   }
 
   // Remove from UI immediately
   cartItems.value = cartItems.value.filter((i) => i.id !== id)
   selectedIds.value = selectedIds.value.filter((x) => x !== id)
 
+  // Fire the DELETE right away — backend is always in sync
+  try {
+    const res = await fetch(`/customer/cart/${id}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch (err) {
+    console.error('Failed to remove item:', err)
+    // Restore on failure
+    const restored = [...cartItems.value]
+    restored.splice(Math.min(index, restored.length), 0, item)
+    cartItems.value = restored
+    if (selectedBefore) selectedIds.value = [...selectedIds.value, id]
+    return
+  }
+
+  // Show undo toast — undo will re-add via POST
   undoMessage.value = `${item.product.name} removed`
   undoVisible.value = true
 
   const timeoutId = setTimeout(() => {
-    void finalizePendingDelete()
-  }, DELETE_DELAY_MS)
+    pendingDelete.value = null
+    undoVisible.value = false
+  }, UNDO_TOAST_MS)
 
-  pendingDelete.value = {
-    item,
-    index,
-    selectedBeforeDelete,
-    timeoutId,
-  }
+  pendingDelete.value = { item, index, selectedBefore, timeoutId }
 }
 
-const finalizePendingDelete = async () => {
-  const pending = pendingDelete.value
-  if (!pending) return
-
-  pendingDelete.value = null
-  undoVisible.value = false
-
-  try {
-    await commitRemoveItem(pending.item.id)
-  } catch (err) {
-    console.error('Failed to remove item:', err)
-
-    // restore item if backend delete fails
-    const restored = [...cartItems.value]
-    restored.splice(
-      Math.min(pending.index, restored.length),
-      0,
-      pending.item
-    )
-    cartItems.value = restored
-
-    if (pending.selectedBeforeDelete) {
-      selectedIds.value = Array.from(
-        new Set([...selectedIds.value, pending.item.id])
-      )
-    }
-  }
-}
-
-const undoRemoveItem = () => {
+const undoRemoveItem = async () => {
   const pending = pendingDelete.value
   if (!pending) return
 
   clearTimeout(pending.timeoutId)
-
-  const restored = [...cartItems.value]
-  restored.splice(
-    Math.min(pending.index, restored.length),
-    0,
-    pending.item
-  )
-  cartItems.value = restored
-
-  if (pending.selectedBeforeDelete) {
-    selectedIds.value = Array.from(
-      new Set([...selectedIds.value, pending.item.id])
-    )
-  }
-
   pendingDelete.value = null
   undoVisible.value = false
+
+  // Re-add the item to the backend
+  try {
+    const res = await fetch('/customer/cart/add', {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        store_id: pending.item.store.id,
+        product_id: pending.item.product.id,
+        quantity: pending.item.quantity,
+      }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    // Restore in local state at original position
+    const restored = [...cartItems.value]
+    restored.splice(Math.min(pending.index, restored.length), 0, pending.item)
+    cartItems.value = restored
+
+    if (pending.selectedBefore) {
+      selectedIds.value = Array.from(new Set([...selectedIds.value, pending.item.id]))
+    }
+  } catch (err) {
+    console.error('Failed to undo remove:', err)
+    await fetchCart()
+  }
 }
 
 const adjustQty = async (id: number, delta: number) => {
@@ -411,6 +423,36 @@ const adjustQty = async (id: number, delta: number) => {
 }
 
 const confirmRemoveSelected = async () => {
+  // Dismiss any undo toast (delete already fired)
+  if (pendingDelete.value) {
+    clearTimeout(pendingDelete.value.timeoutId)
+    pendingDelete.value = null
+    undoVisible.value = false
+  }
+
+  const isGlobalAll =
+    removeModalScope.value === 'global' &&
+    cartItems.value.every((i) => selectedIds.value.includes(i.id))
+
+  if (isGlobalAll) {
+    // Fast path: clear everything via the dedicated clear endpoint
+    cartItems.value = []
+    selectedIds.value = []
+    removeModalOpen.value = false
+
+    try {
+      const res = await fetch('/customer/cart', {
+        method: 'DELETE',
+        headers: jsonHeaders(),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    } catch (err) {
+      console.error('Failed to clear cart:', err)
+      await fetchCart()
+    }
+    return
+  }
+
   const ids = cartItems.value
     .filter((i) =>
       removeModalScope.value === 'global'
@@ -766,12 +808,12 @@ const submitPreorder = async () => {
 
             <Button
               variant="outline"
-              class="gap-2"
-              :disabled="selectedCount === 0"
-              @click="removeSelectedGlobal"
+              class="gap-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+              :disabled="cartItems.length === 0"
+              @click="clearAllOpen = true"
             >
               <Trash2 class="h-4 w-4" />
-              Remove selected
+              Remove all products
             </Button>
           </div>
 
@@ -934,6 +976,29 @@ const submitPreorder = async () => {
               @click="confirmRemoveSelected"
             >
               Remove All
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog v-model:open="clearAllOpen">
+        <DialogContent class="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove All Products</DialogTitle>
+            <DialogDescription>
+              This will permanently clear your entire cart. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div class="flex justify-end gap-2 pt-4">
+            <Button variant="outline" @click="clearAllOpen = false">
+              Cancel
+            </Button>
+            <Button
+              class="bg-red-600 text-white hover:bg-red-700"
+              @click="confirmClearAll"
+            >
+              Clear Cart
             </Button>
           </div>
         </DialogContent>

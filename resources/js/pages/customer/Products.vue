@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, reactive } from 'vue';
 import { watchDebounced } from '@vueuse/core';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
@@ -120,6 +120,19 @@ watch([selectedCategory, sortBy], () => {
   fetchAllProducts()
 })
 
+// Per-product quantity state keyed by product.id
+const quantities = reactive<Record<number, number>>({})
+
+const getQty = (product: any): number => quantities[product.id] ?? 1
+
+const setQty = (product: any, val: number) => {
+  const max = product.stock_level > 0 ? product.stock_level : Infinity
+  quantities[product.id] = Math.min(Math.max(1, val), max)
+}
+
+const increment = (product: any) => setQty(product, getQty(product) + 1)
+const decrement = (product: any) => setQty(product, getQty(product) - 1)
+
 const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -130,6 +143,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 }
 
 const addToCart = async (product: any) => {
+  const qty = getQty(product)
   try {
     const response = await fetch('/customer/cart/add', {
       method: 'POST',
@@ -142,12 +156,13 @@ const addToCart = async (product: any) => {
       body: JSON.stringify({
         store_id: product.store.id,
         product_id: product.id,
-        quantity: 1,
+        quantity: qty,
       }),
     })
 
     if (!response.ok) throw new Error('Failed to add to cart')
-    showToast(`"${product.product_name}" added to cart!`)
+    quantities[product.id] = 1
+    showToast(`${qty}× "${product.product_name}" added to cart!`)
   } catch (err) {
     console.error(err)
     showToast('Failed to add to cart. Please try again.', 'error')
@@ -272,7 +287,7 @@ const filteredProducts = computed(() => products.value)
                 >
 
                 <!-- Image Section -->
-                <div class="relative w-full aspect-square overflow-hidden bg-gray-100">
+                <Link :href="`/customer/products/${product.store.id}/${product.id}`" class="block relative w-full aspect-square overflow-hidden bg-gray-100">
 
                     <img
                     :src="product.image_url"
@@ -287,7 +302,7 @@ const filteredProducts = computed(() => products.value)
                     Sold Out
                     </span>
 
-                </div>
+                </Link>
 
 
                 <!-- Content -->
@@ -308,9 +323,9 @@ const filteredProducts = computed(() => products.value)
                     </Link>
 
                     <!-- Product Name -->
-                    <h3 class="text-sm font-medium text-foreground line-clamp-2 min-h-[40px]">
+                    <Link :href="`/customer/products/${product.store.id}/${product.id}`" class="block text-sm font-medium text-foreground hover:text-[#245c4a] transition line-clamp-2 min-h-[40px]">
                     {{ product.product_name }}
-                    </h3>
+                    </Link>
 
                     <!-- Price -->
                     <div class="flex items-center justify-between">
@@ -340,14 +355,49 @@ const filteredProducts = computed(() => products.value)
 
                     </div>
 
-                    <!-- Add Button -->
-                    <Button
-                    size="sm"
-                    class="w-full mt-2 mb-4 bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
-                    @click="addToCart(product)"
-                    >
-                    {{ product.is_available ? 'Add to Cart' : 'Add to Cart (Low Stock)' }}
-                    </Button>
+                    <!-- Quantity Selector + Add Button -->
+                    <div class="mt-2 mb-4 space-y-2">
+                      <div class="flex items-center gap-2">
+                        <button
+                          class="h-8 w-8 rounded-md border border-border flex items-center justify-center text-lg font-medium hover:bg-muted transition disabled:opacity-40"
+                          :disabled="getQty(product) <= 1"
+                          @click.stop="decrement(product)"
+                          aria-label="Decrease quantity"
+                        >−</button>
+
+                        <input
+                          type="number"
+                          :value="getQty(product)"
+                          :min="1"
+                          :max="product.stock_level > 0 ? product.stock_level : undefined"
+                          class="w-12 h-8 text-center text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-[#245c4a] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          @change="setQty(product, Number(($event.target as HTMLInputElement).value))"
+                          @keydown.up.prevent="increment(product)"
+                          @keydown.down.prevent="decrement(product)"
+                          aria-label="Quantity"
+                        />
+
+                        <button
+                          class="h-8 w-8 rounded-md border border-border flex items-center justify-center text-lg font-medium hover:bg-muted transition disabled:opacity-40"
+                          :disabled="product.stock_level > 0 && getQty(product) >= product.stock_level"
+                          @click.stop="increment(product)"
+                          aria-label="Increase quantity"
+                        >+</button>
+
+                        <span v-if="product.stock_level > 0" class="text-xs text-muted-foreground ml-auto">
+                          / {{ product.stock_level }}
+                        </span>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        class="w-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
+                        :disabled="!product.is_available"
+                        @click="addToCart(product)"
+                      >
+                        {{ product.is_available ? 'Add to Cart' : 'Out of Stock' }}
+                      </Button>
+                    </div>
 
                 </CardContent>
 

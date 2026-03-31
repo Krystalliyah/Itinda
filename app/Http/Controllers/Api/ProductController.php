@@ -216,4 +216,42 @@ class ProductController extends Controller
             ]
         ]);
     }
+    /**
+         * Get a single product from a specific store
+         */
+        public function show($storeId, $productId)
+        {
+            $store = Tenant::query()
+                ->where('is_approved', 1)
+                ->findOrFail($storeId);
+
+            $product = $store->run(function () use ($productId) {
+                return \App\Models\Product::with('category')->findOrFail($productId);
+            });
+
+            return response()->json([
+                'data' => [
+                    'id'            => $product->id,
+                    'product_name'  => $product->name,
+                    'description'   => $product->description ?? '',
+                    'sku'           => $product->sku ?? null,
+                    'category_id'   => $product->category_id,
+                    'category_name' => $product->category->name ?? null,
+                    'image_url'     => $product->image_path
+                        ? asset('storage/' . $product->image_path)
+                        : 'https://picsum.photos/600?random=' . $product->id,
+                    'unit_price'    => (float) $product->price,
+                    'stock_level'   => $product->stock ?? 0,
+                    'sold_count'    => 0,
+                    'rating'        => 4.5,
+                    'is_available'  => $product->stock > 0,
+                    'is_active'     => $product->is_active,
+                    'store' => [
+                        'id'   => $store->id,
+                        'name' => $store->name,
+                        'logo' => $store->logo ?? 'https://ui-avatars.com/api/?name=' . urlencode($store->name),
+                    ],
+                ],
+            ]);
+        }
 }

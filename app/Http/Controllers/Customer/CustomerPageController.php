@@ -94,6 +94,14 @@ class CustomerPageController extends Controller
         return inertia('customer/Products');
     }
 
+    public function showProduct($storeId, $productId)
+    {
+        return inertia('customer/ProductDetail', [
+            'storeId'   => $storeId,
+            'productId' => (int) $productId,
+        ]);
+    }
+
     public function orders()
     {
         return inertia('customer/Orders');
