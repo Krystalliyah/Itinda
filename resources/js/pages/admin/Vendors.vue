@@ -483,7 +483,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
 .page-container {
     padding: 2rem;
-    background: #f8fafc;
+    background: var(--background);
     min-height: 100vh;
 }
 
@@ -513,7 +513,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #475569;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
@@ -525,13 +525,13 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .page-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--brand-green-dark);
     margin: 0 0 0.25rem 0;
 }
 
 .page-subtitle {
     font-size: 0.95rem;
-    color: #64748b;
+    color: var(--brand-muted);
     margin: 0;
 }
 
@@ -553,14 +553,14 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     gap: 0.75rem;
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--card);
+    border: 1px solid var(--border);
 }
 
 .stat-icon {
     width: 20px;
     height: 20px;
-    color: #64748b;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
@@ -572,13 +572,13 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     line-height: 1;
 }
 
 .stat-label {
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--muted-foreground);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -589,8 +589,8 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: #0f172a;
-    color: white;
+    background: var(--primary);
+    color: var(--primary-foreground);
     border: none;
     border-radius: 8px;
     font-weight: 600;
@@ -600,7 +600,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .btn-primary:hover {
-    background: #1e293b;
+    opacity: 0.9;
 }
 
 .btn-primary:disabled {
@@ -614,9 +614,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: white;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+    background: var(--card);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-weight: 600;
     font-size: 0.95rem;
@@ -625,8 +625,8 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .btn-secondary:hover {
-    border-color: #94a3b8;
-    color: #334155;
+    border-color: var(--muted-foreground);
+    color: var(--foreground);
 }
 
 .btn-icon {
@@ -635,12 +635,11 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .create-card {
-    background: white;
+    background: var(--card);
     border-radius: 16px;
     padding: 2rem;
     margin-bottom: 2rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
 }
 
 .create-header {
@@ -648,26 +647,26 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
 }
 
 .create-icon {
     width: 24px;
     height: 24px;
-    color: #64748b;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
 .create-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     margin: 0 0 0.25rem 0;
 }
 
 .create-subtitle {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--muted-foreground);
     margin: 0;
 }
 
@@ -687,24 +686,24 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .field-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--foreground);
 }
 
 .field-input {
     padding: 0.75rem 1rem;
-    border: 1.5px solid #e2e8f0;
+    border: 1.5px solid var(--border);
     border-radius: 8px;
     font-size: 0.95rem;
-    color: #0f172a;
-    background: #f8fafc;
+    color: var(--foreground);
+    background: var(--input);
     transition: all 0.2s;
 }
 
 .field-input:focus {
     outline: none;
-    border-color: #10b981;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    border-color: var(--ring);
+    background: var(--card);
+    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.12);
 }
 
 .subdomain-preview {
@@ -712,18 +711,18 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.85rem;
-    color: #475569;
+    color: var(--muted-foreground);
     font-weight: 500;
 }
 
 .preview-icon {
     width: 16px;
     height: 16px;
-    color: #64748b;
+    color: var(--muted-foreground);
 }
 
 .field-error {
@@ -739,12 +738,11 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .section-card {
-    background: white;
+    background: var(--card);
     border-radius: 16px;
     padding: 2rem;
     margin-bottom: 2rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
 }
 
 .section-header {
@@ -753,7 +751,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
 }
 
 .section-title-wrapper {
@@ -765,13 +763,13 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .section-icon {
     width: 20px;
     height: 20px;
-    color: #64748b;
+    color: var(--muted-foreground);
 }
 
 .section-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     margin: 0;
 }
 
@@ -780,14 +778,14 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 700;
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--secondary);
+    color: var(--muted-foreground);
 }
 
 .view-toggle {
     display: flex;
     gap: 0.5rem;
-    background: #f8fafc;
+    background: var(--secondary);
     padding: 0.25rem;
     border-radius: 8px;
 }
@@ -799,18 +797,18 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    color: #94a3b8;
+    color: var(--muted-foreground);
 }
 
 .toggle-btn:hover {
-    background: white;
-    color: #475569;
+    background: var(--accent);
+    color: var(--foreground);
 }
 
 .toggle-btn.active {
-    background: white;
-    color: #0f172a;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background: var(--card);
+    color: var(--foreground);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .toggle-icon {
@@ -832,28 +830,29 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     padding: 0.75rem 1rem;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #64748b;
+    color: var(--muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--secondary);
+    border-bottom: 1px solid var(--border);
 }
 
 .vendors-table tbody td {
     padding: 1rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
+    color: var(--foreground);
 }
 
 .vendors-table tbody tr:hover {
-    background: #f8fafc;
+    background: var(--accent);
 }
 
 .pending-row {
-    background: #fffbeb;
+    background: rgba(120, 53, 15, 0.08);
 }
 
 .pending-row:hover {
-    background: #fef9e7 !important;
+    background: rgba(120, 53, 15, 0.15) !important;
 }
 
 .table-vendor-info {
@@ -865,19 +864,19 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .table-avatar {
     width: 40px;
     height: 40px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    border: 1px solid var(--border);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #64748b;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
 .table-avatar.pending {
-    background: #fffbeb;
-    border-color: #fde68a;
+    background: rgba(120, 53, 15, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
 }
 
 .table-avatar svg {
@@ -887,27 +886,27 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
 .table-vendor-name {
     font-weight: 600;
-    color: #0f172a;
+    color: var(--foreground);
     font-size: 0.95rem;
 }
 
 .table-vendor-email {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--muted-foreground);
 }
 
 .table-link {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    color: #3b82f6;
+    color: #60a5fa;
     text-decoration: none;
     font-weight: 500;
     font-size: 0.9rem;
 }
 
 .table-link:hover {
-    color: #2563eb;
+    color: #93c5fd;
     text-decoration: underline;
 }
 
@@ -917,15 +916,15 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .table-muted {
-    color: #94a3b8;
+    color: var(--muted-foreground);
     font-size: 0.9rem;
 }
 
 .table-db-badge {
     padding: 0.25rem 0.75rem;
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 500;
@@ -950,9 +949,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .table-action-btn.view {
-    background: #f8fafc;
-    color: #3b82f6;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: #60a5fa;
+    border: 1px solid var(--border);
 }
 
 .table-action-btn.view:hover {
@@ -962,9 +961,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .table-action-btn.approve {
-    background: #f8fafc;
-    color: #10b981;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: #34d399;
+    border: 1px solid var(--border);
 }
 
 .table-action-btn.approve:hover {
@@ -974,9 +973,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .table-action-btn.delete {
-    background: #f8fafc;
-    color: #ef4444;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: #f87171;
+    border: 1px solid var(--border);
 }
 
 .table-action-btn.delete:hover {
@@ -997,25 +996,24 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .vendor-card {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1.25rem;
     transition: all 0.2s;
 }
 
 .vendor-card:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-color: var(--muted-foreground);
 }
 
 .active-card {
-    border-left: 2px solid #64748b;
+    border-left: 2px solid var(--muted-foreground);
 }
 
 .pending-card {
     border-left: 2px solid #f59e0b;
-    background: #fffbeb;
+    background: rgba(120, 53, 15, 0.08);
 }
 
 .card-header-row {
@@ -1027,19 +1025,19 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .card-avatar {
     width: 40px;
     height: 40px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    border: 1px solid var(--border);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #64748b;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
 .card-avatar.pending {
-    background: #fef3c7;
-    border-color: #fde68a;
+    background: rgba(120, 53, 15, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
 }
 
 .card-avatar svg {
@@ -1055,7 +1053,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .card-name {
     font-size: 1rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     margin: 0 0 0.25rem 0;
     white-space: nowrap;
     overflow: hidden;
@@ -1064,7 +1062,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
 .card-email {
     font-size: 0.8rem;
-    color: #64748b;
+    color: var(--muted-foreground);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -1077,7 +1075,7 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     gap: 0.5rem;
     margin-bottom: 1rem;
     padding: 0.75rem;
-    background: white;
+    background: var(--secondary);
     border-radius: 6px;
 }
 
@@ -1091,23 +1089,23 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .detail-icon {
     width: 14px;
     height: 14px;
-    color: #94a3b8;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
 .detail-link {
-    color: #3b82f6;
+    color: #60a5fa;
     text-decoration: none;
     font-weight: 500;
 }
 
 .detail-link:hover {
-    color: #2563eb;
+    color: #93c5fd;
     text-decoration: underline;
 }
 
 .detail-text {
-    color: #64748b;
+    color: var(--muted-foreground);
 }
 
 .card-footer {
@@ -1125,9 +1123,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
 .db-badge-small {
     padding: 0.25rem 0.5rem;
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 500;
@@ -1147,9 +1145,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .view-btn {
-    background: #f8fafc;
-    color: #3b82f6;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: #60a5fa;
+    border: 1px solid var(--border);
 }
 
 .view-btn:hover {
@@ -1159,9 +1157,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .approve-btn {
-    background: #f8fafc;
-    color: #10b981;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: #34d399;
+    border: 1px solid var(--border);
 }
 
 .approve-btn:hover {
@@ -1171,9 +1169,9 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 }
 
 .delete-btn {
-    background: #f8fafc;
-    color: #ef4444;
-    border: 1px solid #e2e8f0;
+    background: var(--secondary);
+    color: #f87171;
+    border: 1px solid var(--border);
 }
 
 .delete-btn:hover {
@@ -1190,20 +1188,20 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 .empty-icon {
     width: 64px;
     height: 64px;
-    color: #cbd5e1;
+    color: var(--border);
     margin: 0 auto 1rem;
 }
 
 .empty-text {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #475569;
+    color: var(--foreground);
     margin: 0 0 0.5rem 0;
 }
 
 .empty-hint {
     font-size: 0.9rem;
-    color: #94a3b8;
+    color: var(--muted-foreground);
     margin: 0;
 }
 
@@ -1259,4 +1257,21 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
         gap: 1rem;
     }
 }
+
+/* ── Dark mode — only exceptions tokens can't handle alone ── */
+:global(.dark) .page-title    { color: var(--foreground); }
+:global(.dark) .page-subtitle { color: var(--muted-foreground); }
+
+/* pending-row needs a different tint in dark vs light */
+:global(.dark) .pending-row         { background: rgba(120, 53, 15, 0.15) !important; }
+:global(.dark) .pending-row:hover   { background: rgba(120, 53, 15, 0.25) !important; }
+:global(.dark) .pending-card        { background: rgba(120, 53, 15, 0.12); }
+:global(.dark) .table-avatar.pending { background: rgba(120, 53, 15, 0.2); border-color: rgba(245, 158, 11, 0.4); }
+:global(.dark) .card-avatar.pending  { background: rgba(120, 53, 15, 0.2); border-color: rgba(245, 158, 11, 0.4); }
+
+/* active-icon / pending-icon semantic colors */
+:global(.dark) .active-icon  { color: #34d399; }
+:global(.dark) .pending-icon { color: #fbbf24; }
+:global(.dark) .active-badge { background: rgba(6,95,70,0.3);   color: #6ee7b7; }
+:global(.dark) .pending-badge { background: rgba(120,53,15,0.3); color: #fde68a; }
 </style>

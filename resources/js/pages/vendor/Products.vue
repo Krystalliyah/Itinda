@@ -533,7 +533,7 @@ function deleteProduct(id: number) {
 
           <!-- Modal panel: flex column so header/footer stay fixed, body scrolls -->
           <div
-            class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"
+            class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-card rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-border"
           >
             <!-- Header -->
             <div class="px-5 py-4 border-b border-border flex items-start justify-between flex-shrink-0">
@@ -551,8 +551,7 @@ function deleteProduct(id: number) {
               <button
                 type="button"
                 @click="closeModal"
-                class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-[#F3F7F5]"
-                style="color:#245C4A"
+                class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-accent text-foreground"
               >
                 ✕
               </button>
@@ -563,10 +562,9 @@ function deleteProduct(id: number) {
               <form id="product-form" @submit.prevent="submit" class="flex flex-col gap-4">
 
                 <!-- Thumbnail -->
-                <div class="flex items-start gap-4 p-3 rounded-lg" style="background:hsl(0 0% 97%);">
+                <div class="flex items-start gap-4 p-3 rounded-lg bg-muted">
                   <div
-                    class="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
-                    style="background:hsl(0 0% 92%); border:1px solid hsl(0 0% 88%)"
+                    class="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-secondary border border-border"
                   >
                     <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-cover" alt="" />
                     <span v-else class="text-xl">🖼️</span>
@@ -580,7 +578,7 @@ function deleteProduct(id: number) {
                       type="file"
                       accept="image/*"
                       @change="onPickImage"
-                      class="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white file:text-slate-700 file:border file:border-border hover:file:bg-gray-50"
+                      class="block w-full text-xs text-foreground file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border file:border-border file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-accent"
                     />
                     <p class="text-xs text-muted-foreground mt-1">JPG/PNG recommended (max 2MB).</p>
                     <p v-if="form.errors.image" class="text-xs mt-1" style="color:#9f1239">
@@ -598,8 +596,8 @@ function deleteProduct(id: number) {
                     v-model="form.product_name"
                     required
                     placeholder="e.g. Chocolate Bar"
-                    class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                    style="--tw-ring-color: rgba(36,92,74,.35);"
                   />
                   <p v-if="form.errors.product_name" class="text-xs mt-1" style="color:#9f1239">
                     {{ form.errors.product_name }}
@@ -617,11 +615,11 @@ function deleteProduct(id: number) {
                         type="button"
                         ref="categoryBtnEl"
                         @click="openCategoryDropdown"
-                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-input text-foreground text-sm focus:outline-none focus:ring-2 transition-colors"
                         :class="form.errors.category_id ? 'border-red-300' : 'border-border'"
-                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                        style="--tw-ring-color: rgba(36,92,74,.35);"
                       >
-                        <span :style="selectedCategoryLabel ? 'color:#111827' : 'color:#6b7280'">
+                        <span :class="selectedCategoryLabel ? 'text-foreground' : 'text-muted-foreground'">
                           {{ selectedCategoryLabel ?? 'Select category' }}
                         </span>
                         <svg
@@ -637,7 +635,7 @@ function deleteProduct(id: number) {
                       <Teleport to="body">
                         <div
                           v-if="categoryOpen"
-                          class="fixed z-[9999] bg-white rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
+                          class="fixed z-[9999] bg-card rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
                           :style="{ ...categoryDropdownStyle, maxHeight: '220px' }"
                           ref="categoryDropdownEl"
                         >
@@ -646,9 +644,8 @@ function deleteProduct(id: number) {
                             :key="category.id"
                             type="button"
                             @click="selectCategory(category.id)"
-                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[#F9FBF9]"
-                            :class="form.category_id === category.id ? 'font-semibold' : ''"
-                            :style="form.category_id === category.id ? 'color:#245c4a' : 'color:#111827'"
+                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-accent text-foreground"
+                            :class="form.category_id === category.id ? 'font-semibold text-primary' : ''"
                           >
                             <span class="flex items-center gap-2">
                               <svg
@@ -688,8 +685,8 @@ function deleteProduct(id: number) {
                     <input
                       v-model="form.barcode"
                       placeholder="e.g. 4901234567890"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                      style="--tw-ring-color: rgba(36,92,74,.35);"
                     />
                     <p v-if="form.errors.barcode" class="text-xs mt-1" style="color:#9f1239">
                       {{ form.errors.barcode }}
@@ -713,8 +710,8 @@ function deleteProduct(id: number) {
                         step="0.01"
                         required
                         placeholder="0.00"
-                        class="w-full pl-7 pr-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                        class="w-full pl-7 pr-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                        style="--tw-ring-color: rgba(36,92,74,.35);"
                       />
                     </div>
                     <p v-if="form.errors.price" class="text-xs mt-1" style="color:#9f1239">
@@ -734,8 +731,8 @@ function deleteProduct(id: number) {
                       step="1"
                       required
                       placeholder="0"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                      style="--tw-ring-color: rgba(36,92,74,.35);"
                     />
                     <p v-if="form.errors.stock" class="text-xs mt-1" style="color:#9f1239">
                       {{ form.errors.stock }}
@@ -752,8 +749,8 @@ function deleteProduct(id: number) {
                     v-model="form.description"
                     rows="3"
                     placeholder="Brief product description (optional)"
-                    class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm resize-none"
-                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm resize-none"
+                    style="--tw-ring-color: rgba(36,92,74,.35);"
                   />
                   <p v-if="form.errors.description" class="text-xs mt-1" style="color:#9f1239">
                     {{ form.errors.description }}
@@ -762,8 +759,7 @@ function deleteProduct(id: number) {
 
                 <!-- Active toggle -->
                 <div
-                  class="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border"
-                  style="background:hsl(0 0% 98.5%);"
+                  class="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-muted"
                 >
                   <div>
                     <p class="text-sm font-medium text-foreground">Active product</p>
@@ -786,12 +782,11 @@ function deleteProduct(id: number) {
             </div>
 
             <!-- Footer actions — always visible -->
-            <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-xl">
+            <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-card rounded-b-xl">
               <button
                 type="button"
                 @click="closeModal"
-                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors"
-                style="color: #111827;"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-secondary text-foreground hover:bg-accent transition-colors"
               >
                 Cancel
               </button>

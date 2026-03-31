@@ -1166,6 +1166,15 @@ input[type="checkbox"]:checked {
     color: #f9fafb !important;
 }
 
+/* Stat mini-cards inside the green gradient hero banner —
+   bg-white/15 gets caught by the .bg-white rule above and turns light,
+   so we force all text inside them back to white. */
+.bg-\[linear-gradient\(135deg\,\#1B4A3D_0\%\,\#2C725E_100\%\)\] [class*="bg-white/"] p,
+.bg-\[linear-gradient\(135deg\,\#1B4A3D_0\%\,\#2C725E_100\%\)\] [class*="bg-white/"] {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
 /* ENSURE ALL WHITE BACKGROUNDS ARE GREY */
 .bg-white:not(.modal-content) {
     background: #f8fafc !important;

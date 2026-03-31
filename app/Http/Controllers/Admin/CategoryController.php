@@ -21,11 +21,34 @@ class CategoryController extends Controller
                         }])
                         ->parents()
                         ->orderBy('name')
-                        ->get()
-                        ->map(fn ($cat) => $this->formatCategory($cat));
+                        ->get();
+
+        // Aggregate product counts across all tenant databases.
+        // Products live in tenant DBs (category_id FK), categories in central DB.
+        $productCounts = []; // [category_id => count]
+
+        foreach (\App\Models\Tenant::where('is_approved', true)->get() as $tenant) {
+            try {
+                $tenant->run(function () use (&$productCounts) {
+                    $rows = \Illuminate\Support\Facades\DB::table('products')
+                        ->selectRaw('category_id, COUNT(*) as cnt')
+                        ->whereNotNull('category_id')
+                        ->groupBy('category_id')
+                        ->get();
+
+                    foreach ($rows as $row) {
+                        $productCounts[$row->category_id] = ($productCounts[$row->category_id] ?? 0) + $row->cnt;
+                    }
+                });
+            } catch (\Exception $e) {
+                \Log::warning("Could not read products from tenant {$tenant->id}: " . $e->getMessage());
+            }
+        }
+
+        $formatted = $categories->map(fn ($cat) => $this->formatCategory($cat, $productCounts));
 
         return inertia('admin/Categories', [
-            'categories' => $categories,
+            'categories' => $formatted,
         ]);
     }
 
@@ -100,8 +123,10 @@ class CategoryController extends Controller
 
     /**
      * Format a category (and its children) for the frontend.
+     *
+     * @param  array<int,int>  $productCounts  [category_id => total across all tenants]
      */
-    private function formatCategory(Category $cat, bool $isChild = false): array
+    private function formatCategory(Category $cat, array $productCounts = [], bool $isChild = false): array
     {
         $data = [
             'id'            => $cat->id,
@@ -110,13 +135,13 @@ class CategoryController extends Controller
             'description'   => $cat->description ?? '',
             'color'         => $cat->color ?? '#6366f1',
             'parent_id'     => $cat->parent_id,
-            'product_count' => 0, // Products are in tenant DB, not central
+            'product_count' => $productCounts[$cat->id] ?? 0,
             'children'      => [],
         ];
 
         if (! $isChild && $cat->relationLoaded('children')) {
             $data['children'] = $cat->children
-                ->map(fn ($child) => $this->formatCategory($child, true))
+                ->map(fn ($child) => $this->formatCategory($child, $productCounts, true))
                 ->values()
                 ->all();
         }
