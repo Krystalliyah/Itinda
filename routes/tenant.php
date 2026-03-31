@@ -7,7 +7,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use Inertia\Inertia;
 use App\Http\Controllers\Vendor\AnalyticsController;
-use App\Http\Controllers\Vendor\ExpenseController;
 
 
 /*
@@ -147,23 +146,13 @@ Route::middleware([
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel')->middleware('permission:manage-orders');
 
         // Management routes
-        Route::get('/store-settings', function() {
-            $tenant = tenant();
-            $domain = $tenant->domains->first()?->domain ?? null;
-            return inertia('vendor/StoreSettings', [
-                'tenantInfo' => [
-                    'id'             => $tenant->id,
-                    'name'           => $tenant->name,
-                    'email'          => $tenant->email,
-                    'phone'          => $tenant->phone ?? null,
-                    'address'        => $tenant->address ?? null,
-                    'slug'           => $tenant->id,
-                    'domain'         => $domain,
-                    'description'    => $tenant->description ?? null,
-                    'operating_hours'=> $tenant->operating_hours ?? null,
-                ],
-            ]);
-        })->name('store.settings')->middleware('permission:manage-store-settings');
+        Route::get('/store-settings', [StoreSettingsController::class, 'show'])
+            ->name('store.settings')
+            ->middleware('permission:manage-store-settings');
+
+        Route::put('/store-settings', [StoreSettingsController::class, 'update'])
+            ->name('store.settings.update')
+            ->middleware('permission:manage-store-settings');
         
         // Staff Management
         Route::middleware('permission:manage-staff')->group(function() {
@@ -173,10 +162,7 @@ Route::middleware([
             Route::put('staff/{user}/permissions', [App\Http\Controllers\Vendor\StaffManagementController::class, 'updatePermissions'])->name('staff.update-permissions');
         });
         
-        Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses')->middleware('permission:view-expenses');
-        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store')->middleware('permission:view-expenses');
-        Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update')->middleware('permission:view-expenses');
-        Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy')->middleware('permission:view-expenses');
+        Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses')->middleware('permission:view-expenses');
         Route::get('/analytics', AnalyticsController::class)
             ->name('analytics')
             ->middleware('permission:view-analytics');
