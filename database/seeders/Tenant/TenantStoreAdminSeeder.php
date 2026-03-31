@@ -19,19 +19,11 @@ class TenantStoreAdminSeeder extends Seeder
         }
 
         $loginId = 'admin-' . $tenant->id;
-        $email = $loginId . '@tenant.local';
 
         $user = User::where('login_id', $loginId)->first();
 
         if (! $user) {
-            $user = User::create([
-                'name' => 'Store Admin',
-                'login_id' => $loginId,
-                'email' => $email,
-                'password' => Hash::make('Password123!'),
-                'is_admin' => true,
-                'email_verified_at' => now(),
-            ]);
+            return;
         }
         
         if (!$user->email_verified_at) {

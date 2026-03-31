@@ -63,8 +63,10 @@ class VendorController extends Controller
         // Run tenant-specific seeders (role table + admin user).
         $tenant->run(function () {
             (new \Database\Seeders\Tenant\TenantRolesSeeder())->run();
-            (new \Database\Seeders\Tenant\TenantStoreAdminSeeder())->run();
+            // (new \Database\Seeders\Tenant\TenantStoreAdminSeeder())->run();
         });
+
+        $this->copyVendorUserToTenant($tenant);
 
         // Generate a one-time authentication token for SSO
         $token = $this->generateTenantAuthToken($tenant);
@@ -88,39 +90,48 @@ class VendorController extends Controller
      */
     protected function copyVendorUserToTenant(Tenant $tenant): void
     {
-        // Find the user with the same email as the tenant
         $centralUser = User::where('email', $tenant->email)->first();
 
-        if (!$centralUser) {
-            return; // No user to copy
+        if (! $centralUser) {
+            return;
         }
 
-        // Initialize tenancy for this tenant
         tenancy()->initialize($tenant);
 
         try {
-            // Check if user already exists in tenant DB
             $existingUser = User::where('email', $centralUser->email)->first();
 
-            if (!$existingUser) {
-                // Create the tenant user with the same credentials
+            if (! $existingUser) {
                 $tenantUser = User::create([
                     'name' => $centralUser->name,
-                    'login_id' => $centralUser->email ?? 'vendor-' . $tenant->id,
+                    'login_id' => 'admin-' . $tenant->id,
                     'email' => $centralUser->email,
-                    'password' => $centralUser->password, // The bcrypt hash is portable
+                    'password' => $centralUser->password,
                     'phone' => $centralUser->phone,
-                    'email_verified_at' => $centralUser->email_verified_at,
-                    'is_admin' => false,
+                    'email_verified_at' => now(),
+                    'is_admin' => true,
+                ]);
+            } else {
+                $existingUser->update([
+                    'name' => $centralUser->name,
+                    'login_id' => 'admin-' . $tenant->id,
+                    'email' => $centralUser->email,
+                    'phone' => $centralUser->phone,
+                    'is_admin' => true,
                 ]);
 
-                // Assign vendor role in the tenant if it exists
-                if (\Spatie\Permission\Models\Role::where('name', 'vendor')->exists()) {
-                    $tenantUser->assignRole('vendor');
-                }
+                $tenantUser = $existingUser;
+            }
+
+            if (! $tenantUser->email_verified_at) {
+                $tenantUser->email_verified_at = now();
+                $tenantUser->save();
+            }
+
+            if (\Spatie\Permission\Models\Role::where('name', 'vendor')->exists()) {
+                $tenantUser->assignRole('vendor');
             }
         } finally {
-            // Revert to central context
             tenancy()->end();
         }
     }

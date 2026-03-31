@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { Head, Form, Link, usePage } from '@inertiajs/vue3';
+import { Head, Form, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import {
     BadgeCheck,
     Bell,
     Mail,
-    MapPin,
-    PencilLine,
     Phone,
     ShieldCheck,
     UserRound,
 } from 'lucide-vue-next';
 
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
 import InputError from '@/components/InputError.vue';
 import Header from '@/components/Header.vue';
@@ -39,25 +36,45 @@ const contentClass = computed(() => ({
 }));
 
 const page = usePage();
-const user = page.props.auth.user as {
-    name: string;
-    email: string;
-    email_verified_at?: string | null;
-};
 
-defineProps<{
-    mustVerifyEmail: boolean;
+const profile = computed(() => {
+    const props = page.props as any;
+
+    return props.profile ?? {
+        name: props.auth?.user?.name ?? '',
+        email: props.auth?.user?.email ?? '',
+        phone: props.auth?.user?.phone ?? '',
+        email_verified_at: props.auth?.user?.email_verified_at ?? null,
+        login_id: props.auth?.user?.login_id ?? '',
+        role_label: 'Store Admin',
+    };
+});
+
+const props = defineProps<{
+    mustVerifyEmail?: boolean;
     status?: string;
 }>();
 
 const initials = computed(() => {
-    return user.name
+    return profile.value.name
         ?.split(' ')
-        .map((part) => part[0])
+        .map((part: string) => part[0])
         .join('')
         .slice(0, 2)
         .toUpperCase();
 });
+
+const form = useForm({
+    name: profile.value.name ?? '',
+    email: profile.value.email ?? '',
+    phone: profile.value.phone ?? '',
+});
+
+const saveChanges = () => {
+    form.put('/vendor/profile', {
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
@@ -100,11 +117,11 @@ const initials = computed(() => {
                                                 <h2
                                                     class="truncate text-lg sm:text-2xl font-semibold tracking-tight text-[#163F35] dark:text-slate-100"
                                                 >
-                                                    {{ user.name }}
+                                                    {{ profile.name }}
                                                 </h2>
 
                                                 <span
-                                                    v-if="user.email_verified_at"
+                                                    v-if="profile.email_verified_at"
                                                     class="inline-flex items-center gap-1 rounded-full bg-[#EAF4EF] px-2.5 py-1 text-xs font-semibold text-[#1B5B4B] dark:bg-emerald-500/10 dark:text-emerald-300"
                                                 >
                                                     <BadgeCheck class="h-3.5 w-3.5" />
@@ -121,7 +138,7 @@ const initials = computed(() => {
                                             </div>
 
                                             <p class="mt-1 text-sm text-[#60756D] dark:text-slate-300">
-                                                {{ user.email }}
+                                                {{ profile.email }}
                                             </p>
 
                                             <div class="mt-4 flex flex-wrap gap-2">
@@ -129,7 +146,7 @@ const initials = computed(() => {
                                                     class="inline-flex items-center gap-1 rounded-full border border-[#D8E4DD] bg-white px-3 py-1 text-xs font-medium text-[#3C6658] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                                                 >
                                                     <ShieldCheck class="h-3.5 w-3.5" />
-                                                    Secure account
+                                                    {{ profile.role_label }}
                                                 </span>
                                                 <span
                                                     class="inline-flex items-center gap-1 rounded-full border border-[#D8E4DD] bg-white px-3 py-1 text-xs font-medium text-[#3C6658] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
@@ -152,13 +169,13 @@ const initials = computed(() => {
                                     Profile Information
                                 </CardTitle>
                                 <CardDescription class="text-[#657C74] dark:text-slate-300">
-                                    Update your name and email address.
+                                    Update your name, email address, and phone number.
                                 </CardDescription>
                             </CardHeader>
 
                             <CardContent>
                                 <div
-                                    v-if="mustVerifyEmail && !user.email_verified_at"
+                                    v-if="mustVerifyEmail && !profile.email_verified_at"
                                     class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/40 dark:bg-amber-500/10"
                                 >
                                     <p class="text-sm text-amber-800 dark:text-amber-200">
@@ -189,46 +206,53 @@ const initials = computed(() => {
                                         </span>
                                     </Form>
                                 </div>
-                                <Form
-                                    v-bind="ProfileController.update.form()"
-                                    class="space-y-6"
-                                    v-slot="{ errors, processing, recentlySuccessful }"
-                                >
+
+                                <form @submit.prevent="saveChanges" class="space-y-6">
                                     <div class="grid gap-5 md:grid-cols-2">
                                         <div class="grid gap-2 md:col-span-1">
                                             <Label for="name">Full name</Label>
                                             <Input
                                                 id="name"
+                                                v-model="form.name"
                                                 class="mt-1 block w-full"
-                                                name="name"
-                                                :default-value="user.name"
                                                 required
                                                 autocomplete="name"
                                                 placeholder="Full name"
                                             />
-                                            <InputError class="mt-1" :message="errors.name" />
+                                            <InputError class="mt-1" :message="form.errors.name" />
                                         </div>
 
                                         <div class="grid gap-2 md:col-span-1">
                                             <Label for="email">Email address</Label>
                                             <Input
                                                 id="email"
+                                                v-model="form.email"
                                                 type="email"
                                                 class="mt-1 block w-full"
-                                                name="email"
-                                                :default-value="user.email"
                                                 required
                                                 autocomplete="username"
                                                 placeholder="Email address"
-                                                :aria-invalid="!!errors.email"
+                                                :aria-invalid="!!form.errors.email"
                                             />
-                                            <InputError class="mt-1" :message="errors.email" />
+                                            <InputError class="mt-1" :message="form.errors.email" />
+                                        </div>
+
+                                        <div class="grid gap-2 md:col-span-2">
+                                            <Label for="phone">Phone number</Label>
+                                            <Input
+                                                id="phone"
+                                                v-model="form.phone"
+                                                type="text"
+                                                class="mt-1 block w-full"
+                                                placeholder="Phone number"
+                                            />
+                                            <InputError class="mt-1" :message="form.errors.phone" />
                                         </div>
                                     </div>
 
                                     <div class="flex items-center gap-4">
                                         <Button
-                                            :disabled="processing"
+                                            :disabled="form.processing"
                                             data-test="update-profile-button"
                                             class="bg-[#17493D] text-white hover:bg-[#10362D]"
                                         >
@@ -242,14 +266,14 @@ const initials = computed(() => {
                                             leave-to-class="opacity-0"
                                         >
                                             <p
-                                                v-show="recentlySuccessful"
+                                                v-show="form.recentlySuccessful"
                                                 class="text-sm font-medium text-[#1B5B4B] dark:text-emerald-300"
                                             >
                                                 Changes saved.
                                             </p>
                                         </Transition>
                                     </div>
-                                </Form>
+                                </form>
                             </CardContent>
                         </Card>
 
@@ -293,7 +317,7 @@ const initials = computed(() => {
                                                 Full name
                                             </p>
                                             <p class="mt-1 text-sm font-medium" style="color:#ffffff">
-                                                {{ user.name }}
+                                                {{ form.name }}
                                             </p>
                                         </div>
                                     </div>
@@ -306,8 +330,8 @@ const initials = computed(() => {
                                             <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
                                                 Email
                                             </p>
-                                            <p class="mt-1 text-sm font-medium break-all" style="color:#ffffff">
-                                                {{ user.email }}
+                                            <p class="mt-1 text-sm font-medium text-white break-all">
+                                                {{ form.email }}
                                             </p>
                                         </div>
                                     </div>
@@ -321,7 +345,7 @@ const initials = computed(() => {
                                                 Account status
                                             </p>
                                             <p class="mt-1 text-sm font-medium" style="color:#ffffff">
-                                                {{ user.email_verified_at ? 'Verified and active' : 'Pending email verification' }}
+                                                {{ profile.email_verified_at ? 'Verified and active' : 'Pending email verification' }}
                                             </p>
                                         </div>
                                     </div>
