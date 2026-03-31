@@ -56,7 +56,7 @@ class CustomerPageController extends Controller
             });
 
         // Approved stores for recommendations
-        $stores = Cache::remember('approved_stores_list', 120, function () {
+        $stores = Cache::remember('approved_stores_list', 60, function () {
             return Tenant::where('is_approved', true)
                 ->with('domains')
                 ->get()
@@ -66,6 +66,7 @@ class CustomerPageController extends Controller
                     'domain' => $t->domains->first()?->domain,
                     'hours'  => $t->operating_hours,
                     'logo'   => $t->data['logo'] ?? null,
+                    'isOpen' => $this->checkStoreIsOpen($t->operating_hours),
                 ]);
         });
 
@@ -109,5 +110,33 @@ class CustomerPageController extends Controller
     public function cart()
     {
         return inertia('customer/Cart');
+    }
+
+    private function checkStoreIsOpen(?array $operatingHours): bool
+    {
+        $now = now();
+        $currentDay = strtolower($now->format('l'));
+
+        if (empty($operatingHours) || !is_array($operatingHours)) {
+            return in_array($currentDay, ['monday','tuesday','wednesday','thursday','friday'])
+                && $now->format('H:i') >= '08:00'
+                && $now->format('H:i') <= '17:00';
+        }
+
+        $schedule = $operatingHours[$currentDay] ?? null;
+
+        if (!$schedule || empty($schedule['is_open'])) {
+            return false;
+        }
+
+        $open  = $schedule['open_time']  ?? null;
+        $close = $schedule['close_time'] ?? null;
+
+        if (!$open || !$close) {
+            return false;
+        }
+
+        $current = $now->format('H:i');
+        return $current >= $open && $current <= $close;
     }
 }

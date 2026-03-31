@@ -200,6 +200,17 @@ const maxMonthlySpend = computed(() =>
     Math.max(...monthlySpend.value.map((item) => item.amount)),
 );
 
+const expenseTrend = computed(() => {
+    const data = monthlySpend.value;
+    if (data.length < 2) return null;
+    const prev = data[data.length - 2].amount;
+    const curr = data[data.length - 1].amount;
+    if (prev === 0) return null;
+    const pct = Math.round(((curr - prev) / prev) * 100);
+    if (pct === 0) return '0%';
+    return (pct > 0 ? '+' : '') + pct + '%';
+});
+
 const formatPeso = (value: number) =>
     new Intl.NumberFormat('en-PH', {
         style: 'currency',
@@ -355,7 +366,9 @@ const statusClass = (status: ExpenseStatus) => {
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-[#73867F] dark:text-slate-300">Expense trend</p>
-                                <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">+12%</p>
+                                <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">
+                                    {{ expenseTrend ?? '—' }}
+                                </p>
                             </div>
                             <div
                                 class="rounded-2xl bg-[#EEF2FF] p-3 text-[#4253B5] dark:bg-amber-100/15 dark:text-amber-200"
@@ -364,7 +377,10 @@ const statusClass = (status: ExpenseStatus) => {
                             </div>
                         </div>
                         <p class="mt-3 text-sm text-[#6C817A] dark:text-slate-300">
-                            Slight increase compared with last month due to restocking and maintenance.
+                            <template v-if="expenseTrend === null">No trend data available yet.</template>
+                            <template v-else-if="expenseTrend.startsWith('+')">Expenses increased compared to last month.</template>
+                            <template v-else-if="expenseTrend.startsWith('-')">Expenses decreased compared to last month.</template>
+                            <template v-else>Expenses are unchanged from last month.</template>
                         </p>
                     </div>
                 </section>

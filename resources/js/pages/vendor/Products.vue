@@ -42,6 +42,8 @@ const showModal = ref(false);
 const editingProduct = ref<Product | null>(null);
 const search = ref('');
 const imagePreview = ref<string | null>(null);
+const imageInputKey = ref(0);
+let previewObjectUrl: string | null = null;
 const categoryOpen = ref(false);
 const categoryBtnEl = ref<HTMLElement | null>(null);
 const categoryDropdownStyle = ref<Record<string, string>>({});
@@ -125,12 +127,21 @@ function productStatusBadge(isActive: boolean) {
       };
 }
 
+function revokePreview() {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+}
+
 function openCreateModal() {
   editingProduct.value = null;
   form.reset();
   form.clearErrors();
   form.is_active = true;
+  revokePreview();
   imagePreview.value = null;
+  imageInputKey.value++;
   showModal.value = true;
 }
 
@@ -146,7 +157,9 @@ function openEditModal(product: Product) {
   form.stock = product.stock != null ? String(product.stock) : '0';
   form.image = null;
   form.is_active = product.is_active;
+  revokePreview();
   imagePreview.value = product.image_url || null;
+  imageInputKey.value++;
   showModal.value = true;
 }
 
@@ -155,6 +168,7 @@ function closeModal() {
   form.reset();
   form.clearErrors();
   editingProduct.value = null;
+  revokePreview();
   imagePreview.value = null;
 }
 
@@ -163,8 +177,10 @@ function onPickImage(e: Event) {
   const file = input.files?.[0] ?? null;
   form.image = file;
 
+  revokePreview();
   if (file) {
-    imagePreview.value = URL.createObjectURL(file);
+    previewObjectUrl = URL.createObjectURL(file);
+    imagePreview.value = previewObjectUrl;
   } else {
     imagePreview.value = editingProduct.value?.image_url || null;
   }
@@ -577,6 +593,7 @@ function deleteProduct(id: number) {
                     <input
                       type="file"
                       accept="image/*"
+                      :key="imageInputKey"
                       @change="onPickImage"
                       class="block w-full text-xs text-foreground file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border file:border-border file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-accent"
                     />

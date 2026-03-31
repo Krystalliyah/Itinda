@@ -77,14 +77,7 @@ function cancelOrder(order: Order) {
 }
 
 function statusBadgeClass(status: OrderStatus): string {
-    switch (status) {
-        case 'pending':   return 'bg-amber-50 text-amber-700';
-        case 'confirmed': return 'bg-blue-50 text-blue-700';
-        case 'preparing': return 'bg-violet-50 text-violet-700';
-        case 'ready':     return 'bg-emerald-50 text-emerald-700';
-        case 'completed': return 'bg-emerald-50 text-emerald-700';
-        case 'cancelled': return 'bg-red-50 text-red-700';
-    }
+    return `status-badge--${status}`;
 }
 
 function formatPrice(v: number | null | undefined) { return '₱' + (v ?? 0).toLocaleString('en-PH', { minimumFractionDigits:2 }); }
@@ -491,8 +484,7 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
 .dark .pickup-cell { color: var(--muted-foreground); }
 .dark .total-cell  { color: var(--foreground); }
 
-/* Status badges */
-.dark .status-badge { /* individual statuses handled below */ }
+/* Status badges — colors defined with .status-badge--{status} below */
 .dark .payment-badge--paid   { background: rgba(6,95,70,0.35);   color: #6ee7b7; }
 .dark .payment-badge--unpaid { background: rgba(127,29,29,0.35); color: #fca5a5; }
 
@@ -608,7 +600,32 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
 .payment-badge--paid   { background:#ecfdf5; color:#059669; }
 .payment-badge--unpaid { background:#fef2f2; color:#ef4444; }
 
-.status-badge { padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1.5;
+}
+
+/* Light mode status colors */
+.status-badge--pending   { background: #fffbeb; color: #b45309; }
+.status-badge--confirmed { background: #eff6ff; color: #1d4ed8; }
+.status-badge--preparing { background: #f5f3ff; color: #7c3aed; }
+.status-badge--ready     { background: #ecfdf5; color: #059669; }
+.status-badge--completed { background: #f0f9f6; color: #245c4a; }
+.status-badge--cancelled { background: #fef2f2; color: #ef4444; }
+
+/* Dark mode status colors */
+.dark .status-badge--pending   { background: rgba(180, 83,  9, 0.2);  color: #fcd34d; }
+.dark .status-badge--confirmed { background: rgba(29,  78,216, 0.2);  color: #93c5fd; }
+.dark .status-badge--preparing { background: rgba(124, 58,237, 0.2);  color: #c4b5fd; }
+.dark .status-badge--ready     { background: rgba(5,  150, 105, 0.2); color: #6ee7b7; }
+.dark .status-badge--completed { background: rgba(36,  92, 74, 0.25); color: #6ee7b7; }
+.dark .status-badge--cancelled { background: rgba(239, 68, 68, 0.2);  color: #fca5a5; }
 
 .action-row { display:flex; gap:4px; }
 .action-btn { width:30px; height:30px; border-radius:6px; border:1px solid #e5e5e5; background:#fff; color:#737373; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color 0.15s,color 0.15s,background 0.15s; }
