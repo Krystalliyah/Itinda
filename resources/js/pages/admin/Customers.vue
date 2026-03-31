@@ -281,7 +281,7 @@ const displayedPages = computed(() => {
 
 .page-container {
     padding: 2rem 2.5rem;
-    background: #f8fafc;
+    background: var(--background);
     min-height: 100vh;
 }
 
@@ -310,12 +310,12 @@ const displayedPages = computed(() => {
 .page-header h1 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--brand-green-dark);
     margin: 0 0 0.25rem 0;
 }
 
 .page-header p {
-    color: #64748b;
+    color: var(--brand-muted);
     margin: 0;
     font-size: 0.95rem;
 }
@@ -337,13 +337,13 @@ const displayedPages = computed(() => {
 }
 
 .stat-verified {
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(6, 95, 70, 0.15);
+    color: #10b981;
 }
 
 .stat-unverified {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(127, 29, 29, 0.15);
+    color: #f87171;
 }
 
 .stat-icon {
@@ -352,11 +352,10 @@ const displayedPages = computed(() => {
 }
 
 .card {
-    background: white;
+    background: var(--card);
     border-radius: 14px;
     padding: 1.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
 }
 
 .card-header {
@@ -365,13 +364,13 @@ const displayedPages = computed(() => {
     gap: 0.6rem;
     margin-bottom: 1.25rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
 }
 
 .card-header h2 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     margin: 0;
     display: flex;
     align-items: center;
@@ -392,8 +391,8 @@ const displayedPages = computed(() => {
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 700;
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(6, 95, 70, 0.15);
+    color: #10b981;
 }
 
 .table-responsive {
@@ -410,18 +409,18 @@ th {
     text-align: left;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #64748b;
+    color: var(--muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background: #f8fafc;
-    border-bottom: 1.5px solid #e2e8f0;
+    background: var(--secondary);
+    border-bottom: 1.5px solid var(--border);
 }
 
 td {
     padding: 0.85rem 0.85rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
     font-size: 0.88rem;
-    color: #0f172a;
+    color: var(--foreground);
     vertical-align: middle;
 }
 
@@ -430,13 +429,13 @@ tr:last-child td {
 }
 
 tr:hover td {
-    background: #f8fafc;
+    background: var(--accent);
 }
 
 .id-pill {
     display: inline-block;
-    background: #dbeafe;
-    color: #1e40af;
+    background: rgba(30, 58, 138, 0.15);
+    color: #60a5fa;
     font-size: 0.72rem;
     font-weight: 700;
     padding: 0.2rem 0.5rem;
@@ -445,7 +444,7 @@ tr:hover td {
 
 .customer-name {
     font-weight: 600;
-    color: #0f172a;
+    color: var(--foreground);
 }
 
 .email-cell,
@@ -453,13 +452,13 @@ tr:hover td {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    color: #475569;
+    color: var(--muted-foreground);
 }
 
 .cell-icon {
     width: 14px;
     height: 14px;
-    color: #94a3b8;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
@@ -474,13 +473,13 @@ tr:hover td {
 }
 
 .badge-verified {
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(6, 95, 70, 0.15);
+    color: #10b981;
 }
 
 .badge-unverified {
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(127, 29, 29, 0.15);
+    color: #f87171;
 }
 
 .badge-icon {
@@ -489,7 +488,7 @@ tr:hover td {
 }
 
 .text-muted {
-    color: #64748b;
+    color: var(--muted-foreground);
     font-size: 0.85rem;
 }
 
@@ -505,11 +504,11 @@ tr:hover td {
 .empty-icon {
     width: 48px;
     height: 48px;
-    color: #cbd5e1;
+    color: var(--border);
 }
 
 .empty-state p {
-    color: #64748b;
+    color: var(--muted-foreground);
     font-size: 0.9rem;
     margin: 0;
 }
@@ -521,14 +520,14 @@ tr:hover td {
     align-items: center;
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border);
     flex-wrap: wrap;
     gap: 1rem;
 }
 
 .pagination-info {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--muted-foreground);
 }
 
 .pagination {
@@ -545,17 +544,17 @@ tr:hover td {
     border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 500;
-    color: #334155;
-    background: white;
-    border: 1px solid #e2e8f0;
+    color: var(--foreground);
+    background: var(--card);
+    border: 1px solid var(--border);
     transition: all 0.15s;
     text-decoration: none;
     cursor: pointer;
 }
 
 .pagination-item:hover:not(.disabled):not(.active) {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+    background: var(--accent);
+    border-color: var(--border);
 }
 
 .pagination-item.active {
@@ -567,7 +566,7 @@ tr:hover td {
 .pagination-item.disabled {
     opacity: 0.5;
     pointer-events: none;
-    background: #f1f5f9;
+    background: var(--muted);
 }
 
 .pagination-icon {
@@ -595,4 +594,8 @@ tr:hover td {
         align-items: flex-start;
     }
 }
+
+/* ── Dark mode — only exceptions tokens can't handle ── */
+:global(.dark) .page-header h1 { color: var(--foreground); }
+:global(.dark) .page-header p  { color: var(--muted-foreground); }
 </style>

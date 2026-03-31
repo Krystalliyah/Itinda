@@ -254,31 +254,31 @@ const statusClass = (status: ExpenseStatus) => {
                     Keep store spending clear and organized
                 </h1>
 
-                <p class="mt-3 max-w-xl text-sm leading-7 text-[#F2F7F4] sm:text-base">
+                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
                     Monitor operational costs, review category spending, and quickly spot pending payments.
                 </p>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-amber-200/40 dark:bg-amber-100/15">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                         Total expenses
                     </p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(totalExpenses) }}</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(totalExpenses) }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-amber-200/40 dark:bg-amber-100/15">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                         Paid
                     </p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(paidExpenses) }}</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(paidExpenses) }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-amber-200/40 dark:bg-amber-100/15">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                         Pending
                     </p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(pendingExpenses) }}</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(pendingExpenses) }}</p>
                 </div>
             </div>
         </div>
@@ -645,3 +645,4 @@ const statusClass = (status: ExpenseStatus) => {
         </main>
     </div>
 </template>
+

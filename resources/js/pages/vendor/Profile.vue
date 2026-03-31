@@ -303,31 +303,31 @@ const saveChanges = () => {
                                 <CardTitle class="text-lg text-white">
                                     Account Overview
                                 </CardTitle>
-                                <CardDescription class="text-white/70">
+                                <CardDescription class="text-white">
                                     A quick summary of your profile.
                                 </CardDescription>
                             </CardHeader>
 
                             <CardContent class="space-y-3">
-                                <div class="rounded-2xl bg-white/10 p-4">
+                                <div class="rounded-2xl p-4" style="background:rgba(255,255,255,0.1)">
                                     <div class="flex items-start gap-3">
-                                        <UserRound class="mt-0.5 h-4 w-4 text-white/80" />
+                                        <UserRound class="mt-0.5 h-4 w-4 text-white" />
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide text-white/60">
+                                            <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
                                                 Full name
                                             </p>
-                                            <p class="mt-1 text-sm font-medium text-white">
+                                            <p class="mt-1 text-sm font-medium" style="color:#ffffff">
                                                 {{ form.name }}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="rounded-2xl bg-white/10 p-4">
+                                <div class="rounded-2xl p-4" style="background:rgba(255,255,255,0.1)">
                                     <div class="flex items-start gap-3">
-                                        <Mail class="mt-0.5 h-4 w-4 text-white/80" />
+                                        <Mail class="mt-0.5 h-4 w-4 text-white" />
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide text-white/60">
+                                            <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
                                                 Email
                                             </p>
                                             <p class="mt-1 text-sm font-medium text-white break-all">
@@ -337,28 +337,14 @@ const saveChanges = () => {
                                     </div>
                                 </div>
 
-                                <div class="rounded-2xl bg-white/10 p-4">
+                                <div class="rounded-2xl p-4" style="background:rgba(255,255,255,0.1)">
                                     <div class="flex items-start gap-3">
-                                        <Phone class="mt-0.5 h-4 w-4 text-white/80" />
+                                        <ShieldCheck class="mt-0.5 h-4 w-4 text-white" />
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide text-white/60">
-                                                Phone
-                                            </p>
-                                            <p class="mt-1 text-sm font-medium text-white">
-                                                {{ form.phone || 'Not provided' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="rounded-2xl bg-white/10 p-4">
-                                    <div class="flex items-start gap-3">
-                                        <ShieldCheck class="mt-0.5 h-4 w-4 text-white/80" />
-                                        <div>
-                                            <p class="text-xs uppercase tracking-wide text-white/60">
+                                            <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
                                                 Account status
                                             </p>
-                                            <p class="mt-1 text-sm font-medium text-white">
+                                            <p class="mt-1 text-sm font-medium" style="color:#ffffff">
                                                 {{ profile.email_verified_at ? 'Verified and active' : 'Pending email verification' }}
                                             </p>
                                         </div>
@@ -435,3 +421,4 @@ const saveChanges = () => {
         </main>
     </div>
 </template>
+

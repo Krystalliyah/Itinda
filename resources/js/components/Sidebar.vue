@@ -161,7 +161,7 @@ const handleDrawerNavClick = () => {
     top: 64px;
     height: calc(100vh - 64px);
     width: var(--sidebar-expanded);
-    background: #1b4d3e;
+    background: var(--sidebar-background);
     z-index: 30;
     display: flex;
     flex-direction: column;
@@ -180,7 +180,7 @@ const handleDrawerNavClick = () => {
 
 .sidebar-content {
     padding: var(--sidebar-pad-y) var(--sidebar-pad-x);
-    color: white;
+    color: var(--sidebar-foreground);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -199,7 +199,7 @@ const handleDrawerNavClick = () => {
     min-height: var(--icon-box);
     margin-bottom: 26px;
     padding-bottom: 18px;
-    border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+    border-bottom: 1px solid var(--sidebar-border);
 }
 
 .sidebar-header-left {
@@ -216,7 +216,7 @@ const handleDrawerNavClick = () => {
 .sidebar-logo {
     width: var(--icon-box);
     height: var(--icon-box);
-    background: #c5a059;
+    background: var(--brand-gold);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -227,11 +227,11 @@ const handleDrawerNavClick = () => {
 .sidebar-logo svg {
     width: var(--icon-size);
     height: var(--icon-size);
-    color: #1b4d3e;
+    color: var(--brand-green);
 }
 
 .sidebar-title {
-    color: #c5a059;
+    color: var(--brand-gold);
     margin: 0;
     font-size: 1.3rem;
     font-family: 'Montserrat', sans-serif;
@@ -263,7 +263,7 @@ const handleDrawerNavClick = () => {
 .sidebar-footer {
     margin-top: auto;
     padding-top: 20px;
-    border-top: 1px solid rgba(197, 160, 89, 0.2);
+    border-top: 1px solid var(--sidebar-border);
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -276,7 +276,7 @@ const handleDrawerNavClick = () => {
     min-height: var(--icon-box);
     padding: 0 14px;
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--sidebar-foreground);
     font-size: 0.95rem;
     font-weight: 600;
     text-decoration: none;
@@ -306,7 +306,7 @@ const handleDrawerNavClick = () => {
 
 .menu-item:hover {
     background: rgba(197, 160, 89, 0.1);
-    color: #c5a059;
+    color: var(--brand-gold);
 }
 
 .menu-item svg {
@@ -340,7 +340,7 @@ const handleDrawerNavClick = () => {
     left: 56px;
     top: 50%;
     transform: translateY(-50%);
-    background: #245c4a;
+    background: var(--brand-green-dark);
     color: white;
     padding: 6px 10px;
     border-radius: 8px;
@@ -352,7 +352,7 @@ const handleDrawerNavClick = () => {
 }
 
 .logout-btn {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .logout-btn:hover {
@@ -460,7 +460,7 @@ const handleDrawerNavClick = () => {
     min-height: var(--icon-box);
     padding: 0 14px;
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.72);
+    color: var(--sidebar-foreground);
     font-size: 0.95rem;
     font-weight: 600;
     text-decoration: none;
@@ -483,7 +483,7 @@ const handleDrawerNavClick = () => {
 .sidebar-nav-item:hover,
 :deep(.sidebar-nav-item:hover) {
     background: rgba(197, 160, 89, 0.1);
-    color: #c5a059;
+    color: var(--brand-gold);
 }
 
 .sidebar-nav-icon,
@@ -541,7 +541,7 @@ const handleDrawerNavClick = () => {
     left: 56px;
     top: 50%;
     transform: translateY(-50%);
-    background: #245c4a;
+    background: var(--brand-green-dark);
     color: white;
     padding: 6px 10px;
     border-radius: 8px;

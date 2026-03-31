@@ -14,46 +14,39 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::with([
-                'children' => fn ($q) => $q->orderBy('name'),
-            ])
-            ->parents()
-            ->orderBy('name')
-            ->get();
+        $categories = Category::with(['children' => function ($q) {
+                            $q->orderBy('name');
+                        }])
+                        ->parents()
+                        ->orderBy('name')
+                        ->get();
 
-        $productCounts = [];
+        // Aggregate product counts across all tenant databases.
+        // Products live in tenant DBs (category_id FK), categories in central DB.
+        $productCounts = []; // [category_id => count]
 
-        foreach (Tenant::query()->get() as $tenant) {
+        foreach (Tenant::query()->where('is_approved', true)->get() as $tenant) {
             try {
-                tenancy()->initialize($tenant);
+                $tenant->run(function () use (&$productCounts) {
+                    $rows = DB::table('products')
+                        ->selectRaw('category_id, COUNT(*) as cnt')
+                        ->whereNotNull('category_id')
+                        ->groupBy('category_id')
+                        ->get();
 
-                if (! Schema::hasTable('products')) {
-                    continue;
-                }
-
-                $counts = DB::table('products')
-                    ->selectRaw('category_id, COUNT(*) as product_count')
-                    ->whereNotNull('category_id')
-                    ->groupBy('category_id')
-                    ->pluck('product_count', 'category_id');
-
-                foreach ($counts as $categoryId => $count) {
-                    $productCounts[$categoryId] = ($productCounts[$categoryId] ?? 0) + (int) $count;
-                }
-            } catch (\Throwable $e) {
-                \Log::warning("Could not count products for tenant {$tenant->id}: {$e->getMessage()}");
-            } finally {
-                tenancy()->end();
+                    foreach ($rows as $row) {
+                        $productCounts[$row->category_id] = ($productCounts[$row->category_id] ?? 0) + $row->cnt;
+                    }
+                });
+            } catch (\Exception $e) {
+                \Log::warning("Could not read products from tenant {$tenant->id}: " . $e->getMessage());
             }
         }
 
-        DB::setDefaultConnection('central');
+        $formattedCategories = $categories->map(fn ($cat) => $this->formatCategory($cat, $productCounts));
 
         return inertia('admin/Categories', [
-            'categories' => $categories
-                ->map(fn ($cat) => $this->formatCategory($cat, false, $productCounts))
-                ->values()
-                ->all(),
+            'categories' => $formattedCategories,
         ]);
     }
 
@@ -64,7 +57,7 @@ class CategoryController extends Controller
             'slug'        => ['required', 'string', 'max:255', 'regex:/^[a-z0-9-]+$/', Rule::unique('categories', 'slug')],
             'description' => 'nullable|string|max:1000',
             'color'       => 'nullable|string|max:20',
-            'parent_id'   => ['nullable', 'integer', Rule::exists('categories', 'id')], // Validate parent_id if sub-category
+            'parent_id'   => ['nullable', 'integer', Rule::exists('categories', 'id')],
         ]);
 
         // If no color is provided and the category is a sub-category, set default color based on the parent category's color
@@ -126,7 +119,12 @@ class CategoryController extends Controller
         return back()->with('success', 'Category updated successfully.');
     }
 
-    private function formatCategory(Category $cat, bool $isChild = false, array $productCounts = []): array
+    /**
+     * Format a category (and its children) for the frontend.
+     *
+     * @param  array<int,int>  $productCounts  [category_id => total across all tenants]
+     */
+    private function formatCategory(Category $cat, array $productCounts = [], bool $isChild = false): array
     {
         $data = [
             'id'            => $cat->id,
@@ -135,13 +133,13 @@ class CategoryController extends Controller
             'description'   => $cat->description ?? '',
             'color'         => $cat->color ?? '#6366f1',
             'parent_id'     => $cat->parent_id,
-            'product_count' => (int) ($productCounts[$cat->id] ?? 0),
+            'product_count' => $productCounts[$cat->id] ?? 0,
             'children'      => [],
         ];
 
         if (! $isChild && $cat->relationLoaded('children')) {
             $data['children'] = $cat->children
-                ->map(fn ($child) => $this->formatCategory($child, true, $productCounts))
+                ->map(fn ($child) => $this->formatCategory($child, $productCounts, true))
                 ->values()
                 ->all();
         }

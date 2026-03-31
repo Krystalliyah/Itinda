@@ -150,25 +150,25 @@ const saveChanges = () => {
                     {{ storeName }}
                 </h1>
 
-                <p class="mt-3 max-w-xl text-sm leading-7 text-[#F2F7F4] sm:text-base">
+                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
                     Keep your storefront polished, informative, and easy to manage across desktop and mobile.
                 </p>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Lead time</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.pickup_lead_time }}</p>
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Lead time</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.pickup_lead_time }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Order notice</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.order_notice }}</p>
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Order notice</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.order_notice }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Setup</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ setupProgress }}% complete</p>
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
                 </div>
             </div>
         </div>

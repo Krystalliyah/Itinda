@@ -133,31 +133,31 @@ const formatPeso = (value: number) =>
                                     Track revenue, orders, and top-performing products
                                 </h1>
 
-                                <p class="mt-3 max-w-xl text-sm leading-7 text-[#F2F7F4] sm:text-base">
+                                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
                                     Get a clear view of store performance, customer order patterns, and your strongest-selling items.
                                 </p>
                             </div>
 
                             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                                         Weekly revenue
                                     </p>
-                                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(totalRevenue) }}</p>
+                                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(totalRevenue) }}</p>
                                 </div>
 
-                                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                                         Total orders
                                     </p>
-                                    <p class="mt-2 text-xl font-semibold !text-white">{{ totalOrders }}</p>
+                                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ totalOrders }}</p>
                                 </div>
 
-                                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                                         Best day
                                     </p>
-                                    <p class="mt-2 text-xl font-semibold !text-white">{{ bestDay.day }}</p>
+                                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ bestDay.day }}</p>
                                 </div>
                             </div>
                         </div>
@@ -486,3 +486,4 @@ const formatPeso = (value: number) =>
         </main>
     </div>
 </template>
+

@@ -1,202 +1,200 @@
-/* DARK MODE THEME ENHANCEMENTS */
+/* ================================================================
+   DARK MODE SUPPLEMENTAL OVERRIDES  — iTinda
+   ----------------------------------------------------------------
+   Tokens in app.css (.dark) drive all surfaces, text, borders,
+   inputs, and focus rings. This file handles only:
+     1. Component class names that can't use tokens directly
+     2. bg-white / bg-card surface fixes for pages using hardcoded classes
+     3. Semantic badge/pill color inversions
+     4. Table, modal, and form surface fixes
+     5. Custom non-Tailwind class names (chips, pills, badges)
+     6. Scrollbar and toasts
+   ----------------------------------------------------------------
+   Rules:
+   - No broad catch-all selectors (no .dark * { color })
+   - No shadow-as-background hacks (.shadow-sm is not a card)
+   - No global button resets
+   - No global p/span/label color overrides
+   - !important only where Tailwind utility specificity requires it
+   ================================================================ */
 
-/* ========================================
-   SIDEBAR & HEADER - DARK MODE
-   ======================================== */
-
-/* Dark mode sidebar - change from green to dark grey */
-.dark .sidebar,
-.dark aside[class*="sidebar"] {
-    background-color: #111827 !important;
-    border-right: 1px solid #1f2937 !important;
+/* ── App shell ────────────────────────────────────────────── */
+.dark .dashboard-wrapper,
+.dark .dashboard-content {
+    background-color: var(--background);
 }
 
-/* Dark mode header - change to dark grey */
-.dark header,
-.dark .app-header,
-.dark header[class*="header"] {
-    background-color: #1f2937 !important;
-    border-bottom: 1px solid #374151 !important;
+/* ── Header ───────────────────────────────────────────────── */
+.dark .app-header {
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
 }
 
-/* Sidebar logo in dark mode */
-.dark .sidebar-logo,
-.dark [class*="sidebar-logo"] {
-    background-color: #d4b76a !important; /* Gold accent */
-    color: #111827 !important;
+/* Header text and icon colors */
+.dark .header-title       { color: var(--foreground); }
+.dark .user-name          { color: var(--foreground); }
+.dark .menu-toggle svg    { color: var(--brand-gold); stroke: var(--brand-gold); }
+.dark .user-avatar        { background: var(--brand-gold); color: var(--sidebar-background); }
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.dark .sidebar {
+    background: var(--sidebar-background);
+    border-right: 1px solid var(--sidebar-border);
+}
+.dark .sidebar-header  { border-bottom-color: var(--sidebar-border); }
+.dark .sidebar-footer  { border-top-color: var(--sidebar-border); }
+.dark .sidebar-logo    { background: var(--sidebar-accent); }
+.dark .sidebar-logo svg { color: var(--sidebar-accent-foreground); }
+.dark .sidebar-title   { color: #ffffff; }
+
+/* Nav items */
+.dark .sidebar-nav-item,
+.dark .sidebar .menu-item {
+    color: var(--sidebar-foreground);
+}
+.dark .sidebar-nav-item:hover,
+.dark .sidebar .menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+.dark .sidebar-nav-item.active,
+.dark .sidebar .menu-item.active,
+.dark .sidebar-nav-item[aria-current="page"],
+.dark .sidebar .menu-item[aria-current="page"] {
+    background: var(--sidebar-primary);
+    color: #ffffff;
 }
 
-/* Sidebar text in dark mode */
-.dark .sidebar *,
-.dark aside[class*="sidebar"] * {
-    color: #e5e7eb !important;
+/* Collapsed tooltip */
+.dark .sidebar.collapsed .sidebar-nav-item:hover::after,
+.dark .sidebar.collapsed .menu-item:hover::after {
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
-/* Sidebar active/hover states in dark mode */
-.dark .sidebar .active,
-.dark .sidebar [class*="active"] {
-    background-color: rgba(212, 183, 106, 0.15) !important;
-    color: #d4b76a !important;
+/* ── White surface fix — the core problem ─────────────────── */
+/*
+   Pages use bg-white on cards, panels, and table wrappers.
+   In dark mode these must become var(--card).
+   We scope to .dark to avoid touching light mode.
+   We do NOT use * descendant selectors — only the surface itself.
+*/
+.dark .bg-white {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
 }
 
-.dark .sidebar a:hover,
-.dark .sidebar button:hover {
-    background-color: rgba(212, 183, 106, 0.1) !important;
-    color: #d4b76a !important;
-}
-
-/* Header elements in dark mode */
-.dark header *:not(svg),
-.dark .app-header *:not(svg) {
-    color: #e5e7eb !important;
-}
-
-.dark header svg,
-.dark .app-header svg {
-    color: #d4b76a !important;
-    stroke: #d4b76a !important;
-}
-/* ========================================
-   CONTENT AREA - DARK MODE
-   ======================================== */
-
-/* Main content background */
-.dark .dashboard-content,
-.dark main[class*="dashboard"] {
-    background-color: #0f172a !important;
-}
-
-/* AGGRESSIVE: Target ALL white backgrounds */
-.dark .bg-white,
-.dark [class*="bg-white"],
+/* Hardcoded inline style backgrounds */
 .dark [style*="background: white"],
 .dark [style*="background:white"],
 .dark [style*="background: #fff"],
-.dark [style*="background:#fff"] {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
+.dark [style*="background:#fff"],
+.dark [style*="background-color: white"],
+.dark [style*="background-color:#fff"] {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
 }
 
-/* Card components specifically */
-.dark .bg-gradient-to-br {
-    background: #1e293b !important;
+/* ── Tables ───────────────────────────────────────────────── */
+/*
+   Tables in pages use raw <table> / <th> / <td> with bg-white
+   or no background class at all. We set them explicitly.
+*/
+.dark table {
+    background-color: var(--card);
+    color: var(--card-foreground);
 }
 
-/* Override any gradient backgrounds */
-.dark [class*="from-white"],
-.dark [class*="to-white"] {
-    background: #1e293b !important;
+.dark thead,
+.dark thead tr {
+    background-color: var(--secondary);
+    border-bottom-color: var(--border);
 }
 
-/* Stat cards and metric cards */
-.dark .shadow-sm,
-.dark .shadow,
-.dark .shadow-md,
-.dark [class*="shadow-"] {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
+.dark th {
+    background-color: var(--secondary) !important;
+    color: var(--muted-foreground) !important;
+    border-color: var(--border) !important;
 }
 
-/* ========================================
-   FORM ELEMENTS - DARK MODE
-   ======================================== */
+.dark td {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
+    border-color: var(--border) !important;
+}
 
-/* Inputs and textareas */
+.dark tr:hover td {
+    background-color: var(--accent) !important;
+}
+
+/* Shared Table.vue component — already uses bg-card, reinforce */
+.dark .data-table th { color: var(--muted-foreground) !important; }
+.dark .data-table td { color: var(--card-foreground) !important; }
+
+/* ── Modals / Dialogs ─────────────────────────────────────── */
+/*
+   DialogContent.vue uses bg-card (correct).
+   Pages that build their own modals with bg-white need this fix.
+*/
+.dark [data-slot="dialog-content"] {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border-color: var(--border);
+}
+
+/* Modal overlay */
+.dark [data-slot="dialog-overlay"] {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Custom modal classes used in page-level modals */
+.dark .modal-content {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
+    border-color: var(--border) !important;
+}
+
+/* ── Forms ────────────────────────────────────────────────── */
 .dark input,
 .dark textarea,
 .dark select {
-    background-color: #0f172a !important;
-    color: #f1f5f9 !important;
-    border-color: #374151 !important;
+    background-color: var(--input) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border) !important;
 }
 
 .dark input:focus,
 .dark textarea:focus,
 .dark select:focus {
-    border-color: #d4b76a !important;
-    box-shadow: 0 0 0 3px rgba(212, 183, 106, 0.1) !important;
+    border-color: var(--ring) !important;
+    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.15) !important;
+    outline: none !important;
 }
 
-/* Input prefixes/suffixes */
-.dark input + span,
-.dark span + input {
-    background-color: #374151 !important;
-    color: #9ca3af !important;
-    border-color: #374151 !important;
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: var(--muted-foreground) !important;
 }
 
-/* Operating hours grid items - specific fix */
-.dark .grid.gap-3 > div,
-.dark .grid.gap-4 > div {
-    background-color: #1e293b !important;
-    border-color: #374151 !important;
+/* Labels inside forms */
+.dark label {
+    color: var(--foreground);
 }
 
-/* Operating hours text */
-.dark .grid.gap-3 p,
-.dark .grid.gap-4 p,
-.dark .grid.gap-3 label,
-.dark .grid.gap-4 label {
-    color: #f1f5f9 !important;
+/* ── Hardcoded brand-green backgrounds ────────────────────── */
+/* Pages use inline style or Tailwind arbitrary bg-[#245C4A] */
+.dark [class*="bg-[#245C4A]"],
+.dark [class*="bg-[#245c4a]"],
+.dark [class*="bg-[#1b4d3e]"],
+.dark [class*="bg-[#1B4D3E]"] {
+    background-color: var(--brand-gold) !important;
+    color: #0d1b2a !important;
 }
 
-/* Time inputs specific */
-.dark input[type="time"] {
-    background-color: #0f172a !important;
-    color: #f1f5f9 !important;
-    border-color: #374151 !important;
-}
-
-/* Checkbox containers */
-.dark .flex.items-start.gap-3,
-.dark .flex.items-center.gap-2 {
-    color: #f1f5f9 !important;
-}
-
-.dark .flex.items-start.gap-3 span,
-.dark .flex.items-center.gap-2 span {
-    color: #f1f5f9 !important;
-}
-
-/* Store preferences and notification cards */
-.dark .rounded-2xl.border,
-.dark .rounded-xl.border {
-    background-color: #1e293b !important;
-    border-color: #374151 !important;
-}
-
-.dark .rounded-2xl.border *,
-.dark .rounded-xl.border * {
-    color: #f1f5f9 !important;
-}
-
-/* Specific fix for checkbox labels */
-.dark label.flex {
-    background-color: #1e293b !important;
-}
-
-.dark label.flex .block {
-    color: #f1f5f9 !important;
-}
-
-.dark label.flex .text-sm {
-    color: #cbd5e1 !important;
-}
-/* ========================================
-   BADGES & TAGS - DARK MODE
-   ======================================== */
-
-/* ALL light color backgrounds - make them dark with gold tint */
-.dark .bg-blue-50,
-.dark .bg-green-50,
-.dark .bg-yellow-50,
-.dark .bg-amber-50,
-.dark .bg-red-50,
-.dark .bg-purple-50,
-.dark .bg-indigo-50,
-.dark .bg-emerald-50,
-.dark .bg-teal-50,
-.dark .bg-cyan-50,
+/* ── Hardcoded light backgrounds (brand-specific) ─────────── */
 .dark [class*="bg-[#EDF6F1]"],
 .dark [class*="bg-[#F3F7F5]"],
 .dark [class*="bg-[#FBFCFC]"],
@@ -205,349 +203,307 @@
 .dark [class*="bg-[#E4ECE8]"],
 .dark [class*="bg-[#ECF2EF]"],
 .dark [class*="bg-[#E6EEEA]"],
-.dark [class*="bg-[#E5EEEA]"] {
-    background-color: rgba(212, 183, 106, 0.15) !important;
-    color: #f1f5f9 !important;
+.dark [class*="bg-[#E5EEEA]"],
+.dark [class*="bg-[#FAFCFB]"],
+.dark [class*="bg-[#F8FAFB]"] {
+    background-color: var(--secondary) !important;
+    color: var(--foreground) !important;
 }
 
-/* Status badges - specific colors */
-.dark .bg-amber-100,
-.dark .bg-amber-50 {
-    background-color: #78350f !important;
-    color: #fef3c7 !important;
-}
-
-.dark .bg-green-100,
-.dark .bg-emerald-100 {
-    background-color: #065f46 !important;
-    color: #ffffff !important;
-}
-
-.dark .bg-red-100,
-.dark .bg-red-50 {
-    background-color: #7f1d1d !important;
-    color: #fecaca !important;
-}
-
-/* Category badges in tables */
-.dark .bg-gray-100,
-.dark .bg-slate-100,
-.dark .bg-gray-50,
-.dark .bg-slate-50 {
-    background-color: #334155 !important;
-    color: #f1f5f9 !important;
-}
-
-/* ========================================
-   TEXT COLORS - DARK MODE
-   ======================================== */
-
-/* Headings and important text */
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6,
-.dark .text-sm.font-medium,
-.dark .text-lg.font-semibold,
-.dark .text-xl.font-semibold,
-.dark .font-semibold {
-    color: #f1f5f9 !important;
-}
-
-/* Body text */
-.dark p,
-.dark span:not([class*="bg-"]),
-.dark label {
-    color: #e5e7eb !important;
-}
-
-/* Muted text */
-.dark .text-xs,
-.dark [class*="text-muted"],
-.dark [class*="text-gray"] {
-    color: #9ca3af !important;
-}
-
-/* Specific text color overrides for hardcoded colors */
+/* ── Hardcoded dark text colors (brand green) ─────────────── */
 .dark [class*="text-[#183D34]"],
 .dark [class*="text-[#1E4138]"],
 .dark [class*="text-[#245C4A]"],
+.dark [class*="text-[#245c4a]"],
+.dark [class*="text-[#1b4d3e]"],
+.dark [class*="text-[#1B4D3E]"],
+.dark [class*="text-[#1D4B3C]"],
+.dark [class*="text-[#163F35]"],
+.dark [class*="text-[#315B4F]"] {
+    color: var(--foreground) !important;
+}
+
+/* ── Hardcoded muted text colors ──────────────────────────── */
 .dark [class*="text-[#6E817A]"],
 .dark [class*="text-[#70867D]"],
 .dark [class*="text-[#74867F]"],
-.dark [class*="text-[#61766F]"] {
-    color: #f1f5f9 !important;
+.dark [class*="text-[#61766F]"],
+.dark [class*="text-[#6C8079]"],
+.dark [class*="text-[#70827B]"],
+.dark [class*="text-[#8A9C95]"],
+.dark [class*="text-[#73867F]"],
+.dark [class*="text-[#6C817A]"],
+.dark [class*="text-[#5F766E]"],
+.dark [class*="text-[#5E7A70]"] {
+    color: var(--muted-foreground) !important;
 }
 
-/* Ensure all text in cards is visible */
-.dark .rounded-2xl *:not(input):not(textarea):not(button),
-.dark .rounded-xl *:not(input):not(textarea):not(button) {
-    color: #e5e7eb !important;
+/* ── Hardcoded border colors ──────────────────────────────── */
+.dark [class*="border-[#DCE8E1]"],
+.dark [class*="border-[#D7E3DC]"],
+.dark [class*="border-[#E5EEEA]"],
+.dark [class*="border-[#CBD9D2]"],
+.dark [class*="border-[#E4ECE8]"],
+.dark [class*="border-[#B8CCC3]"],
+.dark [class*="border-[#D8E4DD]"] {
+    border-color: var(--border) !important;
 }
 
-/* Override for specific font weights */
-.dark .font-semibold,
-.dark .font-bold {
-    color: #f1f5f9 !important;
-}
-/* ========================================
-   BORDERS - DARK MODE
-   ======================================== */
-
-.dark .border,
-.dark [class*="border-"] {
-    border-color: #374151 !important;
-}
-
-/* ========================================
-   BUTTONS - DARK MODE
-   ======================================== */
-
-/* Primary buttons (green) - change to gold in dark mode */
-.dark button[style*="#245c4a"],
-.dark button[style*="#245C4A"],
-.dark [class*="bg-[#245C4A]"] {
-    background-color: #d4b76a !important;
-    color: #111827 !important;
-}
-
-.dark button[style*="#245c4a"]:hover,
-.dark button[style*="#245C4A"]:hover {
-    background-color: #c5a059 !important;
-}
-
-/* Secondary buttons */
-.dark button:not([style*="background"]) {
-    background-color: #374151 !important;
-    color: #f9fafb !important;
-    border-color: #4b5563 !important;
-}
-
-.dark button:not([style*="background"]):hover {
-    background-color: #4b5563 !important;
-}
-
-/* ========================================
-   TABLES - DARK MODE
-   ======================================== */
-
-.dark table {
-    background-color: #1e293b !important;
-}
-
-.dark th {
-    background-color: #334155 !important;
-    color: #f1f5f9 !important;
-    border-color: #475569 !important;
-}
-
-.dark td {
-    background-color: #1e293b !important;
-    color: #e2e8f0 !important;
-    border-color: #475569 !important;
-}
-
-.dark tr:hover td {
-    background-color: #334155 !important;
-}
-
-/* ========================================
-   PROFILE PAGE - DARK MODE
-   ======================================== */
-
-/* Profile card - the main white card */
-.dark .rounded-xl.bg-white.shadow-sm,
-.dark .rounded-2xl.bg-white.shadow-sm,
-.dark .rounded-lg.bg-white.shadow-sm {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
-}
-
-/* Avatar placeholder */
-.dark .rounded-full.bg-gray-100,
-.dark .rounded-full.bg-gray-200 {
-    background-color: #334155 !important;
-}
-
-/* Verified badge */
+/* ── Semantic badge color inversions ──────────────────────── */
+.dark .bg-amber-100  { background-color: rgba(120, 53, 15, 0.55)  !important; color: #fde68a !important; }
+.dark .bg-amber-50   { background-color: rgba(120, 53, 15, 0.35)  !important; color: #fde68a !important; }
 .dark .bg-green-100,
-.dark .bg-emerald-100 {
-    background-color: #065f46 !important;
-    color: #ffffff !important;
-}
-
-/* ========================================
-   INVENTORY PAGE - DARK MODE
-   ======================================== */
-
-/* Inventory stat cards - target the actual cards */
-.dark .grid.gap-4 > div.bg-white,
-.dark .grid.gap-3 > div.bg-white {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
-}
-
-/* ========================================
-   EXPENSES & ANALYTICS - DARK MODE
-   ======================================== */
-
-/* Stat cards - target cards with padding */
-.dark .rounded-\[26px\].bg-white,
-.dark .rounded-xl.bg-white.p-5,
-.dark .rounded-xl.bg-white.p-6 {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
-}
-
-/* Icon backgrounds - make them gold in dark mode */
-.dark .bg-blue-50,
+.dark .bg-emerald-100 { background-color: rgba(6, 95, 70, 0.5)   !important; color: #6ee7b7 !important; }
 .dark .bg-green-50,
-.dark .bg-yellow-50,
-.dark .bg-amber-50,
-.dark .bg-red-50,
+.dark .bg-emerald-50  { background-color: rgba(6, 95, 70, 0.3)   !important; color: #6ee7b7 !important; }
+.dark .bg-red-100    { background-color: rgba(127, 29, 29, 0.55)  !important; color: #fca5a5 !important; }
+.dark .bg-red-50     { background-color: rgba(127, 29, 29, 0.3)   !important; color: #fca5a5 !important; }
+.dark .bg-blue-100   { background-color: rgba(30, 58, 138, 0.5)   !important; color: #93c5fd !important; }
+.dark .bg-blue-50    { background-color: rgba(30, 58, 138, 0.3)   !important; color: #93c5fd !important; }
 .dark .bg-purple-50,
-.dark .bg-indigo-50,
-.dark .bg-emerald-50 {
-    background-color: rgba(212, 183, 106, 0.15) !important;
-}
+.dark .bg-indigo-50  { background-color: rgba(76, 29, 149, 0.35)  !important; color: #c4b5fd !important; }
+.dark .bg-gray-100,
+.dark .bg-slate-100  { background-color: var(--secondary)         !important; color: var(--foreground) !important; }
+.dark .bg-gray-50,
+.dark .bg-slate-50   { background-color: var(--muted)             !important; color: var(--foreground) !important; }
 
-/* Keep icon colors as they are - don't change them */
-.dark .text-blue-600,
-.dark .text-blue-700 {
-    color: #60a5fa !important;
-}
+/* ── Icon semantic colors — preserve in dark mode ─────────── */
+.dark .text-blue-600,  .dark .text-blue-700  { color: #60a5fa !important; }
+.dark .text-green-600, .dark .text-green-700 { color: #4ade80 !important; }
+.dark .text-amber-600, .dark .text-yellow-600,
+.dark .text-yellow-700                       { color: #fbbf24 !important; }
+.dark .text-red-600,   .dark .text-red-700   { color: #f87171 !important; }
+.dark .text-purple-600,.dark .text-indigo-600 { color: #a78bfa !important; }
 
-.dark .text-green-600,
-.dark .text-green-700 {
-    color: #4ade80 !important;
-}
-
-.dark .text-yellow-600,
-.dark .text-yellow-700,
-.dark .text-amber-600 {
-    color: #fbbf24 !important;
-}
-
-.dark .text-red-600,
-.dark .text-red-700 {
-    color: #f87171 !important;
-}
-
-/* ========================================
-   ORDER MANAGEMENT - DARK MODE
-   ======================================== */
-
-/* Order cards */
-.dark .border.rounded-xl.bg-white,
-.dark .border.rounded-lg.bg-white {
-    background-color: #1e293b !important;
-    border-color: #374151 !important;
-}
-
-/* Status badges */
-.dark .bg-amber-100 {
-    background-color: #78350f !important;
-    color: #fef3c7 !important;
-}
-
-.dark .bg-green-100 {
-    background-color: #065f46 !important;
-    color: #ffffff !important;
-}
-
-.dark .bg-red-100 {
-    background-color: #7f1d1d !important;
-    color: #fecaca !important;
-}
-
-/* ========================================
-   UTILITY CLASSES
-   ======================================== */
-
-/* Ensure border-radius is respected */
-.rounded-xl,
-.rounded-2xl,
-.rounded-3xl,
-.rounded-full {
-    overflow: hidden !important;
-}
-
-/* Scrollbar styling for dark mode */
-.dark ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.dark ::-webkit-scrollbar-track {
-    background: #1e293b;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 4px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
-
-/* Force product count chips to have dark background in dark mode */
+/* ── Custom chip / badge classes ──────────────────────────── */
 .dark .chip-products {
-    background-color: #334155 !important;
-    color: #e2e8f0 !important;
+    background-color: var(--secondary) !important;
+    color: var(--muted-foreground) !important;
+    border-color: var(--border) !important;
 }
 
-/* Ensure category chips stay dark */
 .dark .chip-children {
-    background-color: #4c1d95 !important;
-    color: #e9d5ff !important;
+    background-color: rgba(76, 29, 149, 0.4) !important;
+    color: #c4b5fd !important;
+    border-color: rgba(139, 92, 246, 0.25) !important;
 }
 
-/* Category row hover in dark mode - dark green */
-.dark .tree-row:hover {
-    background-color: #014050 !important;  /* Your brand green */
-}
-
-/* Child rows hover - slightly lighter or same dark green */
-.dark .child-row:hover {
-    background-color: #113d3c !important;
-}
-
-/* ========================================
-   FIX REPORTS.VUE DARK MODE ISSUES
-   ======================================== */
-
-/* Fix "Days Active" badge in Vendor Performance */
+/* ── Status pills ─────────────────────────────────────────── */
 .dark .days-badge {
-    background-color: #334155 !important;
-    color: #e2e8f0 !important;
+    background-color: var(--secondary) !important;
+    color: var(--muted-foreground) !important;
 }
 
-/* Fix "Verified" and "Pending" status pills in Customer Activity */
 .dark .pill-active {
-    background-color: #15803d !important;  /* Dark green for verified */
-    color: #ffffff !important;
+    background-color: rgba(6, 95, 70, 0.5) !important;
+    color: #6ee7b7 !important;
 }
 
 .dark .pill-pending {
-    background-color: #92400e !important;  /* Dark orange for pending */
-    color: #ffffff !important;
+    background-color: rgba(120, 53, 15, 0.55) !important;
+    color: #fde68a !important;
 }
 
-/* Fix any other status pills that might appear */
 .dark .status-pill {
-    background-color: #334155 !important;
-    color: #e2e8f0 !important;
+    background-color: var(--secondary) !important;
+    color: var(--muted-foreground) !important;
 }
 
-/* Ensure the "Verified" and "Pending" text in the table header remains visible */
-.dark .data-table th {
-    color: #9ca3af !important;
+/* ── Admin page custom card classes ───────────────────────── */
+.dark .page-container {
+    background-color: var(--background);
 }
 
-/* Fix the percentage text inside donut charts */
-.dark .donut-body svg text {
-    fill: #f1f5f9 !important;  /* Light text for dark mode */
+.dark .page-container .card,
+.dark .page-container .section-card,
+.dark .page-container .stat-card,
+.dark .page-container .kpi-card,
+.dark .page-container .chart-card,
+.dark .page-container .donut-card,
+.dark .page-container .health-card {
+    background-color: var(--card) !important;
+    border-color: var(--border) !important;
+    color: var(--card-foreground) !important;
+}
+
+/* Admin card text hierarchy */
+.dark .page-container .card-title,
+.dark .page-container .kpi-val,
+.dark .page-container .stat-value,
+.dark .page-container .hm-val {
+    color: var(--foreground) !important;
+}
+
+.dark .page-container .card-subtitle,
+.dark .page-container .kpi-label,
+.dark .page-container .kpi-sub,
+.dark .page-container .hm-label {
+    color: var(--muted-foreground) !important;
+}
+
+/* Admin tab bar */
+.dark .tab-bar {
+    background-color: var(--card) !important;
+    border-color: var(--border) !important;
+}
+
+/* ── SVG text fills (charts, donuts) ──────────────────────── */
+.dark .donut-body svg text,
+.dark .trend-svg text {
+    fill: var(--foreground) !important;
+}
+
+/* ── Table row hover (custom classes) ─────────────────────── */
+.dark .tree-row:hover  { background-color: var(--accent); }
+.dark .child-row:hover { background-color: var(--accent); }
+
+/* ── Rounded card overflow fix ────────────────────────────── */
+/* Prevents background bleeding outside border-radius on cards */
+.dark .rounded-xl.bg-white,
+.dark .rounded-2xl.bg-white,
+.dark .rounded-lg.bg-white {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
+    border-color: var(--border) !important;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+.dark ::-webkit-scrollbar              { width: 5px; height: 5px; }
+.dark ::-webkit-scrollbar-track        { background: transparent; }
+.dark ::-webkit-scrollbar-thumb        { background: var(--accent); border-radius: 99px; }
+.dark ::-webkit-scrollbar-thumb:hover  { background: var(--muted-foreground); }
+
+/* ── Customer Dashboard — Current Order card ─────────────── */
+/*
+   The card uses inline style="background:#17493D" so we target
+   the element via its shadow utility which is unique to this card.
+   We also cover the bg-[#17493D] Tailwind class variant.
+*/
+.dark [class*="shadow-"][style*="background:#17493D"],
+.dark [class*="shadow-"][style*="background: #17493D"] {
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35) !important;
+}
+
+/* The card itself is identified by its unique shadow value */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] {
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35) !important;
+}
+
+/* Text inside the dark-green current-order / account-overview cards */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] h2,
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-white {
+    color: var(--foreground) !important;
+}
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-white\/60,
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-white\/70,
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-white\/50,
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-white\/55,
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-white\/80 {
+    color: var(--muted-foreground) !important;
+}
+
+/* Inner frosted panels (bg-white/5, bg-white/10) inside the card */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-white\/5,
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-white\/10 {
+    background-color: var(--secondary) !important;
+    border-color: var(--border) !important;
+}
+
+/* Progress bar track */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-white\/10.h-1\.5 {
+    background-color: var(--muted) !important;
+}
+
+/* "View order details" / "Browse stores" CTA button inside the card */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] button.bg-white {
+    background-color: var(--brand-gold) !important;
+    color: #0d1b2a !important;
+}
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] button.bg-white:hover {
+    background-color: #c49040 !important;
+}
+
+/* Gold accent text (₱ amount) */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .text-\[#FFD88A\] {
+    color: var(--brand-gold) !important;
+}
+
+/* Step pills inside progress tracker */
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-\[#FFF1CB\] {
+    background-color: rgba(212,168,67,0.2) !important;
+    color: var(--brand-gold) !important;
+}
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-white.text-\[#17493D\] {
+    background-color: var(--accent) !important;
+    color: var(--foreground) !important;
+}
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-\[#F7D98C\] {
+    background-color: rgba(212,168,67,0.25) !important;
+    color: var(--brand-gold) !important;
+}
+.dark .shadow-\[0_18px_40px_rgba\(23\,73\,61\,0\.18\)\] .bg-\[#EAF3EE\] {
+    background-color: var(--accent) !important;
+    color: var(--foreground) !important;
+}
+
+/* ── Customer Profile — white cards & green sidebar card ──── */
+/* Profile info cards (bg-white, gradient-to-white) */
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] {
+    background: var(--card) !important;
+    background-image: none !important;
+    border-color: var(--border) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25) !important;
+}
+
+/* Text inside profile white cards */
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#163F35\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#173F35\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#24463D\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#1B5B4B\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#3C6658\] {
+    color: var(--foreground) !important;
+}
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#657C74\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#60756D\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#5E7A70\],
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .text-\[#60756D\] {
+    color: var(--muted-foreground) !important;
+}
+
+/* Helpful Notes inner panels */
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .bg-\[#FBFCFB\] {
+    background-color: var(--secondary) !important;
+}
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .border-\[#E4ECE7\] {
+    border-color: var(--border) !important;
+}
+
+/* Verified badge inside profile header card */
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] .bg-\[#EAF4EF\] {
+    background-color: var(--secondary) !important;
+    color: var(--foreground) !important;
+}
+
+/* White pill badges (Secure account / Notifications enabled) */
+.dark .shadow-\[0_12px_32px_rgba\(23\,73\,61\,0\.06\)\] span.bg-white {
+    background-color: var(--secondary) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border) !important;
+}
+
+/* ── Sonner toasts ────────────────────────────────────────── */
+.dark [data-sonner-toaster] {
+    --normal-bg:     var(--card);
+    --normal-text:   var(--foreground);
+    --normal-border: var(--border);
+    --success-bg:    rgba(6, 95, 70, 0.5);
+    --success-text:  #6ee7b7;
+    --error-bg:      rgba(127, 29, 29, 0.5);
+    --error-text:    #fca5a5;
+    --warning-bg:    rgba(120, 53, 15, 0.5);
+    --warning-text:  #fde68a;
 }
