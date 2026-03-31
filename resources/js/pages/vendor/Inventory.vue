@@ -479,6 +479,97 @@ function stockBarWidth(item: InventoryItem) {
 .dark .toggle-btn--on  { background:#10b981 !important; color:white !important; }
 .dark .toggle-btn--off { background:#6b7280 !important; color:white !important; }
 
+/* ─── Dark mode — all surfaces, text, borders ─── */
+/* Page shell */
+.dark .inv-page { background: var(--background); }
+
+/* Header */
+.dark .inv-title { color: var(--foreground); }
+.dark .inv-sub   { color: var(--muted-foreground); }
+
+/* Buttons */
+.dark .btn-ghost { border-color: var(--border); color: var(--muted-foreground); background: transparent; }
+.dark .btn-ghost:hover { border-color: var(--brand-gold); color: var(--foreground); }
+
+/* Stat cards */
+.dark .stat-card  { background: var(--card); border: 1px solid var(--border); box-shadow: none; }
+.dark .stat-label { color: var(--muted-foreground); }
+.dark .stat-value { color: var(--foreground); }
+.dark .stat-value--red   { color: #f87171; }
+.dark .stat-value--amber { color: #fbbf24; }
+
+/* Filter bar */
+.dark .search-input  { background: var(--input); border-color: var(--border); color: var(--foreground); }
+.dark .search-input::placeholder { color: var(--muted-foreground); }
+.dark .search-input:focus { border-color: var(--ring); }
+.dark .search-icon   { color: var(--muted-foreground); }
+.dark .filter-select { background: var(--input); border-color: var(--border); color: var(--foreground); }
+.dark .filter-select:focus { border-color: var(--ring); }
+.dark .result-count  { color: var(--muted-foreground); }
+
+/* Desktop table */
+.dark .table-card { background: var(--card); box-shadow: none; }
+.dark .inv-table thead tr { background: var(--secondary); border-bottom-color: var(--border); }
+.dark .inv-table th { color: var(--muted-foreground); }
+.dark .inv-table th:hover { color: var(--foreground); }
+.dark .sort-arrow.active { color: var(--brand-gold); }
+.dark .inv-table tbody tr { border-bottom-color: var(--border); }
+.dark .inv-table tbody tr:hover { background: var(--accent); }
+.dark .inv-table td { color: var(--foreground); }
+
+/* Product cell */
+.dark .product-name    { color: var(--foreground); }
+.dark .product-barcode { color: var(--muted-foreground); }
+
+/* Category badge */
+.dark .category-badge { background: rgba(27,77,62,0.25); color: #6ee7b7; border-color: rgba(27,77,62,0.4); }
+
+/* Stock bar track */
+.dark .stock-bar-wrap { background: var(--secondary); }
+.dark .reorder-hint   { color: var(--muted-foreground); }
+
+/* Price */
+.dark .price-cost { color: var(--muted-foreground); }
+
+/* Margin badges */
+.dark .margin--good { background: rgba(6,95,70,0.3);   color: #6ee7b7; }
+.dark .margin--low  { background: rgba(120,53,15,0.3);  color: #fde68a; }
+
+/* Status pills */
+.dark .status-pill--on  { background: rgba(6,95,70,0.35);  color: #6ee7b7; }
+.dark .status-pill--off { background: var(--secondary);     color: var(--muted-foreground); }
+
+/* Stock pills */
+.dark .stock-pill.stock--out { background: rgba(127,29,29,0.35); color: #fca5a5; }
+.dark .stock-pill.stock--low { background: rgba(120,53,15,0.35); color: #fde68a; }
+.dark .stock-pill.stock--ok  { background: rgba(6,95,70,0.35);   color: #6ee7b7; }
+
+/* Mobile cards */
+.dark .mc { background: var(--card); border-color: var(--border); box-shadow: none; }
+.dark .mc-prices { background: var(--secondary); }
+.dark .mc-price-val { color: var(--foreground); }
+.dark .mc-label { color: var(--muted-foreground); }
+
+/* Action buttons */
+.dark .action-btn { background: var(--secondary); border-color: var(--border); color: var(--muted-foreground); }
+.dark .action-btn:hover { border-color: var(--brand-green); color: var(--foreground); background: var(--accent); }
+.dark .action-btn--danger:hover { border-color: #ef4444; color: #f87171; background: rgba(127,29,29,0.2); }
+
+/* Modal */
+.dark .modal { background: var(--card); }
+.dark .modal-title { color: var(--foreground); }
+.dark .modal-product-name { color: var(--muted-foreground); }
+.dark .modal-close { color: var(--muted-foreground); }
+.dark .modal-close:hover { color: #f87171; }
+.dark .field-label { color: var(--foreground); }
+.dark .field-input { background: var(--input); border-color: var(--border); color: var(--foreground); }
+.dark .field-input:focus { border-color: var(--ring); }
+.dark .availability-toggle { background: var(--secondary); color: var(--foreground); }
+
+/* Empty states */
+.dark .empty-inner { color: var(--muted-foreground); }
+.dark .empty-state-mobile { color: var(--muted-foreground); }
+
 .action-row { display:flex; gap:4px; }
 .action-btn { width:30px; height:30px; border-radius:6px; border:1px solid #e5e5e5; background:#fff; color:#737373; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color 0.15s,color 0.15s,background 0.15s; }
 .action-btn:hover { border-color:#245c4a; color:#245c4a; background:#f0f9f6; }

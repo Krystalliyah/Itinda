@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerOrder extends Model
 {
+    protected $connection = 'central';
+
     protected $table = 'customer_orders';
 
     protected $fillable = [

@@ -33,13 +33,14 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         // Cart API Routes
         Route::get('/cart-data', [CartController::class, 'index']);
         Route::post('/cart/add', [CartController::class, 'add']);
+        Route::post('/cart/preorder', [CartController::class, 'preorder']);
+        Route::delete('/cart/bulk', [CartController::class, 'destroyMany']);
+        Route::delete('/cart', [CartController::class, 'clear']);
         Route::put('/cart/{cart}', [CartController::class, 'update']);
         Route::delete('/cart/{cart}', [CartController::class, 'destroy']);
-        Route::delete('/cart', [CartController::class, 'clear']);
-        Route::delete('/cart/bulk', [CartController::class, 'destroyMany']);
-        Route::post('/cart/preorder', [CartController::class, 'preorder']);
 
         // Orders Page API Routes
         Route::get('/orders-data', [CustomerOrderController::class, 'index'])->name('orders.data');
         Route::get('/orders-data/{id}', [CustomerOrderController::class, 'show'])->name('orders.show.data');
+        Route::post('/orders/{id}/cancel', [CustomerOrderController::class, 'cancel'])->name('orders.cancel');
 });

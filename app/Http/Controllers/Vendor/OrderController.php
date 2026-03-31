@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerOrder;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -10,6 +11,18 @@ use Carbon\Carbon;
 class OrderController extends Controller
 {
     private const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'];
+
+    /**
+     * Map tenant order statuses to the central customer_orders status vocabulary.
+     */
+    private const STATUS_MAP = [
+        'pending'   => 'pending',
+        'confirmed' => 'pending',
+        'preparing' => 'preparing',
+        'ready'     => 'ready_for_pickup',
+        'completed' => 'picked_up',
+        'cancelled' => 'cancelled',
+    ];
 
     public function index()
     {
@@ -40,6 +53,8 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => $next]);
+        $this->syncCustomerOrder($order);
+
         return back()->with('success', "Order marked as {$next}.");
     }
 
@@ -50,7 +65,24 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => 'cancelled']);
+        $this->syncCustomerOrder($order);
+
         return back()->with('success', 'Order cancelled.');
+    }
+
+    /**
+     * Push the tenant order status into the central customer_orders table
+     * so the customer dashboard always reflects the live state.
+     */
+    private function syncCustomerOrder(Order $order): void
+    {
+        $tenantId       = tenant('id');
+        $customerStatus = self::STATUS_MAP[$order->status] ?? $order->status;
+
+        CustomerOrder::on('central')
+            ->where('tenant_id', $tenantId)
+            ->where('order_id', $order->id)
+            ->update(['status' => $customerStatus]);
     }
 
     private function nextStatus(string $current): ?string

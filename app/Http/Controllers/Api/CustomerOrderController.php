@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\CustomerOrderResource;
 use App\Models\CustomerOrder;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -13,60 +12,67 @@ class CustomerOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        $customerOrders = CustomerOrder::query()
-            ->where('user_id', $user->id)
+        $orders = CustomerOrder::where('user_id', $request->user()->id)
             ->latest('ordered_at')
-            ->get();
+            ->get()
+            ->map(fn($o) => $this->transformOrder($o));
 
-        $orders = $customerOrders->map(function ($customerOrder) {
-            return $this->transformOrder($customerOrder);
-        });
-
-        return CustomerOrderResource::collection($orders);
+        return response()->json(['data' => $orders]);
     }
 
     public function show(Request $request, $id)
     {
-        $user = $request->user();
-
-        $customerOrder = CustomerOrder::query()
-            ->where('user_id', $user->id)
+        $order = CustomerOrder::where('user_id', $request->user()->id)
             ->where('id', $id)
             ->firstOrFail();
 
-        $order = $this->transformOrder($customerOrder);
+        return response()->json(['data' => $this->transformOrder($order)]);
+    }
 
-        return new CustomerOrderResource($order);
+    public function cancel(Request $request, $id)
+    {
+        $order = CustomerOrder::where('user_id', $request->user()->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if ($order->status !== 'pending') {
+            return response()->json(['message' => 'Only pending orders can be cancelled.'], 422);
+        }
+
+        $order->update(['status' => 'cancelled']);
+
+        // Sync cancellation to the tenant order
+        $tenant = Tenant::find($order->tenant_id);
+        if ($tenant) {
+            $tenant->run(function () use ($order) {
+                \App\Models\Order::where('id', $order->order_id)->update(['status' => 'cancelled']);
+            });
+        }
+
+        return response()->json(['message' => 'Order cancelled.']);
     }
 
     private function transformOrder(CustomerOrder $customerOrder): array
     {
-        $tenant = Tenant::query()->find($customerOrder->tenant_id);
-        $storeData = $tenant?->data ?? [];
+        $tenant = Tenant::find($customerOrder->tenant_id);
 
-        $items = [];
-
-        if ($tenant) {
-            $items = $this->getTenantOrderItems($tenant, $customerOrder->order_id);
-        }
+        $items = $tenant ? $this->getTenantOrderItems($tenant, $customerOrder->order_id) : [];
 
         return [
-            'id' => $customerOrder->id,
-            'customer_id' => $customerOrder->user_id,
-            'store_id' => $customerOrder->tenant_id,
-            'order_number' => $customerOrder->order_number ?? 'NA',
-            'status' => $customerOrder->status ?? 'pending',
-            'total_amount' => (float) ($customerOrder->total ?? 0),
-            'pickup_date' => null,
-            'notes' => null,
-            'created_at' => optional($customerOrder->created_at)?->toISOString(),
-            'updated_at' => optional($customerOrder->updated_at)?->toISOString(),
-            'store' => [
-                'id' => $tenant?->id ?? 'NA',
-                'name' => $tenant?->name ?? 'NA',
-                'logo_url' => $storeData['logo'] ?? null,
+            'id'           => $customerOrder->id,
+            'customer_id'  => $customerOrder->user_id,
+            'store_id'     => $customerOrder->tenant_id,
+            'order_number' => $customerOrder->order_number ?? 'N/A',
+            'status'       => $customerOrder->status ?? 'pending',
+            'total_amount' => (float) $customerOrder->total,
+            'pickup_date'  => null,
+            'notes'        => null,
+            'created_at'   => $customerOrder->created_at?->toISOString(),
+            'updated_at'   => $customerOrder->updated_at?->toISOString(),
+            'store'        => [
+                'id'       => $tenant?->id ?? 'N/A',
+                'name'     => $tenant?->name ?? 'Unknown Store',
+                'logo_url' => $tenant?->data['logo'] ?? null,
             ],
             'items' => $items,
         ];
@@ -77,36 +83,27 @@ class CustomerOrderController extends Controller
         $items = [];
 
         $tenant->run(function () use (&$items, $orderId) {
-            $orderItems = DB::table('order_items')
-                ->where('order_id', $orderId)
-                ->get();
-
-            $productIds = $orderItems->pluck('product_id')->filter()->unique()->values();
-
-            $products = collect();
-
-            if ($productIds->isNotEmpty()) {
-                $products = DB::table('products')
-                    ->whereIn('id', $productIds)
-                    ->get()
-                    ->keyBy('id');
-            }
+            $orderItems = DB::table('order_items')->where('order_id', $orderId)->get();
+            $products   = DB::table('products')
+                ->whereIn('id', $orderItems->pluck('product_id')->filter()->unique())
+                ->get()->keyBy('id');
 
             $items = $orderItems->map(function ($item) use ($products) {
                 $product = $products->get($item->product_id);
-
                 return [
-                    'id' => $item->id,
+                    'id'           => $item->id,
                     'inventory_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'product' => [
-                        'id' => $item->product_id,
-                        'name' => $item->product_name ?? $product->name ?? 'NA',
-                        'description' => $product->description ?? 'NA',
-                        'price' => (float) ($item->price ?? $product->price ?? 0),
-                        'image_url' => $product->image_path ?? null,
+                    'quantity'     => $item->quantity,
+                    'created_at'   => $item->created_at,
+                    'product'      => [
+                        'id'          => $item->product_id,
+                        'name'        => $item->product_name ?? $product?->name ?? 'N/A',
+                        'description' => $product?->description ?? '',
+                        'price'       => (float) ($item->price ?? $product?->price ?? 0),
+                        'image_url'   => $product?->image_path
+                            ? asset('storage/' . $product->image_path)
+                            : null,
                     ],
-                    'created_at' => $item->created_at,
                 ];
             })->values()->toArray();
         });

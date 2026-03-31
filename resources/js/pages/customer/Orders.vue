@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar.vue'
@@ -31,7 +31,8 @@ import {
 
 import { ChevronDown, Search, ShoppingCart, XCircle } from 'lucide-vue-next'
 
-type OrderStatus = 'pending' | 'confirmed' | 'ready' | 'completed' | 'cancelled'
+// Status vocabulary matches customer_orders in the central DB
+type OrderStatus = 'pending' | 'preparing' | 'ready_for_pickup' | 'picked_up' | 'cancelled'
 
 type Store = {
   id: string
@@ -78,11 +79,11 @@ const contentClass = computed(() => ({
 
 /** Tabs */
 const tabs = [
-  { key: 'pending' as const, label: 'Pending' },
-  { key: 'confirmed' as const, label: 'Accepted' },
-  { key: 'ready' as const, label: 'Ready' },
-  { key: 'completed' as const, label: 'Completed' },
-  { key: 'cancelled' as const, label: 'Cancelled' },
+  { key: 'pending' as const,          label: 'Pending' },
+  { key: 'preparing' as const,        label: 'Preparing' },
+  { key: 'ready_for_pickup' as const, label: 'Ready for Pickup' },
+  { key: 'picked_up' as const,        label: 'Picked Up' },
+  { key: 'cancelled' as const,        label: 'Cancelled' },
 ]
 const activeTab = ref<OrderStatus>('pending')
 
@@ -231,45 +232,69 @@ const formatDateOnly = (iso: string) =>
   }).format(new Date(iso))
 
 const statusLabel = (s: OrderStatus) => {
-  if (s === 'confirmed') return 'Accepted'
-  return s.charAt(0).toUpperCase() + s.slice(1)
+  const labels: Record<OrderStatus, string> = {
+    pending:          'Pending',
+    preparing:        'Preparing',
+    ready_for_pickup: 'Ready for Pickup',
+    picked_up:        'Picked Up',
+    cancelled:        'Cancelled',
+  }
+  return labels[s] ?? s
 }
 
 const statusClasses = (s: OrderStatus) => {
-  // simple badge-like styles using Tailwind + your theme colors
   switch (s) {
     case 'pending':
       return 'bg-muted text-foreground'
-    case 'confirmed':
+    case 'preparing':
+      return 'bg-blue-500/10 text-blue-700 border border-blue-500/20 dark:text-blue-300'
+    case 'ready_for_pickup':
       return 'bg-[#C5A059]/10 text-[#C5A059] border border-[#C5A059]/20'
-    case 'ready':
-      return 'bg-[#245c4a]/10 text-[#245c4a] border border-[#245c4a]/20'
-    case 'completed':
+    case 'picked_up':
       return 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-300'
     case 'cancelled':
       return 'bg-red-500/10 text-red-700 border border-red-500/20 dark:text-red-300'
   }
 }
 
-/** Actions (mock for now) */
-const cancelOrder = (orderId: number) => {
+/** Cancel order — hits the real API and syncs to tenant */
+const cancelOrder = async (orderId: number) => {
   const order = orders.value.find((o) => o.id === orderId)
-  if (!order) return
-  if (order.status !== 'pending') return
+  if (!order || order.status !== 'pending') return
+  if (!window.confirm('Cancel this order?')) return
 
-  const ok = window.confirm('Cancel this order?')
-  if (!ok) return
-
-  orders.value = orders.value.map((o) =>
-    o.id === orderId
-      ? { ...o, status: 'cancelled', updated_at: new Date().toISOString() }
-      : o
-  )
+  try {
+    const response = await fetch(`/customer/orders/${orderId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json()
+      alert(body.message ?? 'Failed to cancel order.')
+      return
+    }
+    // Refresh the list so status is accurate
+    await fetchOrders()
+  } catch {
+    alert('Failed to cancel order. Please try again.')
+  }
 }
 
-// Load orders on component mount
+// Poll every 10 s so vendor status changes appear without a manual refresh
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   fetchOrders()
+  pollTimer = setInterval(fetchOrders, 10000)
+})
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import {
   ArrowRight,
   CheckCircle2,
@@ -55,6 +55,7 @@ type StoreItem = {
   domain: string | null
   hours: Record<string, string> | null
   logo: string | null
+  isOpen: boolean
 };
 
 const props = defineProps<{
@@ -118,6 +119,39 @@ const showRecentOrders = computed(() => props.recentOrders.length > 0);
 const totalSpent = computed(() =>
   props.recentOrders.reduce((sum, o) => sum + o.total, 0),
 );
+
+// Poll for live order status when there's an active order
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(() => {
+    if (props.currentOrder && !['picked_up', 'cancelled'].includes(props.currentOrder.status)) {
+      router.reload({ only: ['currentOrder'] });
+    } else {
+      stopPolling();
+    }
+  }, 8000); // every 8 seconds
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+onMounted(() => {
+  if (props.currentOrder) startPolling();
+});
+
+onUnmounted(() => stopPolling());
+
+// Start/stop polling based on whether there's an active order
+watch(() => props.currentOrder, (order) => {
+  if (order) startPolling();
+  else stopPolling();
+});
 </script>
 
 <template>
@@ -219,7 +253,7 @@ const totalSpent = computed(() =>
                 <p class="mt-0.5 text-xs text-muted-foreground">Browse and order from active stores.</p>
               </div>
               <span class="inline-flex items-center rounded-full border border-[#D8E4DD] bg-[#F7FAF8] px-2.5 py-1 text-xs font-semibold text-[#3C6658]">
-                {{ stores.length }} open
+                {{ stores.filter(s => s.isOpen).length }} open
               </span>
             </div>
 
@@ -252,8 +286,12 @@ const totalSpent = computed(() =>
                 </div>
 
                 <div class="flex shrink-0 items-center gap-2">
-                  <span class="hidden rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 sm:inline-flex">
-                    Open
+                  <span class="hidden rounded-full border px-2 py-0.5 text-xs font-medium sm:inline-flex"
+                    :class="store.isOpen
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-red-200 bg-red-50 text-red-600'"
+                  >
+                    {{ store.isOpen ? 'Open' : 'Closed' }}
                   </span>
                   <ChevronRight class="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </div>
@@ -457,9 +495,15 @@ const totalSpent = computed(() =>
                 </div>
 
                 <div class="flex items-center justify-between">
-                  <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    Open
+                  <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                    :class="store.isOpen
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-red-200 bg-red-50 text-red-600'"
+                  >
+                    <span class="h-1.5 w-1.5 rounded-full"
+                      :class="store.isOpen ? 'bg-emerald-500' : 'bg-red-400'"
+                    />
+                    {{ store.isOpen ? 'Open' : 'Closed' }}
                   </span>
                   <button class="flex items-center gap-1 text-xs font-semibold text-[#17493D] transition-colors hover:text-[#10362D]">
                     Browse <ChevronRight class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

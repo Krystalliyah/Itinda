@@ -75,11 +75,12 @@ class VendorController extends Controller
 
         // Show credentials in flash message for convenience
         $loginId = "admin-{$tenant->id}";
-        $message = "Vendor {$tenant->name} approved! ";
-        $message .= "<a href=\"{$tenantUrl}\">Visit tenant</a> " ;
-        $message .= "<br>Login id: {$loginId} / password: password";
-        
-        return back()->with('success', $message);
+
+        return back()->with('vendor_approved', [
+            'name'     => $tenant->name,
+            'url'      => $tenantUrl,
+            'login_id' => $loginId,
+        ]);
     }
 
     /**

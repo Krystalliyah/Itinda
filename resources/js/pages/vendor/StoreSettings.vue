@@ -30,23 +30,24 @@ const contentClass = computed(() => ({
 }));
 
 const tenantInfo = computed(() => (page.props as any).tenantInfo ?? (page.props as any).store ?? {});
-const storeName = computed(() => tenantInfo.value?.name ?? 'iTinda Vendor Store');
+const storeName = computed(() => tenantInfo.value?.name ?? '');
 
 const saveLabel = ref('Changes not yet published');
 
 const storeForm = ref({
-    storeName: storeName.value,
-    storeSlug: tenantInfo.value?.slug ?? 'itinda-vendor-store',
-    tagline: 'Fresh, student-friendly favorites ready for quick campus pick-up.',
-    email: tenantInfo.value?.email ?? 'vendor@itinda.test',
-    phone: tenantInfo.value?.phone ?? '+63 912 345 6789',
-    pickupAddress: tenantInfo.value?.address ?? 'Main Campus Arcade, Ground Floor',
-    pickupNotes: 'Please present your order receipt upon pick-up. Orders are typically ready within 20–30 minutes.',
-    about: 'We serve affordable meals, drinks, and daily essentials tailored for fast and convenient campus pick-up.',
-    website: 'itinda.app/store/vendor-store',
-    pickupLeadTime: '20–30 mins',
-    orderNotice: '30 mins',
+    storeName: tenantInfo.value?.name ?? '',
+    storeSlug: tenantInfo.value?.slug ?? '',
+    tagline: tenantInfo.value?.description ?? '',
+    email: tenantInfo.value?.email ?? '',
+    phone: tenantInfo.value?.phone ?? '',
+    pickupAddress: tenantInfo.value?.address ?? '',
+    pickupNotes: '',
+    about: '',
+    pickupLeadTime: '',
+    orderNotice: '',
 });
+
+const storeDomain = computed(() => tenantInfo.value?.domain ?? null);
 
 const toggles = ref({
     acceptPreOrders: true,
@@ -108,25 +109,25 @@ const saveChanges = () => {
                     {{ storeName }}
                 </h1>
 
-                <p class="mt-3 max-w-xl text-sm leading-7 text-[#F2F7F4] sm:text-base">
+                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
                     Keep your storefront polished, informative, and easy to manage across desktop and mobile.
                 </p>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Lead time</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.pickupLeadTime }}</p>
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Lead time</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.pickupLeadTime }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Order notice</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.orderNotice }}</p>
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Order notice</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.orderNotice }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Setup</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ setupProgress }}% complete</p>
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
                 </div>
             </div>
         </div>
@@ -170,16 +171,19 @@ const saveChanges = () => {
 
                                 <label class="block">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Store slug</span>
-                                    <div class="flex overflow-hidden rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] focus-within:border-[#245C4A] focus-within:ring-2 focus-within:ring-[#245C4A]/10">
-                                        <span class="flex items-center border-r border-[#E5EEEA] bg-[#F3F7F5] px-3 text-xs text-[#70867D]">
-                                            itinda.app/store/
+                                    <div class="flex overflow-hidden rounded-xl border border-[#D7E3DC] bg-[#F3F7F5]">
+                                        <span class="flex items-center border-r border-[#E5EEEA] bg-[#EAEFEC] px-3 text-xs text-[#70867D] shrink-0">
+                                            {{ storeDomain ? storeDomain.replace(storeForm.storeSlug, '') : 'your-domain/' }}
                                         </span>
                                         <input
-                                            v-model="storeForm.storeSlug"
+                                            :value="storeForm.storeSlug"
                                             type="text"
-                                            class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#1E4138] outline-none"
+                                            readonly
+                                            title="Store slug is set at provisioning and cannot be changed here."
+                                            class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#70867D] outline-none cursor-not-allowed select-all"
                                         />
                                     </div>
+                                    <p class="mt-1 text-xs text-[#8A9C95]">Slug is fixed after store creation.</p>
                                 </label>
 
                                 <label class="block md:col-span-2">

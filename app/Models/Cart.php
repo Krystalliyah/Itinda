@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
+    protected $connection = 'central';
+
     protected $fillable = [
         'user_id',
         'store_id',

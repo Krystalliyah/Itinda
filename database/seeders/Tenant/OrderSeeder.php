@@ -69,14 +69,23 @@ class OrderSeeder extends Seeder
                 'total' => $total
             ]);
 
-            // CENTRAL SYNC (customer_orders)
+            // CENTRAL SYNC (customer_orders) — map tenant status to customer vocabulary
+            $statusMap = [
+                'pending'   => 'pending',
+                'confirmed' => 'pending',
+                'preparing' => 'preparing',
+                'ready'     => 'ready_for_pickup',
+                'completed' => 'picked_up',
+                'cancelled' => 'cancelled',
+            ];
+
             DB::connection('central')->table('customer_orders')->insert([
                 'user_id' => $userId,
                 'tenant_id' => tenant('id'),
                 'order_id' => $order->id,
                 'order_number' => 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
                 'total' => $total,
-                'status' => $order->status,
+                'status' => $statusMap[$order->status] ?? $order->status,
                 'ordered_at' => $order->placed_at,
                 'created_at' => now(),
                 'updated_at' => now(),

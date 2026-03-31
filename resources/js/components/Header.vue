@@ -37,21 +37,20 @@ const user = computed(() => page.props.auth?.user);
     left: 0;
     right: 0;
     height: 64px;
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--background);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
     z-index: 40;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
 }
 
 .header-left {
     display: flex;
     align-items: center;
     gap: 16px;
-    background: transparent;
 }
 
 .menu-toggle {
@@ -64,25 +63,25 @@ const user = computed(() => page.props.auth?.user);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background-color 0.2s;
     flex-shrink: 0;
 }
 
 .menu-toggle:hover {
-    background: #f3f4f6;
+    background: var(--muted);
 }
 
 .menu-toggle svg {
     width: 24px;
     height: 24px;
-    color: #1B4D3E;
-    stroke: #1B4D3E;
+    color: var(--brand-green);
+    stroke: var(--brand-green);
 }
 
 .header-title {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #1B4D3E;
+    color: var(--brand-green);
     margin: 0;
     font-family: 'Montserrat', sans-serif;
     white-space: nowrap;
@@ -92,20 +91,18 @@ const user = computed(() => page.props.auth?.user);
     display: flex;
     align-items: center;
     gap: 16px;
-    background: transparent;
 }
 
 .user-info {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: transparent;
 }
 
 .user-name {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--foreground);
     white-space: nowrap;
 }
 
@@ -113,8 +110,8 @@ const user = computed(() => page.props.auth?.user);
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #C5A059;
-    color: #1B4D3E;
+    background: var(--brand-gold);
+    color: var(--brand-green);
     display: flex;
     align-items: center;
     justify-content: center;

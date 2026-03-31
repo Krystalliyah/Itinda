@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 import {
     BadgeDollarSign,
     CalendarDays,
@@ -39,100 +39,84 @@ type ExpenseItem = {
     note: string;
 };
 
+const props = withDefaults(defineProps<{
+    expenses?: ExpenseItem[];
+    monthlySpend?: { label: string; amount: number }[];
+}>(), {
+    expenses: () => [],
+    monthlySpend: () => [],
+});
+
 const search = ref('');
 const selectedCategory = ref('All');
 const selectedStatus = ref('All');
 
-const expenses = ref<ExpenseItem[]>([
-    {
-        id: 1,
-        title: 'Rice and dry goods restock',
-        category: 'Inventory',
-        amount: 5200,
-        date: '2026-03-01',
-        method: 'GCash',
-        status: 'Paid',
-        note: 'Weekly pantry replenishment',
-    },
-    {
-        id: 2,
-        title: 'Milk tea cups and lids',
-        category: 'Packaging',
-        amount: 1850,
-        date: '2026-03-03',
-        method: 'Cash',
-        status: 'Paid',
-        note: 'For drink station packaging',
-    },
-    {
-        id: 3,
-        title: 'Electricity contribution',
-        category: 'Utilities',
-        amount: 2400,
-        date: '2026-03-05',
-        method: 'Bank Transfer',
-        status: 'Pending',
-        note: 'March shared stall utilities',
-    },
-    {
-        id: 4,
-        title: 'Promo posters and menu print',
-        category: 'Marketing',
-        amount: 1250,
-        date: '2026-03-06',
-        method: 'Cash',
-        status: 'Paid',
-        note: 'Counter display refresh',
-    },
-    {
-        id: 5,
-        title: 'Condiments and sauces',
-        category: 'Inventory',
-        amount: 980,
-        date: '2026-03-07',
-        method: 'GCash',
-        status: 'Paid',
-        note: 'Restock for fast-moving items',
-    },
-    {
-        id: 6,
-        title: 'Freezer maintenance',
-        category: 'Maintenance',
-        amount: 3200,
-        date: '2026-03-09',
-        method: 'Bank Transfer',
-        status: 'Scheduled',
-        note: 'Scheduled technician visit',
-    },
-    {
-        id: 7,
-        title: 'Paper bags and stickers',
-        category: 'Packaging',
-        amount: 1460,
-        date: '2026-03-10',
-        method: 'GCash',
-        status: 'Paid',
-        note: 'Branded takeaway supplies',
-    },
-    {
-        id: 8,
-        title: 'Staff meal allowance',
-        category: 'Operations',
-        amount: 1100,
-        date: '2026-03-11',
-        method: 'Cash',
-        status: 'Paid',
-        note: 'Weekend extended hours',
-    },
-]);
+// --- Date range filter ---
+type DatePreset = 'all' | 'this_month' | 'last_30' | 'custom';
+
+const datePreset = ref<DatePreset>('all');
+const customFrom = ref('');
+const customTo = ref('');
+
+const today = new Date();
+const todayStr = today.toISOString().slice(0, 10);
+
+// Derive the active from/to dates based on the selected preset
+const activeDateFrom = computed<string | null>(() => {
+    if (datePreset.value === 'this_month') {
+        return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+    }
+    if (datePreset.value === 'last_30') {
+        const d = new Date(today);
+        d.setDate(d.getDate() - 29);
+        return d.toISOString().slice(0, 10);
+    }
+    if (datePreset.value === 'custom') return customFrom.value || null;
+    return null;
+});
+
+const activeDateTo = computed<string | null>(() => {
+    if (datePreset.value === 'this_month' || datePreset.value === 'last_30') return todayStr;
+    if (datePreset.value === 'custom') return customTo.value || null;
+    return null;
+});
+
+// Reset custom inputs when switching away from custom
+watch(datePreset, (val) => {
+    if (val !== 'custom') {
+        customFrom.value = '';
+        customTo.value = '';
+    }
+});
+
+const datePresetLabel = computed(() => {
+    const map: Record<DatePreset, string> = {
+        all: 'All time',
+        this_month: 'This month',
+        last_30: 'Last 30 days',
+        custom: 'Custom range',
+    };
+    return map[datePreset.value];
+});
+
+const expenses = computed(() => props.expenses);
 
 const categories = computed(() => [
     'All',
     ...new Set(expenses.value.map((expense) => expense.category)),
 ]);
 
-const filteredExpenses = computed(() => {
+// Base set filtered only by date — used for all summary stats and charts
+const dateFilteredExpenses = computed(() => {
     return expenses.value.filter((expense) => {
+        if (activeDateFrom.value && expense.date < activeDateFrom.value) return false;
+        if (activeDateTo.value && expense.date > activeDateTo.value) return false;
+        return true;
+    });
+});
+
+const filteredExpenses = computed(() => {
+    return dateFilteredExpenses.value.filter((expense) => {
         const matchesSearch =
             expense.title.toLowerCase().includes(search.value.toLowerCase()) ||
             expense.category.toLowerCase().includes(search.value.toLowerCase()) ||
@@ -149,29 +133,29 @@ const filteredExpenses = computed(() => {
 });
 
 const totalExpenses = computed(() =>
-    expenses.value.reduce((sum, item) => sum + item.amount, 0),
+    dateFilteredExpenses.value.reduce((sum, item) => sum + item.amount, 0),
 );
 
 const paidExpenses = computed(() =>
-    expenses.value
+    dateFilteredExpenses.value
         .filter((item) => item.status === 'Paid')
         .reduce((sum, item) => sum + item.amount, 0),
 );
 
 const pendingExpenses = computed(() =>
-    expenses.value
+    dateFilteredExpenses.value
         .filter((item) => item.status === 'Pending' || item.status === 'Scheduled')
         .reduce((sum, item) => sum + item.amount, 0),
 );
 
 const inventoryShare = computed(() =>
-    expenses.value
+    dateFilteredExpenses.value
         .filter((item) => item.category === 'Inventory')
         .reduce((sum, item) => sum + item.amount, 0),
 );
 
 const categorySummary = computed(() => {
-    const totals = expenses.value.reduce<Record<string, number>>((acc, item) => {
+    const totals = dateFilteredExpenses.value.reduce<Record<string, number>>((acc, item) => {
         acc[item.category] = (acc[item.category] ?? 0) + item.amount;
         return acc;
     }, {});
@@ -187,18 +171,22 @@ const categorySummary = computed(() => {
         .sort((a, b) => b.amount - a.amount);
 });
 
-const monthlySpend = ref([
-    { label: 'Oct', amount: 7800 },
-    { label: 'Nov', amount: 9200 },
-    { label: 'Dec', amount: 11500 },
-    { label: 'Jan', amount: 8900 },
-    { label: 'Feb', amount: 10400 },
-    { label: 'Mar', amount: 13440 },
-]);
+const monthlySpend = computed(() => props.monthlySpend);
 
 const maxMonthlySpend = computed(() =>
     Math.max(...monthlySpend.value.map((item) => item.amount)),
 );
+
+const expenseTrend = computed(() => {
+    const data = monthlySpend.value;
+    if (data.length < 2) return null;
+    const prev = data[data.length - 2].amount;
+    const curr = data[data.length - 1].amount;
+    if (prev === 0) return null;
+    const pct = Math.round(((curr - prev) / prev) * 100);
+    if (pct === 0) return '0%';
+    return (pct > 0 ? '+' : '') + pct + '%';
+});
 
 const formatPeso = (value: number) =>
     new Intl.NumberFormat('en-PH', {
@@ -254,36 +242,96 @@ const statusClass = (status: ExpenseStatus) => {
                     Keep store spending clear and organized
                 </h1>
 
-                <p class="mt-3 max-w-xl text-sm leading-7 text-[#F2F7F4] sm:text-base">
+                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
                     Monitor operational costs, review category spending, and quickly spot pending payments.
                 </p>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-amber-200/40 dark:bg-amber-100/15">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                         Total expenses
                     </p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(totalExpenses) }}</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(totalExpenses) }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-amber-200/40 dark:bg-amber-100/15">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                         Paid
                     </p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(paidExpenses) }}</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(paidExpenses) }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm dark:border-amber-200/40 dark:bg-amber-100/15">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">
+                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
                         Pending
                     </p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ formatPeso(pendingExpenses) }}</p>
+                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(pendingExpenses) }}</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+                <!-- Date range filter bar -->
+                <section
+                    class="rounded-[26px] border border-[#DCE8E1] bg-white px-5 py-4 shadow-sm dark:border-gray-700 dark:bg-slate-800"
+                >
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center gap-2 text-sm font-medium text-[#355B50] dark:text-slate-300">
+                            <CalendarDays class="h-4 w-4 shrink-0" />
+                            <span>Date range:</span>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                v-for="preset in ([
+                                    { value: 'all', label: 'All time' },
+                                    { value: 'this_month', label: 'This month' },
+                                    { value: 'last_30', label: 'Last 30 days' },
+                                    { value: 'custom', label: 'Custom' },
+                                ] as const)"
+                                :key="preset.value"
+                                type="button"
+                                @click="datePreset = preset.value"
+                                :class="[
+                                    'rounded-full px-4 py-1.5 text-xs font-semibold transition',
+                                    datePreset === preset.value
+                                        ? 'bg-[#245C4A] text-white dark:bg-amber-400 dark:text-slate-900'
+                                        : 'bg-[#EDF6F1] text-[#355B50] hover:bg-[#D8EDE5] dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600',
+                                ]"
+                            >
+                                {{ preset.label }}
+                            </button>
+                        </div>
+
+                        <template v-if="datePreset === 'custom'">
+                            <div class="flex flex-wrap items-center gap-2 ml-auto">
+                                <input
+                                    v-model="customFrom"
+                                    type="date"
+                                    :max="customTo || todayStr"
+                                    class="h-9 rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-3 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
+                                />
+                                <span class="text-xs text-[#6C817A] dark:text-slate-400">to</span>
+                                <input
+                                    v-model="customTo"
+                                    type="date"
+                                    :min="customFrom || undefined"
+                                    :max="todayStr"
+                                    class="h-9 rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-3 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-100"
+                                />
+                            </div>
+                        </template>
+
+                        <span
+                            v-if="datePreset !== 'all'"
+                            class="ml-auto text-xs text-[#6C817A] dark:text-slate-400"
+                        >
+                            Showing {{ dateFilteredExpenses.length }} expense{{ dateFilteredExpenses.length !== 1 ? 's' : '' }}
+                        </span>
+                    </div>
+                </section>
 
                 <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div
@@ -291,7 +339,7 @@ const statusClass = (status: ExpenseStatus) => {
                     >
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-[#73867F] dark:text-slate-300">This month</p>
+                                <p class="text-sm font-medium text-[#73867F] dark:text-slate-300">{{ datePresetLabel }}</p>
                                 <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">
                                     {{ formatPeso(totalExpenses) }}
                                 </p>
@@ -355,7 +403,9 @@ const statusClass = (status: ExpenseStatus) => {
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-[#73867F] dark:text-slate-300">Expense trend</p>
-                                <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">+12%</p>
+                                <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">
+                                    {{ expenseTrend ?? '—' }}
+                                </p>
                             </div>
                             <div
                                 class="rounded-2xl bg-[#EEF2FF] p-3 text-[#4253B5] dark:bg-amber-100/15 dark:text-amber-200"
@@ -364,7 +414,10 @@ const statusClass = (status: ExpenseStatus) => {
                             </div>
                         </div>
                         <p class="mt-3 text-sm text-[#6C817A] dark:text-slate-300">
-                            Slight increase compared with last month due to restocking and maintenance.
+                            <template v-if="expenseTrend === null">No trend data available yet.</template>
+                            <template v-else-if="expenseTrend.startsWith('+')">Expenses increased compared to last month.</template>
+                            <template v-else-if="expenseTrend.startsWith('-')">Expenses decreased compared to last month.</template>
+                            <template v-else>Expenses are unchanged from last month.</template>
                         </p>
                     </div>
                 </section>
@@ -625,19 +678,24 @@ const statusClass = (status: ExpenseStatus) => {
                                 </h3>
                             </div>
 
-                            <div class="space-y-3 text-sm leading-6 text-[#6C8079] dark:text-slate-300">
-                                <p>
-                                    Inventory and packaging remain your highest-repeat expenses this month.
-                                </p>
-                                <p>
-                                    Consider grouping supplier purchases weekly to reduce small, frequent cash outflows.
-                                </p>
-                                <p
-                                    class="rounded-2xl border border-dashed border-[#CBD9D2] bg-white p-4 text-[#5F756D] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                            <div v-if="filteredExpenses.filter(e => e.note).length" class="space-y-2">
+                                <div
+                                    v-for="expense in filteredExpenses.filter(e => e.note)"
+                                    :key="expense.id"
+                                    class="rounded-2xl border border-[#E4ECE8] bg-white p-3 dark:border-slate-700 dark:bg-slate-800"
                                 >
-                                    Tip: connect this page later to your real expense records so totals and category charts update automatically.
-                                </p>
+                                    <p class="text-xs font-semibold text-[#245C4A] dark:text-amber-300 truncate">
+                                        {{ expense.title }}
+                                    </p>
+                                    <p class="mt-1 text-sm leading-5 text-[#5F756D] dark:text-slate-300">
+                                        {{ expense.note }}
+                                    </p>
+                                </div>
                             </div>
+
+                            <p v-else class="text-sm text-[#7A8E86] dark:text-slate-400">
+                                No notes for the current filters.
+                            </p>
                         </section>
                     </aside>
                 </div>
@@ -645,3 +703,4 @@ const statusClass = (status: ExpenseStatus) => {
         </main>
     </div>
 </template>
+
