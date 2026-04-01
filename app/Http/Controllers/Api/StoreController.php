@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\StoreResource;
 use App\Models\Tenant;
+use Illuminate\Support\Facades\Storage;
 
 class StoreController extends Controller
 {
@@ -45,7 +46,7 @@ class StoreController extends Controller
                         'product_name' => $product->name,
                         'description' => $product->description ?? '',
                         'category_id' => $product->category_id,
-                        'image_url' => $product->image_path ? asset('storage/' . $product->image_path) : 'https://picsum.photos/400?random=' . $product->id,
+                        'image_url' => $product->image_path ? Storage::disk('s3')->url($product->image_path) : 'https://picsum.photos/400?random=' . $product->id,
                         'unit_price' => (float) $product->price,
                         'stock_level' => $product->stock ?? 0,
                         'sold_count' => 0, // You can calculate this from orders if needed

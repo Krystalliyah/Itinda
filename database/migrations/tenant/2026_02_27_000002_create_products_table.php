@@ -16,6 +16,7 @@ class CreateProductsTable extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
+            $table->string('barcode')->nullable();
             $table->decimal('price', 10, 2)->default(0);
             $table->integer('stock')->default(0);
             $table->boolean('is_active')->default(true);

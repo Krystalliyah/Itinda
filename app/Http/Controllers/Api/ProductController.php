@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -78,7 +79,7 @@ class ProductController extends Controller
                     'category_id' => $product->category_id,
                     'category_name' => $product->category->name ?? null,
                     'image_url' => $product->image_path 
-                        ? asset('storage/' . $product->image_path) 
+                        ? Storage::disk('s3')->url($product->image_path) 
                         : 'https://picsum.photos/400?random=' . $product->id,
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
@@ -195,7 +196,7 @@ class ProductController extends Controller
                     'category_id' => $product->category_id,
                     'category_name' => $product->category->name ?? null,
                     'image_url' => $product->image_path 
-                        ? asset('storage/' . $product->image_path) 
+                        ? Storage::disk('s3')->url($product->image_path) 
                         : 'https://picsum.photos/400?random=' . $product->id,
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
@@ -238,7 +239,7 @@ class ProductController extends Controller
                     'category_id'   => $product->category_id,
                     'category_name' => $product->category->name ?? null,
                     'image_url'     => $product->image_path
-                        ? asset('storage/' . $product->image_path)
+                        ? Storage::disk('s3')->url($product->image_path)
                         : 'https://picsum.photos/600?random=' . $product->id,
                     'unit_price'    => (float) $product->price,
                     'stock_level'   => $product->stock ?? 0,

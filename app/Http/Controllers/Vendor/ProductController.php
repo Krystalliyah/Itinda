@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -16,12 +17,11 @@ class ProductController extends Controller
         $products = Product::latest()
             ->paginate(15)
             ->through(function ($product) {
-                // Fetch category name from central database
                 $category = \Illuminate\Support\Facades\DB::connection('mysql')
                     ->table('categories')
                     ->where('id', $product->category_id)
                     ->first();
-                
+
                 return [
                     'id' => $product->id,
                     'product_name' => $product->name,
@@ -30,13 +30,14 @@ class ProductController extends Controller
                     'barcode' => $product->barcode,
                     'price' => $product->price,
                     'stock' => $product->stock,
-                    'image_url' => $product->image_path ? asset('storage/' . $product->image_path) : null,
+                    'image_url' => $product->image_path
+                        ? Storage::disk('s3')->url($product->image_path)
+                        : null,
                     'is_active' => $product->is_active,
                     'created_at' => $product->created_at,
                 ];
             });
-        
-        // Fetch categories from central database
+
         $categories = \Illuminate\Support\Facades\DB::connection('mysql')
             ->table('categories')
             ->whereNull('parent_id')
@@ -48,7 +49,7 @@ class ProductController extends Controller
                     'category_name' => $cat->name,
                 ];
             });
-        
+
         return inertia('vendor/Products', [
             'products'       => $products,
             'categories'     => $categories,
@@ -70,11 +71,9 @@ class ProductController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        // Map product_name to name for the model
         $validated['name'] = $validated['product_name'];
         unset($validated['product_name']);
 
-        // Convert category_id to integer if it exists
         if (isset($validated['category_id']) && $validated['category_id'] !== '') {
             $validated['category_id'] = (int) $validated['category_id'];
         } else {
@@ -84,7 +83,14 @@ class ProductController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('products', 'public');
+            $path = $request->file('image')
+             ->store('products', ['disk' => 's3']);
+
+            if (! $path) {
+                return back()->withErrors(['image' => 'Unable to upload image to S3.']);
+            }
+
+            $validated['image_path'] = $path;
         }
 
         Product::create($validated);
@@ -105,11 +111,9 @@ class ProductController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        // Map product_name to name for the model
         $validated['name'] = $validated['product_name'];
         unset($validated['product_name']);
 
-        // Convert category_id to integer if it exists
         if (isset($validated['category_id']) && $validated['category_id'] !== '') {
             $validated['category_id'] = (int) $validated['category_id'];
         } else {
@@ -119,7 +123,14 @@ class ProductController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('products', 'public');
+            $path = $request->file('image')
+                ->storePublicly('products', ['disk' => 's3']);
+
+            if (! $path) {
+                return back()->withErrors(['image' => 'Unable to upload image to S3.']);
+            }
+
+            $validated['image_path'] = $path;
         }
 
         $product->update($validated);

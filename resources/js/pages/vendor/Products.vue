@@ -177,6 +177,8 @@ function onPickImage(e: Event) {
   const file = input.files?.[0] ?? null;
   form.image = file;
 
+  console.log('onPickImage:', { file, fileName: file?.name, fileSize: file?.size });
+
   revokePreview();
   if (file) {
     previewObjectUrl = URL.createObjectURL(file);
@@ -187,25 +189,34 @@ function onPickImage(e: Event) {
 }
 
 function submit() {
-  if (editingProduct.value) {
-    form.transform((data) => ({
-      ...data,
-      _method: 'put' as const,
-      is_active: data.is_active ? 1 : 0,
-    }));
+  console.log('submit:', {
+    editing: !!editingProduct.value,
+    image: form.image,
+    imageName: form.image?.name,
+    imageSize: form.image?.size,
+    data: {
+      product_name: form.product_name,
+      description: form.description,
+      category_id: form.category_id,
+      barcode: form.barcode,
+      price: form.price,
+      stock: form.stock,
+      is_active: form.is_active,
+    },
+  });
 
-    form.post(`/vendor/products/${editingProduct.value.id}`, {
+  if (editingProduct.value) {
+    form.put(`/vendor/products/${editingProduct.value.id}`, {
       forceFormData: true,
+      preserveState: true,
+      onError: (errors) => console.log('upload errors', errors),
       onSuccess: () => closeModal(),
     });
   } else {
-    form.transform((data) => {
-      const { _method, ...rest } = data as any;
-      return { ...rest, is_active: rest.is_active ? 1 : 0 };
-    });
-
     form.post('/vendor/products', {
       forceFormData: true,
+      preserveState: true,
+      onError: (errors) => console.log('upload errors', errors),
       onSuccess: () => closeModal(),
     });
   }
@@ -592,6 +603,7 @@ function deleteProduct(id: number) {
                     </label>
                     <input
                       type="file"
+                      name="image"
                       accept="image/*"
                       :key="imageInputKey"
                       @change="onPickImage"

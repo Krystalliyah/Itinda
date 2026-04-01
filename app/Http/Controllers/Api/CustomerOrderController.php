@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 use App\Models\CustomerOrder;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -101,7 +102,7 @@ class CustomerOrderController extends Controller
                         'description' => $product?->description ?? '',
                         'price'       => (float) ($item->price ?? $product?->price ?? 0),
                         'image_url'   => $product?->image_path
-                            ? asset('storage/' . $product->image_path)
+                            ? Storage::disk('s3')->url($product->image_path)
                             : null,
                     ],
                 ];
