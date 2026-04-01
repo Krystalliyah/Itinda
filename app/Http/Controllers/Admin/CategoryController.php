@@ -20,7 +20,11 @@ class CategoryController extends Controller
                         ->parents()
                         ->orderBy('name')
                         ->get();
-
+                        
+                        // Return the categories to the frontend
+                        return inertia('admin/Categories', [
+                            'categories' => $categories,
+                        ]);
         // Aggregate product counts across all tenant databases.
         // Products live in tenant DBs (category_id FK), categories in central DB.
         $productCounts = []; // [category_id => count]

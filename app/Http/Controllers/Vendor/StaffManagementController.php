@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Permission;
 use Inertia\Inertia;
 
@@ -13,18 +14,45 @@ class StaffManagementController extends Controller
 {
     public function index()
     {
-        // Get all users except the vendor owner (who is likely the first user or has is_admin=true)
-        // Adjust logic based on how you distinguish owner from staff
+        // Get all staff users (excluding the vendor owner)
         $staff = User::where('id', '!=', auth()->id())
             ->whereDoesntHave('roles', function($q) {
                 $q->where('name', 'vendor');
             })
             ->with('roles', 'permissions')
-            ->get();
+            ->get()
+            ->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'login_id' => $user->login_id,
+                    'roles' => $user->roles->map(fn($role) => ['name' => $role->name]),
+                    'permissions' => $user->getAllPermissions()->map(fn($perm) => [
+                        'id' => $perm->id,
+                        'name' => $perm->name
+                    ]),
+                ];
+            });
+
+        // Get all available permissions
+        $availablePermissions = Permission::all()->map(function($permission) {
+            return [
+                'id' => $permission->id,
+                'name' => $permission->name,
+            ];
+        });
 
         return Inertia::render('vendor/Staff', [
             'staff' => $staff,
-            'availablePermissions' => Permission::all(),
+            'availablePermissions' => $availablePermissions,
+            'passwordRequirements' => [
+                'minLength' => 8,
+                'requireLetters' => true,
+                'requireMixedCase' => true,
+                'requireNumbers' => true,
+                'requireSymbols' => true,
+            ],
         ]);
     }
 
@@ -34,7 +62,16 @@ class StaffManagementController extends Controller
             'name' => 'required|string|max:255',
             'login_id' => 'required|string|unique:users,login_id',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ],
         ]);
 
         $user = User::create([
@@ -45,8 +82,11 @@ class StaffManagementController extends Controller
         ]);
 
         $user->assignRole('staff');
+        
+        // Send verification email
+        $user->sendEmailVerificationNotification();
 
-        return back()->with('success', 'Staff account created successfully!');
+        return back()->with('success', 'Staff account created successfully! A verification email has been sent.');
     }
 
     public function updatePermissions(Request $request, User $user)
@@ -55,6 +95,7 @@ class StaffManagementController extends Controller
             'permissions' => 'array',
         ]);
 
+        // Sync permissions - this will remove old permissions and add new ones
         $user->syncPermissions($validated['permissions']);
 
         return back()->with('success', 'Permissions updated successfully!');
@@ -62,6 +103,7 @@ class StaffManagementController extends Controller
 
     public function destroy(User $user)
     {
+        // Don't allow deleting the vendor owner
         if ($user->hasRole('vendor')) {
             abort(403, 'Cannot delete vendor owner.');
         }

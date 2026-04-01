@@ -127,6 +127,8 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        
+        // Override email verification URL generation for tenant subdomains
         $this->configureEmailVerificationUrls();
 
         // Standardize on 'email' as the request parameter name to satisfy Fortify validation.
@@ -229,20 +231,45 @@ class FortifyServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Configure email verification URLs to work with tenant subdomains.
+     */
     private function configureEmailVerificationUrls(): void
     {
-        VerifyEmail::createUrlUsing(function ($notifiable): string {
-            $relativeSignedUrl = URL::temporarySignedRoute(
+        VerifyEmail::createUrlUsing(function ($notifiable) {
+            // Check if we're on a tenant subdomain
+            $host = request()->getHost();
+            $centralDomains = config('tenancy.central_domains', []);
+            
+            // If we're on a subdomain (tenant)
+            if (!in_array($host, $centralDomains)) {
+                // Get the subdomain (e.g., waelchi-ltd-store from waelchi-ltd-store.itinda.test)
+                $subdomain = str_replace('.itinda.test', '', $host);
+                
+                // Generate URL for subdomain
+                $relativeUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addMinutes(config('auth.verification.expire', 60)),
+                    [
+                        'id' => $notifiable->getKey(),
+                        'hash' => sha1($notifiable->getEmailForVerification()),
+                    ],
+                    false
+                );
+                
+                // Build the full URL with subdomain
+                return request()->getScheme() . '://' . $host . $relativeUrl;
+            }
+            
+            // Default central domain URL
+            return URL::temporarySignedRoute(
                 'verification.verify',
                 now()->addMinutes(config('auth.verification.expire', 60)),
                 [
                     'id' => $notifiable->getKey(),
                     'hash' => sha1($notifiable->getEmailForVerification()),
-                ],
-                absolute: false
+                ]
             );
-
-            return rtrim(config('app.url'), '/').$relativeSignedUrl;
         });
     }
 }

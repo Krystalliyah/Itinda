@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import {
     BarChart3,
@@ -10,6 +10,9 @@ import {
     Sparkles,
     TrendingUp,
     Wallet,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-vue-next';
 
 import Header from '@/components/Header.vue';
@@ -40,6 +43,24 @@ interface TopProductItem {
     growth: string;
 }
 
+interface HistoricalTrend {
+    period: string;
+    revenue: number;
+}
+
+interface DailyRevenue {
+    date: string;
+    order_count: number;
+    revenue: number;
+    percentage: number;
+}
+
+interface MonthlyRevenue {
+    month: string;
+    full_month: string;
+    revenue: number;
+}
+
 const props = withDefaults(defineProps<{
     weeklySales?: WeeklySale[];
     categoryMix?: CategoryMixItem[];
@@ -47,6 +68,16 @@ const props = withDefaults(defineProps<{
     topProducts?: TopProductItem[];
     recentInsights?: string[];
     growthSignal?: string;
+    rangeLabel?: string;
+    activePreset?: string;
+    activeFrom?: string;
+    activeTo?: string;
+    totalRevenue?: number;
+    totalOrders?: number;
+    averageOrderValue?: number;
+    historicalTrends?: HistoricalTrend[];
+    dailyRevenue?: DailyRevenue[];
+    monthlyRevenue?: MonthlyRevenue[];
 }>(), {
     weeklySales: () => [],
     categoryMix: () => [],
@@ -54,6 +85,16 @@ const props = withDefaults(defineProps<{
     topProducts: () => [],
     recentInsights: () => [],
     growthSignal: '0%',
+    rangeLabel: 'This week',
+    activePreset: 'this_week',
+    activeFrom: '',
+    activeTo: '',
+    totalRevenue: 0,
+    totalOrders: 0,
+    averageOrderValue: 0,
+    historicalTrends: () => [],
+    dailyRevenue: () => [],
+    monthlyRevenue: () => [],
 });
 
 const { isCollapsed } = useSidebar();
@@ -63,24 +104,76 @@ const contentClass = computed(() => ({
     'sidebar-collapsed': isCollapsed.value,
 }));
 
+// Date range filter state
+const selectedPreset = ref(props.activePreset);
+const customFrom = ref(props.activeFrom);
+const customTo = ref(props.activeTo);
+const showDatePicker = ref(false);
+
+// Date presets for the filter bar
+const datePresets = [
+    { key: 'today', label: 'Today' },
+    { key: 'yesterday', label: 'Yesterday' },
+    { key: 'this_week', label: 'This Week' },
+    { key: 'last_week', label: 'Last Week' },
+    { key: 'last_7', label: 'Last 7 Days' },
+    { key: 'this_month', label: 'This Month' },
+    { key: 'last_month', label: 'Last Month' },
+    { key: 'last_30', label: 'Last 30 Days' },
+    { key: 'this_quarter', label: 'This Quarter' },
+    { key: 'last_quarter', label: 'Last Quarter' },
+    { key: 'this_year', label: 'This Year' },
+    { key: 'last_year', label: 'Last Year' },
+    { key: 'custom', label: 'Custom' },
+];
+
+// Apply filter function
+const applyFilter = () => {
+    const params: Record<string, string> = { preset: selectedPreset.value };
+    
+    if (selectedPreset.value === 'custom') {
+        if (customFrom.value) params.from = customFrom.value;
+        if (customTo.value) params.to = customTo.value;
+    }
+    
+    router.get('/vendor/analytics', params, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+// Apply preset
+const applyPreset = (presetKey: string) => {
+    selectedPreset.value = presetKey;
+    if (presetKey !== 'custom') {
+        customFrom.value = '';
+        customTo.value = '';
+    }
+    applyFilter();
+};
+
+// Reset to default (this week)
+const resetFilter = () => {
+    selectedPreset.value = 'this_week';
+    customFrom.value = '';
+    customTo.value = '';
+    applyFilter();
+};
+
+// Computed values
 const weeklySales = computed(() => props.weeklySales);
 const categoryMix = computed(() => props.categoryMix);
 const peakWindows = computed(() => props.peakWindows);
 const topProducts = computed(() => props.topProducts);
 const recentInsights = computed(() => props.recentInsights);
 const growthSignal = computed(() => props.growthSignal);
+const historicalTrends = computed(() => props.historicalTrends);
+const dailyRevenue = computed(() => props.dailyRevenue);
+const monthlyRevenue = computed(() => props.monthlyRevenue);
 
-const totalRevenue = computed(() =>
-    weeklySales.value.reduce((sum, item) => sum + item.revenue, 0),
-);
-
-const totalOrders = computed(() =>
-    weeklySales.value.reduce((sum, item) => sum + item.orders, 0),
-);
-
-const averageOrderValue = computed(() =>
-    totalOrders.value ? totalRevenue.value / totalOrders.value : 0,
-);
+const totalRevenue = computed(() => props.totalRevenue);
+const totalOrders = computed(() => props.totalOrders);
+const averageOrderValue = computed(() => props.averageOrderValue);
 
 const bestDay = computed(() =>
     weeklySales.value.length
@@ -98,12 +191,27 @@ const maxPeakOrders = computed(() =>
     Math.max(1, ...peakWindows.value.map((item) => item.orders)),
 );
 
+const maxMonthlyRevenue = computed(() =>
+    Math.max(1, ...monthlyRevenue.value.map((item) => item.revenue)),
+);
+
+const maxHistoricalRevenue = computed(() =>
+    Math.max(1, ...historicalTrends.value.map((item) => item.revenue)),
+);
+
 const formatPeso = (value: number) =>
     new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
         maximumFractionDigits: 0,
     }).format(value);
+
+const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
 </script>
 
 <template>
@@ -118,6 +226,7 @@ const formatPeso = (value: number) =>
 
         <main :class="contentClass">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+                <!-- Header Section -->
                 <section
                     class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm dark:border-gray-700 dark:bg-slate-800"
                 >
@@ -141,7 +250,7 @@ const formatPeso = (value: number) =>
                             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
                                 <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
-                                        Weekly revenue
+                                        Total revenue
                                     </p>
                                     <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(totalRevenue) }}</p>
                                 </div>
@@ -155,15 +264,68 @@ const formatPeso = (value: number) =>
 
                                 <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">
-                                        Best day
+                                        Avg order value
                                     </p>
-                                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ bestDay.day }}</p>
+                                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ formatPeso(averageOrderValue) }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
 
+                <!-- Date Range Filter Bar -->
+                <section class="bg-white rounded-xl border border-[#DCE8E1] shadow-sm p-4 dark:border-gray-700 dark:bg-slate-800">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                v-for="preset in datePresets"
+                                :key="preset.key"
+                                @click="applyPreset(preset.key)"
+                                class="px-3 py-1.5 text-xs rounded-lg transition-colors"
+                                :class="selectedPreset === preset.key
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'"
+                            >
+                                {{ preset.label }}
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <div v-if="selectedPreset === 'custom'" class="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    v-model="customFrom"
+                                    class="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-slate-700 dark:text-slate-100"
+                                />
+                                <span class="text-xs text-gray-500">to</span>
+                                <input
+                                    type="date"
+                                    v-model="customTo"
+                                    class="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-slate-700 dark:text-slate-100"
+                                />
+                            </div>
+                            <button
+                                @click="applyFilter"
+                                class="px-3 py-1.5 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                            >
+                                Apply
+                            </button>
+                            <button
+                                @click="resetFilter"
+                                class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                            >
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Show current range label -->
+                    <div class="mt-3 text-xs text-muted-foreground">
+                        Showing data for: <span class="font-semibold text-emerald-600">{{ rangeLabel }}</span>
+                    </div>
+                </section>
+
+                <!-- Stats Cards -->
                 <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div
                         class="rounded-[26px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
@@ -171,7 +333,7 @@ const formatPeso = (value: number) =>
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-[#73867F] dark:text-slate-300">
-                                    Revenue this week
+                                    Revenue
                                 </p>
                                 <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">
                                     {{ formatPeso(totalRevenue) }}
@@ -184,7 +346,7 @@ const formatPeso = (value: number) =>
                             </div>
                         </div>
                         <p class="mt-3 text-sm text-[#6C817A] dark:text-slate-300">
-                            Total earnings from completed pick-up orders across the current week.
+                            Total earnings from completed orders.
                         </p>
                     </div>
 
@@ -230,7 +392,7 @@ const formatPeso = (value: number) =>
                             </div>
                         </div>
                         <p class="mt-3 text-sm text-[#6C817A] dark:text-slate-300">
-                            Average amount spent per completed order this week.
+                            Average amount spent per completed order this period.
                         </p>
                     </div>
 
@@ -249,13 +411,14 @@ const formatPeso = (value: number) =>
                             </div>
                         </div>
                         <p class="mt-3 text-sm text-[#6C817A] dark:text-slate-300">
-                            Estimated week-over-week revenue change based on completed orders.
+                            Period-over-period revenue change based on completed orders.
                         </p>
                     </div>
                 </section>
 
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
                     <div class="grid gap-6">
+                        <!-- Weekly Revenue Trend -->
                         <section
                             class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-slate-800"
                         >
@@ -267,7 +430,7 @@ const formatPeso = (value: number) =>
                                     Revenue overview
                                 </div>
                                 <h2 class="text-base sm:text-lg font-semibold text-[#183D34] dark:text-slate-100">
-                                    Weekly revenue trend
+                                    Daily revenue trend
                                 </h2>
                                 <p class="mt-1 text-xs sm:text-sm text-[#6E817A] dark:text-slate-300">
                                     Compare daily sales and quickly spot your strongest business days.
@@ -307,6 +470,43 @@ const formatPeso = (value: number) =>
                             </div>
                         </section>
 
+                        <!-- Historical Trends Section -->
+                        <section
+                            v-if="historicalTrends.length > 0"
+                            class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-slate-800"
+                        >
+                            <div class="mb-5">
+                                <div
+                                    class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#EDF6F1] px-3 py-1 text-xs font-semibold text-[#245C4A] dark:bg-amber-100/15 dark:text-amber-200"
+                                >
+                                    <TrendingUp class="h-3.5 w-3.5" />
+                                    Historical trends
+                                </div>
+                                <h2 class="text-base sm:text-lg font-semibold text-[#183D34] dark:text-slate-100">
+                                    Revenue comparison
+                                </h2>
+                                <p class="mt-1 text-xs sm:text-sm text-[#6E817A] dark:text-slate-300">
+                                    Compare revenue across different time periods.
+                                </p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div v-for="trend in historicalTrends" :key="trend.period" class="flex items-center justify-between">
+                                    <span class="text-xs text-muted-foreground w-32">{{ trend.period }}</span>
+                                    <div class="flex-1 mx-4">
+                                        <div class="h-2 rounded-full bg-gray-100 dark:bg-slate-700">
+                                            <div 
+                                                class="h-2 rounded-full bg-emerald-500"
+                                                :style="{ width: `${(trend.revenue / maxHistoricalRevenue) * 100}%` }"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-semibold">{{ formatPeso(trend.revenue) }}</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Top Products Section -->
                         <section
                             class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-slate-800"
                         >
@@ -394,6 +594,7 @@ const formatPeso = (value: number) =>
                     </div>
 
                     <aside class="grid gap-6">
+                        <!-- Category Mix -->
                         <section
                             class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
                         >
@@ -425,6 +626,7 @@ const formatPeso = (value: number) =>
                             </div>
                         </section>
 
+                        <!-- Peak Pick-up Windows -->
                         <section
                             class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
                         >
@@ -460,6 +662,61 @@ const formatPeso = (value: number) =>
                             </div>
                         </section>
 
+                        <!-- Monthly Revenue Chart -->
+                        <section
+                            v-if="monthlyRevenue.length > 0"
+                            class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
+                        >
+                            <div class="mb-4 flex items-center gap-2">
+                                <Calendar class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A] dark:text-amber-200" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34] dark:text-slate-100">
+                                    Monthly revenue
+                                </h3>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div v-for="month in monthlyRevenue" :key="month.month" class="grid grid-cols-[44px_minmax(0,1fr)_80px] items-center gap-3">
+                                    <span class="text-sm font-medium text-[#5F756D] dark:text-slate-300">{{ month.month }}</span>
+                                    <div class="h-3 rounded-full bg-[#ECF2EF] dark:bg-slate-700">
+                                        <div
+                                            class="h-3 rounded-full bg-[#245C4A] dark:bg-amber-300"
+                                            :style="{ width: `${(month.revenue / maxMonthlyRevenue) * 100}%` }"
+                                        ></div>
+                                    </div>
+                                    <span class="text-right text-sm font-semibold text-[#183D34] dark:text-slate-100">{{ formatPeso(month.revenue) }}</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Daily Revenue Breakdown Table -->
+                        <section
+                            v-if="dailyRevenue.length > 0"
+                            class="rounded-[28px] border border-[#DCE8E1] bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-slate-800"
+                        >
+                            <div class="mb-4 flex items-center gap-2">
+                                <ReceiptText class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A] dark:text-amber-200" />
+                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34] dark:text-slate-100">
+                                    Daily breakdown
+                                </h3>
+                            </div>
+
+                            <div class="space-y-3 max-h-80 overflow-y-auto">
+                                <div v-for="day in dailyRevenue" :key="day.date" class="flex items-center justify-between text-sm">
+                                    <span class="text-muted-foreground">{{ formatDate(day.date) }}</span>
+                                    <div class="flex-1 mx-4">
+                                        <div class="h-2 rounded-full bg-gray-100 dark:bg-slate-700">
+                                            <div 
+                                                class="h-2 rounded-full bg-emerald-500"
+                                                :style="{ width: `${day.percentage}%` }"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                    <span class="font-semibold">{{ formatPeso(day.revenue) }}</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Quick Insights -->
                         <section
                             class="rounded-[28px] border border-[#DCE8E1] bg-[#F7FAF8] p-5 shadow-sm dark:border-gray-700 dark:bg-slate-900"
                         >
@@ -486,4 +743,3 @@ const formatPeso = (value: number) =>
         </main>
     </div>
 </template>
-

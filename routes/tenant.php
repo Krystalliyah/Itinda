@@ -7,6 +7,8 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use Inertia\Inertia;
 use App\Http\Controllers\Vendor\AnalyticsController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Vendor\ExpenseController;
 
 
 /*
@@ -37,6 +39,10 @@ Route::middleware([
     PreventAccessFromCentralDomains::class,
     'consume-tenant-auth-token',
 ])->group(function () {
+    // =========================================================================
+    // PUBLIC ROUTES (No Authentication Required)
+    // =========================================================================
+    
     // Tenant root: guests go to local login, authenticated users to dashboard
     Route::get('/', function () {
         if (!auth()->check()) {
@@ -54,20 +60,34 @@ Route::middleware([
         return Inertia::render('auth/LoginTenant');
     });
 
+    // =========================================================================
+    // EMAIL VERIFICATION ROUTES (Authenticated but NOT Verified)
+    // =========================================================================
+    // These routes are accessible to authenticated users who haven't verified their email yet
+    
+    Route::middleware(['auth'])->group(function () {
+        // Email verification notice page - shown to users who need to verify
+        Route::get('/email/verify', function () {
+            return Inertia::render('auth/VerifyEmail');
+        })->name('verification.notice');
+        
+        // Email verification handler - the link users click in the email
+        // This route uses 'signed' middleware to ensure the URL hasn't been tampered with
+        Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+            ->middleware(['signed'])
+            ->name('verification.verify');
+        
+        // Resend verification email - for users who didn't receive the email
+        Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+            ->middleware(['throttle:6,1'])
+            ->name('verification.send');
+    });
+    
+    // =========================================================================
+    // PROTECTED ROUTES (Require Authentication AND Email Verification)
+    // =========================================================================
+    
     require __DIR__.'/settings.php';
-
-/*
-|--------------------------------------------------------------------------
-| TENANT DOMAIN VENDOR ROUTES ( tenant.php )
-|--------------------------------------------------------------------------
-| This file handles routes specifically on the TENANT SUBDOMAIN (e.g., foo.itinda.test).
-| All routes in this file interact with the tenant's isolated database.
-|
-| IMPORTANT: Central domain activities (like initially creating the store profile) 
-| MUST NOT be placed here, as those actions belong in your central database. 
-| Central routes belong in routes/vendor.php.
-|--------------------------------------------------------------------------
-*/
 
     // Basic vendor routes (accessible to any vendor account or staff)
     Route::middleware(['auth', 'verified', 'role:vendor|staff'])->prefix('vendor')->name('vendor.')->group(function () {
@@ -131,6 +151,7 @@ Route::middleware([
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
 
+    // Advanced vendor routes with additional approval check
     Route::middleware(['auth', 'verified', 'role:vendor|staff', 'vendor.is_approved'])->prefix('vendor')->name('vendor.')->group(function () {
         // Products management
         Route::middleware('permission:manage-products')->group(function() {
@@ -162,12 +183,22 @@ Route::middleware([
             Route::put('staff/{user}/permissions', [App\Http\Controllers\Vendor\StaffManagementController::class, 'updatePermissions'])->name('staff.update-permissions');
         });
         
-        Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses')->middleware('permission:view-expenses');
-        Route::get('/analytics', AnalyticsController::class)
+        // Expenses Management - Full CRUD with date range filtering
+        Route::middleware('permission:view-expenses')->group(function() {
+            Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses');
+            Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+            Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+            Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+            Route::get('/expenses/inventory-data', [ExpenseController::class, 'getInventorySpendData'])->name('expenses.inventory-data');
+        });
+        
+        // Analytics route - using the invokable controller
+        Route::get('/analytics', App\Http\Controllers\Vendor\AnalyticsController::class)
             ->name('analytics')
             ->middleware('permission:view-analytics');
     });
 
+    // Category management routes
     Route::middleware(['auth', 'verified', 'role:vendor|staff'])->group(function () {
         Route::get('/admin/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
         Route::post('/admin/categories', [CategoryController::class, 'store']);
