@@ -2,7 +2,7 @@
 import { Head, router, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
-import { Star, StarOff, ThumbsUp, CheckCircle, XCircle, MessageSquare, Reply } from 'lucide-vue-next';
+import { Star, StarOff, ThumbsUp, CheckCircle, XCircle, MessageSquare, Reply, X } from 'lucide-vue-next';
 
 // Define types for review data
 interface ReviewUser {
@@ -61,6 +61,22 @@ const submitting = ref(false);
 const filterStatus = ref<'all' | 'approved' | 'pending'>('all');
 const filterRating = ref<number | null>(null);
 const searchQuery = ref('');
+
+// Image lightbox
+const lightboxImage = ref<string | null>(null);
+const showLightbox = ref(false);
+
+// Open image in lightbox
+const openImage = (url: string) => {
+  lightboxImage.value = url;
+  showLightbox.value = true;
+};
+
+// Close lightbox
+const closeLightbox = () => {
+  showLightbox.value = false;
+  lightboxImage.value = null;
+};
 
 const filteredReviews = computed(() => {
   let filtered = props.reviews.data;
@@ -286,7 +302,8 @@ const submitResponse = () => {
             
             <div v-if="review.images && review.images.length" class="flex gap-2 mb-3">
               <div v-for="(img, idx) in review.images" :key="idx" 
-                class="w-16 h-16 rounded-lg overflow-hidden border border-border">
+                class="w-16 h-16 rounded-lg overflow-hidden border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                @click="openImage(img)">
                 <img :src="img" class="w-full h-full object-cover" />
               </div>
             </div>
@@ -386,5 +403,48 @@ const submitResponse = () => {
         </div>
       </div>
     </Teleport>
+
+    <!-- Image Lightbox Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="showLightbox"
+          class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          @click="closeLightbox"
+        >
+          <div class="relative w-full max-w-2xl max-h-[70vh] flex items-center justify-center" @click.stop>
+            <!-- Image Container -->
+            <div class="relative w-full h-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden">
+              <img
+                :src="lightboxImage"
+                alt="Full size image"
+                class="w-full h-full object-contain"
+              />
+            </div>
+
+            <!-- Close button - Top Right -->
+            <button
+              @click="closeLightbox"
+              class="absolute -top-12 right-0 p-2 rounded-full bg-emerald-600/80 hover:bg-emerald-600 text-white transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 focus:ring-offset-black"
+              aria-label="Close image viewer"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </VendorLayout>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

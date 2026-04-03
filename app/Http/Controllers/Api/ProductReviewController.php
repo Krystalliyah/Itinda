@@ -3,275 +3,278 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Models\ProductReview;
-use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProductReviewController extends Controller
 {
+    /**
+     * Initialize tenancy, run callback, then end tenancy.
+     * IMPORTANT: Always return plain arrays/scalars from the callback,
+     * never Eloquent collections or paginators — they hold live DB
+     * connection references that break after tenancy()->end().
+     */
+    private function runForTenant(\App\Models\Tenant $tenant, callable $callback): mixed
+    {
+        tenancy()->initialize($tenant);
+        try {
+            return $callback();
+        } finally {
+            tenancy()->end();
+        }
+    }
+
     public function index(Request $request, $storeId, $productId)
 {
     $perPage = $request->get('per_page', 10);
-    $rating = $request->get('rating');
-    $sort = $request->get('sort', 'newest');
-    $user = auth()->user();
-    
+    $rating  = $request->get('rating');
+    $sort    = $request->get('sort', 'newest');
+    $user    = auth()->user();
+    $userId  = $user?->id;
+
     $tenant = \App\Models\Tenant::find($storeId);
-    
     if (!$tenant) {
         return response()->json(['error' => 'Store not found'], 404);
     }
-    
-    $reviews = $tenant->run(function () use ($productId, $perPage, $rating, $sort, $user) {
-        $query = \App\Models\ProductReview::where('product_id', $productId)
-            ->with('user');
-        
-        // Show approved reviews OR the current user's own reviews (even if not approved)
-        $query->where(function($q) use ($user) {
+
+    // Extract everything as plain arrays INSIDE the tenant context
+    $result = $this->runForTenant($tenant, function () use ($productId, $perPage, $rating, $sort, $userId) {
+        $query = \App\Models\ProductReview::where('product_id', $productId);
+
+        $query->where(function ($q) use ($userId) {
             $q->where('is_approved', true);
-            if ($user) {
-                $q->orWhere('user_id', $user->id);
+            if ($userId) {
+                $q->orWhere('user_id', $userId);
             }
         });
-        
+
         if ($rating) {
             $query->where('rating', $rating);
         }
-        
+
         switch ($sort) {
-            case 'newest':
-                $query->orderBy('created_at', 'desc');
-                break;
-            case 'oldest':
-                $query->orderBy('created_at', 'asc');
-                break;
-            case 'helpful':
-                $query->orderBy('helpful_count', 'desc');
-                break;
-            case 'highest':
-                $query->orderBy('rating', 'desc');
-                break;
-            case 'lowest':
-                $query->orderBy('rating', 'asc');
-                break;
-            default:
-                $query->orderBy('created_at', 'desc');
+            case 'oldest':  $query->orderBy('created_at', 'asc'); break;
+            case 'helpful': $query->orderBy('helpful_count', 'desc'); break;
+            case 'highest': $query->orderBy('rating', 'desc'); break;
+            case 'lowest':  $query->orderBy('rating', 'asc'); break;
+            default:        $query->orderBy('created_at', 'desc');
         }
-        
-        return $query->paginate($perPage);
+
+        $paginator = $query->paginate($perPage);
+
+        // Convert to plain arrays NOW while tenant connection is still active
+        return [
+            'items'        => collect($paginator->items())->map(fn($r) => $r->toArray())->all(),
+            'total'        => $paginator->total(),
+            'per_page'     => $paginator->perPage(),
+            'current_page' => $paginator->currentPage(),
+            'last_page'    => $paginator->lastPage(),
+            'from'         => $paginator->firstItem(),
+            'to'           => $paginator->lastItem(),
+        ];
     });
-    
+
+    // tenancy()->end() already called — safe to use central connection now
+    $centralConnection = config('tenancy.database.central_connection', 'central');
+    $userIds  = collect($result['items'])->pluck('user_id')->unique()->filter()->values();
+    $rawUsers = DB::connection($centralConnection)
+        ->table('users')
+        ->whereIn('id', $userIds)
+        ->get(['id', 'name', 'email'])
+        ->keyBy('id');
+
+    // Merge user data into review arrays (items are now plain arrays, not Eloquent models)
+    $items = collect($result['items'])->map(function ($review) use ($rawUsers) {
+        $user = $rawUsers->get($review['user_id']);
+        $review['user'] = $user ? (array) $user : null;
+        return $review;
+    });
+
     return response()->json([
         'success' => true,
-        'data' => $reviews,
+        'data' => [
+            'data'         => $items,
+            'total'        => $result['total'],
+            'per_page'     => $result['per_page'],
+            'current_page' => $result['current_page'],
+            'last_page'    => $result['last_page'],
+            'from'         => $result['from'],
+            'to'           => $result['to'],
+        ],
     ]);
 }
-    
+
     public function stats($storeId, $productId)
     {
         $tenant = \App\Models\Tenant::find($storeId);
-        
         if (!$tenant) {
             return response()->json(['error' => 'Store not found'], 404);
         }
-        
-        $stats = $tenant->run(function () use ($productId) {
-            $product = Product::find($productId);
-            
-            if (!$product) {
-                return null;
-            }
-            
-            $distribution = $product->rating_distribution ?? [1=>0,2=>0,3=>0,4=>0,5=>0];
-            $total = $product->total_reviews;
-            
+
+        $stats = $this->runForTenant($tenant, function () use ($productId) {
+            $product = \App\Models\Product::find($productId);
+            if (!$product) return null;
+
+            $distribution = $product->rating_distribution ?? [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+            $total        = $product->total_reviews;
+
             $percentages = [];
             for ($i = 5; $i >= 1; $i--) {
-                $count = $distribution[$i] ?? 0;
+                $count           = $distribution[$i] ?? 0;
                 $percentages[$i] = $total > 0 ? round(($count / $total) * 100) : 0;
             }
-            
+
+            // Return plain array — no Eloquent model references
             return [
-                'average_rating' => $product->formatted_rating,
-                'total_reviews' => $product->total_reviews,
+                'average_rating'      => $product->formatted_rating,
+                'total_reviews'       => $total,
                 'rating_distribution' => $distribution,
-                'rating_percentages' => $percentages,
+                'rating_percentages'  => $percentages,
             ];
         });
-        
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+
+        return response()->json(['success' => true, 'data' => $stats]);
     }
-    
+
     public function store(Request $request, $storeId, $productId)
-{
-    // Log at the very beginning
-    \Log::info('=== REVIEW SUBMISSION START ===');
-    \Log::info('Store ID: ' . $storeId);
-    \Log::info('Product ID: ' . $productId);
-    \Log::info('User ID: ' . (auth()->id() ?? 'not logged in'));
-    \Log::info('Request data: ', $request->all());
-    
-    try {
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'title' => 'nullable|string|max:255',
-            'comment' => 'required|string|min:3|max:5000',
-            'images' => 'nullable|array|max:5',
-            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-        
-        \Log::info('Validation passed', ['validated' => $validated]);
-        
-        $user = auth()->user();
-        
-        if (!$user) {
-            \Log::warning('User not logged in');
-            return response()->json([
-                'success' => false,
-                'message' => 'Please login to leave a review'
-            ], 401);
-        }
-        
-        $tenant = \App\Models\Tenant::find($storeId);
-        
-        if (!$tenant) {
-            \Log::warning('Store not found', ['store_id' => $storeId]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Store not found'
-            ], 404);
-        }
-        
-        \Log::info('Tenant found', ['tenant_id' => $tenant->id, 'tenant_name' => $tenant->name]);
-        
-        $result = $tenant->run(function () use ($productId, $user, $validated, $request) {
-            \Log::info('Inside tenant context, looking for product', ['product_id' => $productId]);
-            
-            $product = \App\Models\Product::find($productId);
-            
-            if (!$product) {
-                \Log::error('Product not found in tenant database', ['product_id' => $productId]);
-                throw new \Exception('Product not found');
+    {
+        try {
+            $validated = $request->validate([
+                'rating'   => 'required|integer|min:1|max:5',
+                'title'    => 'nullable|string|max:255',
+                'comment'  => 'required|string|min:3|max:5000',
+                'images'   => 'nullable|array|max:5',
+                'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+            ]);
+
+            $user   = auth()->user();
+            $userId = $user?->id;
+
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Please login to leave a review'], 401);
             }
-            
-            \Log::info('Product found', ['product_id' => $product->id, 'product_name' => $product->name]);
-            
-            // Check if user already reviewed this product
-            $existingReview = \App\Models\ProductReview::where('product_id', $productId)
-                ->where('user_id', $user->id)
-                ->first();
-            
-            if ($existingReview) {
-                \Log::info('Existing review found', ['review_id' => $existingReview->id]);
-                throw new \Exception('You have already reviewed this product');
+
+            $tenant = \App\Models\Tenant::find($storeId);
+            if (!$tenant) {
+                return response()->json(['success' => false, 'message' => 'Store not found'], 404);
             }
-            
-            // Check if user has purchased this product
-            $hasPurchased = \App\Models\OrderItem::where('product_id', $productId)
-                ->whereHas('order', function($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->where('status', 'completed');
-                })
-                ->exists();
-            
-            \Log::info('Purchase check', ['has_purchased' => $hasPurchased]);
-            
-            // Handle image uploads
+
+            // S3 uploads happen BEFORE tenant context — S3 is global, not tenant-specific
             $imagePaths = [];
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
-                    $path = $image->store('product-reviews', 'public');
-                    $imagePaths[] = \Illuminate\Support\Facades\Storage::url($path);
+                    $path         = $image->store('product-reviews', 's3');
+                    $imagePaths[] = Storage::disk('s3')->url($path);
                 }
-                \Log::info('Images uploaded', ['count' => count($imagePaths)]);
             }
-            
-            $review = \App\Models\ProductReview::create([
-                'product_id' => $productId,
-                'user_id' => $user->id,
-                'rating' => $validated['rating'],
-                'title' => $validated['title'] ?? null,
-                'comment' => $validated['comment'],
-                'images' => !empty($imagePaths) ? $imagePaths : null,
-                'is_verified_purchase' => $hasPurchased,
-                'is_approved' => true,
+
+            // Return plain array from callback, not Eloquent model
+            $reviewData = $this->runForTenant($tenant, function () use ($productId, $userId, $validated, $imagePaths) {
+                $product = \App\Models\Product::find($productId);
+                if (!$product) throw new \Exception('Product not found');
+
+                $exists = \App\Models\ProductReview::where('product_id', $productId)
+                    ->where('user_id', $userId)
+                    ->exists();
+                if ($exists) throw new \Exception('You have already reviewed this product');
+
+                $hasPurchased = \App\Models\OrderItem::where('product_id', $productId)
+                    ->whereHas('order', fn($q) => $q->where('user_id', $userId)->where('status', 'completed'))
+                    ->exists();
+
+                $review = \App\Models\ProductReview::create([
+                    'product_id'           => $productId,
+                    'user_id'              => $userId,
+                    'rating'               => $validated['rating'],
+                    'title'                => $validated['title'] ?? null,
+                    'comment'              => $validated['comment'],
+                    'images'               => !empty($imagePaths) ? $imagePaths : null,
+                    'is_verified_purchase' => $hasPurchased,
+                    'is_approved'          => true,
+                ]);
+
+                $product->updateRatingStats();
+
+                // Return plain array — safe to use after tenancy()->end()
+                return $review->toArray();
+            });
+
+            // Attach user info as plain array
+            $reviewData['user'] = [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Review submitted successfully!',
+                'data'    => $reviewData,
             ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            if (tenancy()->initialized) tenancy()->end();
+            Log::error('Review store error: ' . $e->getMessage(), [
+                'storeId'   => $storeId,
+                'productId' => $productId,
+            ]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+public function helpful(Request $request, $storeId, $reviewId)
+{
+    $user   = auth()->user();
+    $userId = $user?->id;
+
+    if (!$user) return response()->json(['message' => 'Please login'], 401);
+
+    $tenant = \App\Models\Tenant::find($storeId);
+    if (!$tenant) return response()->json(['message' => 'Store not found'], 404);
+
+    try {
+        // Return plain scalar from callback
+        $result = $this->runForTenant($tenant, function () use ($reviewId, $userId) {
+            $existingVote = \App\Models\ReviewHelpfulnessVote::where('review_id', $reviewId)
+                ->where('user_id', $userId)
+                ->first();
+
+            $review = \App\Models\ProductReview::find($reviewId);
             
-            \Log::info('Review created', ['review_id' => $review->id]);
-            
-            // Update product rating stats
-            $product->updateRatingStats();
-            \Log::info('Product stats updated');
-            
-            // Load user data for the response
-            $review->load('user');
-            
-            return $review;
+            if ($existingVote) {
+                // User already voted - remove the vote (unlike)
+                $existingVote->delete();
+                $review->decrement('helpful_count');
+                $action = 'unvoted';
+            } else {
+                // User hasn't voted - add the vote (like)
+                \App\Models\ReviewHelpfulnessVote::create([
+                    'review_id' => $reviewId,
+                    'user_id'   => $userId,
+                ]);
+                $review->increment('helpful_count');
+                $action = 'voted';
+            }
+
+            // Return plain array with both count and action
+            return [
+                'helpful_count' => $review->fresh()->helpful_count,
+                'action' => $action
+            ];
         });
-        
-        \Log::info('=== REVIEW SUBMISSION SUCCESS ===');
-        
+
         return response()->json([
-            'success' => true,
-            'message' => 'Review submitted successfully!',
-            'data' => $result,
-        ], 200);
-        
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('Validation failed', ['errors' => $e->errors()]);
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $e->errors(),
-        ], 422);
-    } catch (\Exception $e) {
-        \Log::error('Review submission error: ' . $e->getMessage(), [
-            'store_id' => $storeId,
-            'product_id' => $productId,
-            'user_id' => auth()->id(),
-            'trace' => $e->getTraceAsString()
+            'success' => true, 
+            'helpful_count' => $result['helpful_count'],
+            'action' => $result['action']
         ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 422);
+
+    } catch (\Exception $e) {
+        if (tenancy()->initialized) tenancy()->end();
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
     }
 }
-    public function helpful(Request $request, $reviewId)
-    {
-        $user = auth()->user();
-        
-        if (!$user) {
-            return response()->json(['message' => 'Please login'], 401);
-        }
-        
-        $review = ProductReview::findOrFail($reviewId);
-        
-        $existingVote = \App\Models\ReviewHelpfulnessVote::where('review_id', $reviewId)
-            ->where('user_id', $user->id)
-            ->first();
-        
-        if ($existingVote) {
-            return response()->json(['message' => 'You already voted on this review'], 422);
-        }
-        
-        \App\Models\ReviewHelpfulnessVote::create([
-            'review_id' => $reviewId,
-            'user_id' => $user->id,
-        ]);
-        
-        $review->increment('helpful_count');
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Thank you for your feedback!',
-            'helpful_count' => $review->fresh()->helpful_count,
-        ]);
-    }
 }
