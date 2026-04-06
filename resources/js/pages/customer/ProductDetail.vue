@@ -36,6 +36,22 @@ const contentClass = computed(() => ({
   'sidebar-collapsed': isCollapsed.value,
 }));
 
+// Track referrer from query parameter
+const referrer = ref<'products' | 'store'>('products');
+
+const backLink = computed(() => {
+  if (referrer.value === 'store') {
+    return `/customer/stores/${props.storeId}`;
+  }
+  return '/customer/products';
+});
+const backLabel = computed(() => {
+  if (referrer.value === 'store') {
+    return 'Back to Store';
+  }
+  return 'Back to Products';
+});
+
 const product = ref<any>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -145,7 +161,8 @@ const fetchReviews = async (append = false) => {
       } else {
         reviews.value = data.data.data;
       }
-      hasMoreReviews.value = data.data.next_page_url !== null;
+      // FIX #2: Use last_page instead of next_page_url
+      hasMoreReviews.value = data.data.current_page < data.data.last_page;
     }
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -202,9 +219,20 @@ const removeImage = (index: number) => {
   imagePreviews.value.splice(index, 1);
 };
 
-// Open image in new tab
+// Image lightbox
+const lightboxImage = ref<string | null>(null);
+const showLightbox = ref(false);
+
+// Open image in lightbox (floating modal)
 const openImage = (url: string) => {
-  window.open(url, '_blank');
+  lightboxImage.value = url;
+  showLightbox.value = true;
+};
+
+// Close lightbox
+const closeLightbox = () => {
+  showLightbox.value = false;
+  lightboxImage.value = null;
 };
 
 // Submit review
@@ -247,10 +275,12 @@ const submitReview = async () => {
       showToast('Review submitted successfully!', 'success');
       showReviewModal.value = false;
       resetReviewForm();
-      // Refresh reviews and stats
+      
+      // FIX #1: Add delay and await for proper sequencing
       reviewPage.value = 1;
-      fetchReviews();
-      fetchReviewStats();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await fetchReviews();
+      await fetchReviewStats();
     } else {
       // Show the specific error message from the server
       const errorMessage = data.message || 'Failed to submit review';
@@ -265,11 +295,12 @@ const submitReview = async () => {
 };
 
 // Mark review as helpful
+// Mark review as helpful (toggle)
 const markHelpful = async (reviewId: number) => {
   votingReview.value = reviewId;
   
   try {
-    const response = await fetch(`/customer/reviews/${reviewId}/helpful`, {
+    const response = await fetch(`/customer/reviews/${props.storeId}/${reviewId}/helpful`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -278,16 +309,31 @@ const markHelpful = async (reviewId: number) => {
       body: JSON.stringify({ helpful: true }),
     });
     
-    if (response.ok) {
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Response error:', text);
+      showToast('Failed to update vote', 'error');
+      return;
+    }
+    
+    const data = await response.json();
+    
+    if (data.success) {
       // Update local review count
       const review = reviews.value.find(r => r.id === reviewId);
       if (review) {
-        review.helpful_count++;
+        review.helpful_count = data.helpful_count;
+        // Optional: Track if current user has voted
+        review.user_has_voted = data.action === 'voted';
       }
-      showToast('Thanks for your feedback!', 'success');
+      const message = data.action === 'voted' ? 'Thanks for your feedback!' : 'You removed your vote';
+      showToast(message, 'success');
+    } else {
+      showToast(data.message || 'Failed to update vote', 'error');
     }
   } catch (error) {
     console.error('Error marking helpful:', error);
+    showToast('Network error. Please try again.', 'error');
   } finally {
     votingReview.value = null;
   }
@@ -359,9 +405,29 @@ const isLoggedIn = computed(() => {
 });
 
 onMounted(() => {
+  // Check if 'from=store' is in the URL query parameters
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('from') === 'store') {
+    referrer.value = 'store';
+  }
+
   fetchProduct();
   fetchReviews();
   fetchReviewStats();
+
+  // Add keyboard support for closing lightbox
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && showLightbox.value) {
+      closeLightbox();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+
+  // Cleanup
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
 });
 </script>
 
@@ -381,9 +447,9 @@ onMounted(() => {
       <div class="p-6 max-w-5xl mx-auto space-y-6">
 
         <!-- Back -->
-        <Link href="/customer/products" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-[#245c4a] transition">
+        <Link :href="backLink" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-[#245c4a] transition">
           <ChevronLeft class="w-4 h-4" />
-          Back to Products
+          {{ backLabel }}
         </Link>
 
         <!-- Loading -->
@@ -595,7 +661,8 @@ onMounted(() => {
             </div>
             
             <div v-else-if="reviews.length === 0" class="bg-white rounded-xl border border-border shadow-sm p-8 text-center">
-              <p class="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+              <p v-if="reviewFilter === null && reviewStats.total_reviews === 0" class="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+              <p v-else class="text-muted-foreground">No reviews with this rating yet.</p>
             </div>
             
             <div v-for="review in reviews" :key="review.id" class="bg-white rounded-xl border border-border shadow-sm p-4">
@@ -794,4 +861,47 @@ onMounted(() => {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Image Lightbox Modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showLightbox"
+        class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        @click="closeLightbox"
+      >
+        <div class="relative w-full max-w-2xl max-h-[70vh] flex items-center justify-center" @click.stop>
+          <!-- Image Container -->
+          <div class="relative w-full h-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden">
+            <img
+              :src="lightboxImage"
+              alt="Full size image"
+              class="w-full h-full object-contain"
+            />
+          </div>
+
+          <!-- Close button - Top Right -->
+          <button
+            @click="closeLightbox"
+            class="absolute -top-12 right-0 p-2 rounded-full bg-[#245c4a]/80 hover:bg-[#245c4a] text-white transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#245c4a] focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Close image viewer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

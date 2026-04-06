@@ -10,65 +10,68 @@ use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        $totalProducts  = Product::count();
-        $activeProducts = Product::where('is_active', true)->count();
+   public function index()
+{
+    $totalProducts  = Product::count();
+    $activeProducts = Product::where('is_active', true)->count();
 
-        $products = Product::latest()
-            ->paginate(15)
-            ->through(function ($product) {
-                // Fetch category name from central database
-                $category = DB::connection('mysql')
-                    ->table('categories')
-                    ->where('id', $product->category_id)
-                    ->first();
+    $products = Product::latest()
+        ->paginate(15)
+        ->through(function ($product) {
+            // Fetch category name from central database
+            $category = DB::connection('mysql')
+                ->table('categories')
+                ->where('id', $product->category_id)
+                ->first();
 
-                return [
-                    'id'          => $product->id,
-                    'product_name'=> $product->name,
-                    'description' => $product->description,
-                    'category_name' => $category?->name ?? null,
-                    'barcode'     => $product->barcode,
-                    'price'       => $product->price,
-                    'stock'       => $product->stock,
-                    'image_url'   => $product->image_path
-                        ? Storage::disk('s3')->url($product->image_path)
-                        : null,
-                    'is_active'   => $product->is_active,
-                    'created_at'  => $product->created_at,
-                ];
-            });
+            return [
+                'id'          => $product->id,
+                'product_name'=> $product->name,
+                'description' => $product->description,
+                'category_name' => $category?->name ?? null,
+                'barcode'     => $product->barcode,
+                'price'       => $product->price,
+                'stock'       => $product->stock,
+                'image_url'   => $product->image_path
+                    ? Storage::disk('s3')->url($product->image_path)
+                    : null,
+                'is_active'   => $product->is_active,
+                'created_at'  => $product->created_at,
+                // ADD THESE TWO LINES:
+                'total_reviews' => $product->total_reviews ?? 0,
+                'average_rating' => $product->average_rating ?? 0,
+            ];
+        });
 
-        // Fetch ALL categories from central database (including subcategories)
-        $allCategories = DB::connection('mysql')
-            ->table('categories')
-            ->orderBy('parent_id')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($cat) {
-                return [
-                    'id'          => $cat->id,
-                    'category_name' => $cat->name,
-                    'slug'        => $cat->slug ?? '',
-                    'description' => $cat->description ?? null,
-                    'color'       => $cat->color ?? '#000000',
-                    'parent_id'   => $cat->parent_id,
-                    'children'    => [],
-                ];
-            })
-            ->toArray();
+    // Fetch ALL categories from central database (including subcategories)
+    $allCategories = DB::connection('mysql')
+        ->table('categories')
+        ->orderBy('parent_id')
+        ->orderBy('name')
+        ->get()
+        ->map(function ($cat) {
+            return [
+                'id'          => $cat->id,
+                'category_name' => $cat->name,
+                'slug'        => $cat->slug ?? '',
+                'description' => $cat->description ?? null,
+                'color'       => $cat->color ?? '#000000',
+                'parent_id'   => $cat->parent_id,
+                'children'    => [],
+            ];
+        })
+        ->toArray();
 
-        // Build the category tree
-        $categories = $this->buildCategoryTree($allCategories);
+    // Build the category tree
+    $categories = $this->buildCategoryTree($allCategories);
 
-        return inertia('vendor/Products', [
-            'products'      => $products,
-            'categories'    => $categories,
-            'totalProducts' => $totalProducts,
-            'activeProducts'=> $activeProducts,
-        ]);
-    }
+    return inertia('vendor/Products', [
+        'products'      => $products,
+        'categories'    => $categories,
+        'totalProducts' => $totalProducts,
+        'activeProducts'=> $activeProducts,
+    ]);
+}
 
     /**
      * Build a nested category tree from flat categories

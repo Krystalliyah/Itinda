@@ -8,7 +8,7 @@ import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import { ArrowLeft, ChevronDown, ShoppingCart } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import {
@@ -348,6 +348,7 @@ onMounted(() => {
               v-for="product in filteredProducts"
               :key="product.id"
               class="group rounded-xl border border-border bg-white dark:bg-muted shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer p-0"
+              @click="router.visit(`/customer/products/${props.storeId}/${product.id}?from=store`)"
             >
               <div class="relative w-full aspect-square overflow-hidden bg-gray-100">
                 <img :src="product.image_url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
