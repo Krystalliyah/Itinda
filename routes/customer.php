@@ -29,12 +29,12 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::get('/products-data/{storeId}/{productId}', [ProductController::class, 'show']);
         Route::get('/products-data/store/{id}', [ProductController::class, 'storeProducts']);
 
-        // Product Review Routes
-        Route::get('/products/{storeId}/{productId}/reviews', [App\Http\Controllers\Api\ProductReviewController::class, 'index']);
+       // Product Review Routes - stats MUST be before index
         Route::get('/products/{storeId}/{productId}/reviews/stats', [App\Http\Controllers\Api\ProductReviewController::class, 'stats']);
+        Route::get('/products/{storeId}/{productId}/reviews', [App\Http\Controllers\Api\ProductReviewController::class, 'index']);
         Route::post('/products/{storeId}/{productId}/reviews', [App\Http\Controllers\Api\ProductReviewController::class, 'store'])->middleware('auth');
-        Route::post('/reviews/{reviewId}/helpful', [App\Http\Controllers\Api\ProductReviewController::class, 'helpful'])->middleware('auth');
-        
+        Route::post('/reviews/{storeId}/{reviewId}/helpful', [App\Http\Controllers\Api\ProductReviewController::class, 'helpful'])->middleware('auth');
+                
         // Categories API Route
         Route::get('/categories', [CategoryController::class, 'index']);
         
