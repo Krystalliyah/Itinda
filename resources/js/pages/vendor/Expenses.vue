@@ -85,6 +85,7 @@ const props = withDefaults(defineProps<{
         start_date: string;
         end_date: string;
         category_filter: string;
+        date_preset?: string;
     };
 }>(), {
     expenses: () => [],
@@ -102,6 +103,7 @@ const props = withDefaults(defineProps<{
         start_date: '',
         end_date: '',
         category_filter: 'all',
+        date_preset: 'this_month',
     }),
 });
 
@@ -117,13 +119,17 @@ const selectedStatus = ref('All');
 
 // Date range filter
 type DatePreset = 'all' | 'this_month' | 'last_30' | 'custom';
-const datePreset = ref<DatePreset>('this_month');
+const datePreset = ref<DatePreset>((props.filters.date_preset as DatePreset) || 'this_month');
 const customFrom = ref('');
 const customTo = ref('');
 const categoryFilter = ref(props.filters.category_filter);
 
 const today = new Date();
-const todayStr = today.toISOString().slice(0, 10);
+const todayStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+].join('-');
 
 // Derive the active from/to dates based on the selected preset
 const activeDateFrom = computed<string | null>(() => {
@@ -153,12 +159,18 @@ watch(datePreset, (val) => {
     }
 });
 
+// Watch for changes to expenses prop
+watch(() => props.expenses, () => {
+    // Force recalculation of computed properties
+}, { deep: true });
+
 // Apply filter to server
 const applyFilter = () => {
     router.get('/vendor/expenses', {
         start_date: activeDateFrom.value || '',
         end_date: activeDateTo.value || '',
         category_filter: categoryFilter.value,
+        date_preset: datePreset.value,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -233,9 +245,10 @@ const filteredExpenses = computed(() => {
     });
 });
 
-const totalExpenses = computed(() =>
-    dateFilteredExpenses.value.reduce((sum, item) => sum + item.amount, 0),
-);
+const totalExpenses = computed(() => {
+    const total = dateFilteredExpenses.value.reduce((sum, item) => sum + (item.amount || 0), 0);
+    return total;
+});
 
 const paidExpenses = computed(() =>
     dateFilteredExpenses.value
@@ -251,7 +264,7 @@ const pendingExpenses = computed(() =>
 
 const inventoryShare = computed(() =>
     dateFilteredExpenses.value
-        .filter((item) => item.category === 'Inventory')
+        .filter((item) => item.category.toLowerCase() === 'inventory')
         .reduce((sum, item) => sum + item.amount, 0),
 );
 
@@ -338,12 +351,16 @@ const deleteExpense = (id: number) => {
 };
 
 // Helper functions
-const formatPeso = (value: number) =>
-    new Intl.NumberFormat('en-PH', {
+const formatPeso = (value: number | undefined | null) => {
+    if (value === undefined || value === null || isNaN(value)) {
+        return '₱0';
+    }
+    return new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
         maximumFractionDigits: 0,
     }).format(value);
+};
 
 const formatDate = (value: string) =>
     new Date(value).toLocaleDateString('en-PH', {

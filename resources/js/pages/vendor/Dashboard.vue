@@ -93,10 +93,28 @@ function statusClass(status: string) {
   const map: Record<string, string> = {
     pending: 'badge-status-pending',
     preparing: 'badge-status-preparing',
-    completed: 'badge-status-done',
+    confirmed: 'badge-status-completed',
+    completed: 'badge-status-completed',
+    ready: 'badge-status-ready',
+    ready_for_pickup: 'badge-status-ready',
+    picked_up: 'badge-status-picked',
     cancelled: 'badge-status-cancelled',
   };
   return map[status?.toLowerCase()] ?? 'badge-status-pending';
+}
+
+function statusDotClass(status: string) {
+  const map: Record<string, string> = {
+    pending: 'status-dot-pending',
+    preparing: 'status-dot-preparing',
+    confirmed: 'status-dot-completed',
+    completed: 'status-dot-completed',
+    ready: 'status-dot-ready',
+    ready_for_pickup: 'status-dot-ready',
+    picked_up: 'status-dot-picked',
+    cancelled: 'status-dot-cancelled',
+  };
+  return map[status?.toLowerCase()] ?? 'status-dot-pending';
 }
 
 function stockClass(level: string) {
@@ -416,17 +434,18 @@ function stockClass(level: string) {
                 <td class="px-5 py-3 text-xs text-muted-foreground">{{ order.items_summary }}</td>
                 <td class="px-5 py-3 text-sm font-semibold">₱{{ Number(order.total).toFixed(2) }}</td>
                 <td class="px-5 py-3">
-                  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" :class="statusClass(order.status)">
-                    <span
-                      class="w-1.5 h-1.5 rounded-full"
-                      :class="{
-                        'bg-amber-500': order.status === 'pending',
-                        'bg-blue-500': order.status === 'preparing',
-                        'bg-green-500': order.status === 'completed',
-                        'bg-red-500': order.status === 'cancelled',
-                      }"
-                    ></span>
-                    {{ order.status }}
+                  <span class="status-pill" :class="statusClass(order.status)">
+                  <span class="status-dot" :class="statusDotClass(order.status)"></span>
+                    {{ 
+                      order.status === 'pending' ? 'Pending' :
+                      order.status === 'preparing' ? 'Preparing' :
+                      order.status === 'confirmed' ? 'Confirmed' :
+                      order.status === 'completed' ? 'Completed' :
+                      order.status === 'ready' ? 'Ready for Pickup' :
+                      order.status === 'ready_for_pickup' ? 'Ready for Pickup' :
+                      order.status === 'picked_up' ? 'Picked Up' :
+                      order.status === 'cancelled' ? 'Cancelled' : order.status 
+                     }}
                   </span>
                 </td>
               </tr>
@@ -836,8 +855,82 @@ function stockClass(level: string) {
 </template>
 
 <style scoped>
-.badge-status-pending   { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-.badge-status-preparing { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-.badge-status-done      { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-.badge-status-cancelled { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+/* Standardized Status Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* Pending - Yellow/Amber */
+.badge-status-pending {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+.status-dot-pending {
+  background: #f59e0b;
+}
+
+/* Preparing - Blue */
+.badge-status-preparing {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.status-dot-preparing {
+  background: #3b82f6;
+}
+
+/* Ready for Pickup - Purple */
+.badge-status-ready {
+  background: #faf5ff;
+  color: #6b21a5;
+  border: 1px solid #e9d5ff;
+}
+.status-dot-ready {
+  background: #a855f7;
+}
+
+/* Picked Up - Teal */
+.badge-status-picked {
+  background: #f0fdfa;
+  color: #115e59;
+  border: 1px solid #99f6e4;
+}
+.status-dot-picked {
+  background: #14b8a6;
+}
+
+/* Completed - Green */
+.badge-status-completed {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.status-dot-completed {
+  background: #22c55e;
+}
+
+/* Cancelled - Red */
+.badge-status-cancelled {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.status-dot-cancelled {
+  background: #ef4444;
+}
 </style>

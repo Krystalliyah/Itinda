@@ -2,6 +2,7 @@
 import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
+import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
 
 type Permission = {
   id: number;
@@ -39,8 +40,11 @@ const props = defineProps<{
 
 const showAddModal = ref(false);
 const showPermissionsModal = ref(false);
+const showDeleteModal = ref(false);
 const selectedStaff = ref<Staff | null>(null);
+const staffToDelete = ref<Staff | null>(null);
 const showPasswordRequirements = ref(false);
+const deleteProcessing = ref(false);
 
 const addForm = useForm({
   name: '',
@@ -161,10 +165,26 @@ function submitPermissions() {
   });
 }
 
-function deleteStaff(id: number) {
-  if (confirm('Are you sure you want to remove this staff member?')) {
-    router.delete(`/vendor/staff/${id}`);
-  }
+function deleteStaff(staff: Staff) {
+  staffToDelete.value = staff;
+  showDeleteModal.value = true;
+}
+
+function confirmDeleteStaff(reason?: string) {
+  if (!staffToDelete.value || !reason) return;
+
+  deleteProcessing.value = true;
+  router.delete(`/vendor/staff/${staffToDelete.value.id}`, {
+    data: { reason },
+    onSuccess: () => {
+      showDeleteModal.value = false;
+      staffToDelete.value = null;
+      deleteProcessing.value = false;
+    },
+    onError: () => {
+      deleteProcessing.value = false;
+    },
+  });
 }
 
 // Permission labels and descriptions
@@ -270,7 +290,7 @@ function hasBaseRole(staff: Staff) {
                     <button @click="openPermissionsModal(member)" class="text-xs font-semibold px-2 py-1 rounded hover:bg-emerald-50" style="color:#245c4a">
                       Permissions
                     </button>
-                    <button @click="deleteStaff(member.id)" class="text-xs font-semibold px-2 py-1 rounded hover:bg-rose-50 text-rose-600">
+                    <button @click="deleteStaff(member)" class="text-xs font-semibold px-2 py-1 rounded hover:bg-rose-50 text-rose-600">
                       Remove
                     </button>
                   </div>
@@ -312,7 +332,7 @@ function hasBaseRole(staff: Staff) {
               <button @click="openPermissionsModal(member)" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors" style="color:#245c4a">
                 Edit Permissions
               </button>
-              <button @click="deleteStaff(member.id)" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors">
+              <button @click="deleteStaff(member)" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors">
                 Remove
               </button>
             </div>
@@ -526,5 +546,21 @@ function hasBaseRole(staff: Staff) {
         </div>
       </Teleport>
     </div>
+
+    <ConfirmationModal
+      v-model:open="showDeleteModal"
+      title="Deactivate Staff Account"
+      description="Are you sure you want to deactivate this staff account?"
+      :details="`This will remove ${staffToDelete?.name}'s access to the vendor dashboard and move their account to inactive status. They will no longer be able to log in or perform any actions.`"
+      confirm-text="Deactivate Account"
+      cancel-text="Cancel"
+      variant="destructive"
+      :loading="deleteProcessing"
+      :show-reason-input="true"
+      reason-label="Reason for deactivation"
+      reason-placeholder="Please provide a reason for deactivating this staff account..."
+      @confirm="confirmDeleteStaff"
+      @cancel="staffToDelete = null"
+    />
   </VendorLayout>
 </template>

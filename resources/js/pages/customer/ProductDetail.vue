@@ -22,7 +22,18 @@ import {
   CheckCircle,
   Image as ImageIcon,
   X,
-  Loader2
+  Loader2,
+  Ruler,
+  Scale,
+  Droplet,
+  Flame,
+  Leaf,
+  Shield,
+  Truck,
+  RefreshCw,
+  Clock,
+  Tag,
+  Info
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -56,6 +67,16 @@ const product = ref<any>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+// Mock product specifications data
+const productSpecs = ref({
+  weight: '500g',
+  dimensions: '25cm x 15cm x 10cm',
+  material: 'Premium Quality',
+  origin: 'Imported',
+  brand: 'Premium Brand',
+  ingredients: 'All-natural ingredients, no preservatives',
+  care_instructions: 'Store in cool dry place. Avoid direct sunlight.'
+});
 
 // Helper function to safely get rating distribution
 const getRatingDistribution = (star: number) => {
@@ -153,7 +174,7 @@ const fetchReviews = async (append = false) => {
     const response = await fetch(`/customer/products/${props.storeId}/${props.productId}/reviews?${params}`);
     const data = await response.json();
     
-    console.log('Fetched reviews:', data); // Debug log
+    console.log('Fetched reviews:', data);
     
     if (data.success && data.data) {
       if (append) {
@@ -220,19 +241,17 @@ const removeImage = (index: number) => {
 };
 
 // Image lightbox
-const lightboxImage = ref<string | null>(null);
+const lightboxImage = ref<string | undefined>(undefined);
 const showLightbox = ref(false);
 
-// Open image in lightbox (floating modal)
 const openImage = (url: string) => {
   lightboxImage.value = url;
   showLightbox.value = true;
 };
 
-// Close lightbox
 const closeLightbox = () => {
   showLightbox.value = false;
-  lightboxImage.value = null;
+  lightboxImage.value = undefined;
 };
 
 // Submit review
@@ -269,20 +288,16 @@ const submitReview = async () => {
     
     const data = await response.json();
     
-    console.log('Review submission response:', data); // Debug log
-    
     if (response.ok && data.success) {
       showToast('Review submitted successfully!', 'success');
       showReviewModal.value = false;
       resetReviewForm();
       
-      // FIX #1: Add delay and await for proper sequencing
       reviewPage.value = 1;
       await new Promise(resolve => setTimeout(resolve, 300));
       await fetchReviews();
       await fetchReviewStats();
     } else {
-      // Show the specific error message from the server
       const errorMessage = data.message || 'Failed to submit review';
       showToast(errorMessage, 'error');
     }
@@ -295,7 +310,6 @@ const submitReview = async () => {
 };
 
 // Mark review as helpful
-// Mark review as helpful (toggle)
 const markHelpful = async (reviewId: number) => {
   votingReview.value = reviewId;
   
@@ -319,11 +333,9 @@ const markHelpful = async (reviewId: number) => {
     const data = await response.json();
     
     if (data.success) {
-      // Update local review count
       const review = reviews.value.find(r => r.id === reviewId);
       if (review) {
         review.helpful_count = data.helpful_count;
-        // Optional: Track if current user has voted
         review.user_has_voted = data.action === 'voted';
       }
       const message = data.action === 'voted' ? 'Thanks for your feedback!' : 'You removed your vote';
@@ -582,6 +594,47 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- Product Specifications Section -->
+        <div v-if="product" class="mt-8 pt-8 border-t border-border">
+          <div class="flex items-center gap-2 mb-4">
+            <Info class="w-5 h-5 text-[#245c4a]" />
+            <h2 class="text-xl font-semibold text-foreground">Product Specifications</h2>
+          </div>
+
+          <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+            <div class="divide-y divide-border">
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Weight</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.weight }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Dimensions</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.dimensions }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Material</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.material }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Origin</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.origin }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Brand</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.brand }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Ingredients</span>
+                <span class="text-sm font-medium text-foreground flex-1">{{ productSpecs.ingredients }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Care Instructions</span>
+                <span class="text-sm font-medium text-foreground flex-1">{{ productSpecs.care_instructions }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Reviews Section -->
         <div v-if="product" class="mt-8 pt-8 border-t border-border">
           <div class="flex items-center justify-between mb-4">
@@ -597,33 +650,33 @@ onMounted(() => {
           
           <!-- Rating Summary Bar -->
           <div class="bg-white rounded-xl border border-border shadow-sm p-4 mb-4">
-    <div class="flex flex-col md:flex-row gap-6">
-      <div class="text-center md:text-left">
-        <div class="text-4xl font-bold text-foreground">{{ reviewStats.average_rating }}</div>
-        <div class="flex justify-center md:justify-start mt-1">
-          <Star v-for="i in 5" :key="i" 
-            :class="i <= Math.round(reviewStats.average_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
-            class="w-4 h-4" />
-        </div>
-        <div class="text-sm text-muted-foreground mt-1">{{ reviewStats.total_reviews }} reviews</div>
-      </div>
-      
-      <div class="flex-1 space-y-2">
-        <div v-for="star in [5,4,3,2,1]" :key="star" class="flex items-center gap-2">
-          <span class="text-sm w-8">{{ star }}★</span>
-          <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              class="h-full bg-yellow-400 rounded-full"
-              :style="{ width: `${getRatingPercentage(star)}%` }"
-            ></div>
+            <div class="flex flex-col md:flex-row gap-6">
+              <div class="text-center md:text-left">
+                <div class="text-4xl font-bold text-foreground">{{ reviewStats.average_rating }}</div>
+                <div class="flex justify-center md:justify-start mt-1">
+                  <Star v-for="i in 5" :key="i" 
+                    :class="i <= Math.round(reviewStats.average_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                    class="w-4 h-4" />
+                </div>
+                <div class="text-sm text-muted-foreground mt-1">{{ reviewStats.total_reviews }} reviews</div>
+              </div>
+              
+              <div class="flex-1 space-y-2">
+                <div v-for="star in [5,4,3,2,1]" :key="star" class="flex items-center gap-2">
+                  <span class="text-sm w-8">{{ star }}★</span>
+                  <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-yellow-400 rounded-full"
+                      :style="{ width: `${getRatingPercentage(star)}%` }"
+                    ></div>
+                  </div>
+                  <span class="text-xs text-muted-foreground w-12">
+                    {{ getRatingDistribution(star) }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <span class="text-xs text-muted-foreground w-12">
-            {{ getRatingDistribution(star) }}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
           
           <!-- Review Filters -->
           <div class="flex flex-wrap gap-3 mb-4">
@@ -871,7 +924,6 @@ onMounted(() => {
         @click="closeLightbox"
       >
         <div class="relative w-full max-w-2xl max-h-[70vh] flex items-center justify-center" @click.stop>
-          <!-- Image Container -->
           <div class="relative w-full h-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden">
             <img
               :src="lightboxImage"
@@ -880,7 +932,6 @@ onMounted(() => {
             />
           </div>
 
-          <!-- Close button - Top Right -->
           <button
             @click="closeLightbox"
             class="absolute -top-12 right-0 p-2 rounded-full bg-[#245c4a]/80 hover:bg-[#245c4a] text-white transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#245c4a] focus:ring-offset-2 focus:ring-offset-black"

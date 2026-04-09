@@ -154,117 +154,121 @@ const displayedPages = computed(() => {
                 </div>
 
                 <!-- Customers Table -->
-                <div class="card">
-                    <div class="card-header">
-                        <UsersIcon class="card-header-icon" />
-                        <h2>
-                            All Customers
-                            <span class="count-badge">{{ totalCount }}</span>
-                        </h2>
-                    </div>
+<div class="card">
+    <div class="card-header">
+        <UsersIcon class="card-header-icon" />
+        <h2>
+            All Customers
+            <span class="count-badge">{{ totalCount }}</span>
+        </h2>
+    </div>
 
-                    <div v-if="customerList.length > 0" class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Status</th>
-                                    <th>Joined</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="customer in customerList" :key="customer.id">
-                                    <td><span class="id-pill">{{ customer.id }}</span></td>
-                                    <td>
-                                        <div class="customer-name">{{ customer.name }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="email-cell">
-                                            <EnvelopeIcon class="cell-icon" />
-                                            {{ customer.email }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div v-if="customer.phone" class="phone-cell">
-                                            <PhoneIcon class="cell-icon" />
-                                            {{ customer.phone }}
-                                        </div>
-                                        <span v-else class="text-muted">—</span>
-                                    </td>
-                                    <td>
-                                        <span v-if="customer.email_verified_at" class="badge badge-verified">
-                                            <CheckBadgeIcon class="badge-icon" />
-                                            Verified
-                                        </span>
-                                        <span v-else class="badge badge-unverified">
-                                            <XCircleIcon class="badge-icon" />
-                                            Unverified
-                                        </span>
-                                    </td>
-                                    <td class="text-muted">
-                                        {{ new Date(customer.created_at).toLocaleDateString() }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <!-- Pagination (only shown when data is paginated) -->
-                        <div v-if="hasPagination" class="pagination-wrapper">
-                            <div class="pagination-info">
-                                Showing {{ (props.customers as PaginatedCustomers).meta.from }} to {{ (props.customers as PaginatedCustomers).meta.to }} of {{ (props.customers as PaginatedCustomers).meta.total }} results
-                            </div>
-                            <div class="pagination">
-                                <!-- Previous Page Link -->
-                                <Link
-                                    v-if="currentPage > 1"
-                                    :href="path + '?page=' + (currentPage - 1)"
-                                    class="pagination-item prev"
-                                >
-                                    <ChevronLeftIcon class="pagination-icon" />
-                                    Previous
-                                </Link>
-                                <span v-else class="pagination-item disabled">
-                                    <ChevronLeftIcon class="pagination-icon" />
-                                    Previous
+    <div v-if="customerList.length > 0">
+        <div class="table-responsive-wrapper">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="customer in customerList" :key="customer.id">
+                            <td><span class="id-pill">{{ customer.id }}</span></td>
+                            <td>
+                                <div class="customer-name">{{ customer.name }}</div>
+                            </td>
+                            <td>
+                                <div class="email-cell">
+                                    <EnvelopeIcon class="cell-icon" />
+                                    {{ customer.email }}
+                                </div>
+                            </td>
+                            <td>
+                                <div v-if="customer.phone" class="phone-cell">
+                                    <PhoneIcon class="cell-icon" />
+                                    {{ customer.phone }}
+                                </div>
+                                <span v-else class="text-muted">—</span>
+                            </td>
+                            <td>
+                                <span v-if="customer.email_verified_at" class="badge badge-verified">
+                                    <CheckBadgeIcon class="badge-icon" />
+                                    Verified
                                 </span>
-
-                                <!-- Page Numbers -->
-                                <template v-for="page in displayedPages" :key="page">
-                                    <Link
-                                        v-if="page !== currentPage"
-                                        :href="path + '?page=' + page"
-                                        class="pagination-item"
-                                    >
-                                        {{ page }}
-                                    </Link>
-                                    <span v-else class="pagination-item active">{{ page }}</span>
-                                </template>
-
-                                <!-- Next Page Link -->
-                                <Link
-                                    v-if="currentPage < lastPage"
-                                    :href="path + '?page=' + (currentPage + 1)"
-                                    class="pagination-item next"
-                                >
-                                    Next
-                                    <ChevronRightIcon class="pagination-icon" />
-                                </Link>
-                                <span v-else class="pagination-item disabled">
-                                    Next
-                                    <ChevronRightIcon class="pagination-icon" />
+                                <span v-else class="badge badge-unverified">
+                                    <XCircleIcon class="badge-icon" />
+                                    Unverified
                                 </span>
-                            </div>
-                        </div>
-                    </div>
+                            </td>
+                            <td class="text-muted">
+                                {{ new Date(customer.created_at).toLocaleDateString() }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                    <div v-else class="empty-state">
-                        <UsersIcon class="empty-icon" />
-                        <p>No customers registered yet.</p>
-                    </div>
-                </div>
+        <!-- Pagination (only shown when data is paginated) -->
+        <div v-if="hasPagination" class="pagination-wrapper">
+            <div class="pagination-info">
+                Showing {{ (props.customers as PaginatedCustomers).meta.from }} to {{ (props.customers as PaginatedCustomers).meta.to }} of {{ (props.customers as PaginatedCustomers).meta.total }} results
+            </div>
+            <div class="pagination">
+                <!-- Previous Page Link -->
+                <Link
+                    v-if="currentPage > 1"
+                    :href="path + '?page=' + (currentPage - 1)"
+                    class="pagination-item prev"
+                >
+                    <ChevronLeftIcon class="pagination-icon" />
+                    Previous
+                </Link>
+                <span v-else class="pagination-item disabled">
+                    <ChevronLeftIcon class="pagination-icon" />
+                    Previous
+                </span>
+
+                <!-- Page Numbers -->
+                <template v-for="page in displayedPages" :key="page">
+                    <Link
+                        v-if="page !== currentPage"
+                        :href="path + '?page=' + page"
+                        class="pagination-item"
+                    >
+                        {{ page }}
+                    </Link>
+                    <span v-else class="pagination-item active">{{ page }}</span>
+                </template>
+
+                <!-- Next Page Link -->
+                <Link
+                    v-if="currentPage < lastPage"
+                    :href="path + '?page=' + (currentPage + 1)"
+                    class="pagination-item next"
+                >
+                    Next
+                    <ChevronRightIcon class="pagination-icon" />
+                </Link>
+                <span v-else class="pagination-item disabled">
+                    Next
+                    <ChevronRightIcon class="pagination-icon" />
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div v-else class="empty-state">
+        <UsersIcon class="empty-icon" />
+        <p>No customers registered yet.</p>
+    </div>
+</div>
 
             </div>
         </main>
@@ -395,8 +399,16 @@ const displayedPages = computed(() => {
     color: #10b981;
 }
 
-.table-responsive {
+/* Responsive table styles */
+.table-responsive-wrapper {
+    width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+}
+
+.table-responsive {
+    min-width: 800px;
 }
 
 table {
@@ -581,20 +593,33 @@ tr:hover td {
 }
 
 @media (max-width: 768px) {
-    .page-container {
-        padding: 1.25rem 1rem;
+    .table-responsive-wrapper {
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
     }
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.85rem;
+    
+    th, td {
+        padding: 0.6rem 0.5rem;
     }
-    .pagination-wrapper {
-        flex-direction: column;
-        align-items: flex-start;
+    
+    .id-pill {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+    }
+    
+    .customer-name {
+        font-size: 0.85rem;
+    }
+    
+    .email-cell, .phone-cell {
+        font-size: 0.8rem;
+    }
+    
+    .badge {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
     }
 }
-
 /* ── Dark mode — only exceptions tokens can't handle ── */
 :global(.dark) .page-header h1 { color: var(--foreground); }
 :global(.dark) .page-header p  { color: var(--muted-foreground); }
