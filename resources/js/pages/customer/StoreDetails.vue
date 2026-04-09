@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, reactive, watch, nextTick } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
@@ -146,15 +146,38 @@ const decrement = (product: any) => setQty(product, getQty(product) - 1)
 
 const cartItems = ref<any[]>([])
 const storeCartModalOpen = ref(false)
-const selectedStoreItems = ref<number[]>([])
+const selectedStoreItemIds = ref<number[]>([])
 
-const storeCartItems = computed(() =>
-  cartItems.value.filter(item => Number(item.store_id) === Number(props.storeId))
-)
+// Fixed: Compare as strings and ensure reactivity
+const storeCartItems = computed(() => {
+  const filtered = cartItems.value.filter(item => String(item.store_id) === String(props.storeId))
+  return filtered
+})
 
 const storeCartTotal = computed(() =>
   storeCartItems.value.reduce((sum, item) => sum + Number(item.unit_price) * item.quantity, 0)
 )
+
+const storeAllSelected = computed(() =>
+  storeCartItems.value.length > 0 &&
+  storeCartItems.value.every(item => selectedStoreItemIds.value.includes(item.id))
+)
+
+const storeSelectedTotal = computed(() =>
+  storeCartItems.value
+    .filter(item => selectedStoreItemIds.value.includes(item.id))
+    .reduce((sum, item) => sum + Number(item.unit_price) * item.quantity, 0)
+)
+
+const toggleStoreAll = (val: boolean) => {
+  selectedStoreItemIds.value = val ? storeCartItems.value.map(item => item.id) : []
+}
+
+// Watch for cart items changes
+watch(() => cartItems.value, (newVal) => {
+  console.log('cartItems updated:', newVal.length, 'items')
+  console.log('Filtered store items:', storeCartItems.value.length)
+}, { deep: true })
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount)
@@ -191,6 +214,8 @@ const addToCart = async (product: any) => {
     showToast(`${qty}× "${product.product_name}" added to cart!`)
     
     await fetchCartItems()
+    // Small delay to ensure reactivity updates
+    await nextTick()
     storeCartModalOpen.value = true
   } catch (err) {
     console.error(err)
@@ -215,7 +240,7 @@ const fetchCartItems = async () => {
         storeCart.items.forEach((item: any) => {
           items.push({
             id: item.id,
-            store_id: Number(storeCart.store_id),
+            store_id: String(storeCart.store_id), // Store as string for consistent comparison
             product_name: item.product.name,
             unit_price: Number(item.product.price) || 0,
             image_path: item.product.image_path,
@@ -243,7 +268,7 @@ const removeCartItem = async (itemId: number) => {
     })
     if (response.ok) {
       cartItems.value = cartItems.value.filter(item => item.id !== itemId)
-      selectedStoreItems.value = selectedStoreItems.value.filter(id => id !== itemId)
+      selectedStoreItemIds.value = selectedStoreItemIds.value.filter(id => id !== itemId)
     }
   } catch (err) {
     console.error('Error removing item:', err)
@@ -251,7 +276,7 @@ const removeCartItem = async (itemId: number) => {
 }
 
 const removeSelectedItems = async () => {
-  const ids = selectedStoreItems.value
+  const ids = selectedStoreItemIds.value
   if (ids.length === 0) return
 
   try {
@@ -267,7 +292,7 @@ const removeSelectedItems = async () => {
     })
     if (response.ok) {
       cartItems.value = cartItems.value.filter(item => !ids.includes(item.id))
-      selectedStoreItems.value = []
+      selectedStoreItemIds.value = []
     }
   } catch (err) {
     console.error('Error removing items:', err)
@@ -295,6 +320,13 @@ const updateCartItemQty = async (itemId: number, quantity: number) => {
   }
 }
 
+// Function to handle opening cart modal
+const openCartModal = async () => {
+  await fetchCartItems()
+  await nextTick()
+  storeCartModalOpen.value = true
+}
+
 onMounted(() => {
   fetchStoreDetails()
   fetchProducts()
@@ -315,8 +347,6 @@ onMounted(() => {
     </Sidebar>
 
     <main :class="contentClass">
-      <Head :title="store.name || 'Store Details'" />
-
       <div v-if="loading" class="max-w-6xl mx-auto px-6 pt-6">
         <div class="text-center py-12">
           <p class="text-muted-foreground">Loading store details...</p>
@@ -444,7 +474,7 @@ onMounted(() => {
 
                 <div class="flex items-center justify-between">
                   <span class="text-lg font-semibold text-[#245c4a]">
-                    ${{ product.unit_price.toFixed(2) }}
+                    {{ formatCurrency(product.unit_price) }}
                   </span>
                   <span v-if="product.stock_level <= 5 && product.stock_level > 0" class="text-xs text-orange-600">
                     Low stock
@@ -510,9 +540,10 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- Floating Cart Button -->
         <div class="fixed bottom-6 right-6 z-50">
           <button
-            @click="storeCartModalOpen = true"
+            @click="openCartModal"
             class="relative h-14 w-14 rounded-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
             aria-label="Open cart"
           >
@@ -529,6 +560,7 @@ onMounted(() => {
     </main>
   </div>
 
+  <!-- Cart Modal -->
   <Teleport to="body">
     <Transition
       enter-active-class="transition duration-200 ease-out"
@@ -538,42 +570,38 @@ onMounted(() => {
       leave-from-class="scale-100 opacity-100"
       leave-to-class="scale-95 opacity-0"
     >
-      <div v-if="storeCartModalOpen" class="fixed bottom-24 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[70vh]">
+      <div 
+        v-if="storeCartModalOpen" 
+        :key="`cart-modal-${storeCartItems.length}-${props.storeId}`"
+        class="fixed bottom-24 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[75vh]"
+      >
         <!-- Header -->
         <div class="flex items-center justify-between p-4 border-b border-border">
           <div class="flex items-center gap-2">
             <ShoppingCart class="h-5 w-5 text-[#245c4a]" />
-            <h2 class="text-base font-semibold text-foreground">Cart</h2>
+            <h2 class="text-base font-semibold">Cart — {{ store.name }}</h2>
           </div>
-          <button
-            @click="storeCartModalOpen = false"
-            class="p-1 hover:bg-muted rounded-lg transition"
-            aria-label="Close"
-          >
+          <button @click="storeCartModalOpen = false" class="p-1 hover:bg-muted rounded-lg transition">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
         </div>
 
-        <!-- Store Name -->
-        <div class="px-4 pt-3 pb-2 border-b border-border">
-          <p class="text-sm font-medium text-muted-foreground">{{ store.name }}</p>
-        </div>
-
         <!-- Select All / Remove Selected -->
-        <div v-if="storeCartItems.length > 0" class="flex items-center justify-between px-4 py-3 border-b border-border">
-          <label class="flex items-center gap-2 cursor-pointer">
+        <div v-if="storeCartItems.length > 0" class="flex items-center justify-between px-4 py-2 border-b border-border">
+          <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
             <input
               type="checkbox"
-              :checked="storeCartItems.every(item => selectedStoreItems.includes(item.id))"
-              @change="(e) => selectedStoreItems = (e.target as HTMLInputElement).checked ? storeCartItems.map(i => i.id) : []"
-              class="h-5 w-5 rounded border-gray-300 text-[#245c4a]"
+              :checked="storeAllSelected"
+              @change="toggleStoreAll(($event.target as HTMLInputElement).checked)"
+              class="h-4 w-4 rounded border-gray-300"
             />
-            <span class="text-sm font-medium text-foreground">Select All</span>
+            Select All
+            <span class="text-xs text-muted-foreground">({{ selectedStoreItemIds.length }})</span>
           </label>
           <button
-            v-if="selectedStoreItems.length > 0"
+            v-if="selectedStoreItemIds.length > 0"
             @click="removeSelectedItems"
             class="text-sm font-medium text-red-600 hover:text-red-700 transition"
           >
@@ -582,9 +610,9 @@ onMounted(() => {
         </div>
 
         <!-- Items List -->
-        <div class="flex-1 overflow-y-auto px-4 space-y-3 py-3">
-          <div v-if="storeCartItems.length === 0" class="py-8 text-center text-muted-foreground">
-            <p class="text-sm">No items from this store</p>
+        <div class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          <div v-if="storeCartItems.length === 0" class="py-8 text-center text-sm text-muted-foreground">
+            No items from this store yet.
           </div>
 
           <div
@@ -592,43 +620,45 @@ onMounted(() => {
             :key="item.id"
             class="flex items-start gap-3 p-3 rounded-lg border border-border"
           >
+            <!-- Checkbox -->
             <input
               type="checkbox"
-              :checked="selectedStoreItems.includes(item.id)"
+              :checked="selectedStoreItemIds.includes(item.id)"
               @change="(e) => {
                 if ((e.target as HTMLInputElement).checked) {
-                  selectedStoreItems.push(item.id)
+                  selectedStoreItemIds.push(item.id)
                 } else {
-                  selectedStoreItems = selectedStoreItems.filter(id => id !== item.id)
+                  selectedStoreItemIds = selectedStoreItemIds.filter(id => id !== item.id)
                 }
               }"
-              class="h-5 w-5 rounded border-gray-300 text-[#245c4a] mt-0.5 cursor-pointer"
+              class="h-4 w-4 rounded border-gray-300 mt-1 cursor-pointer"
             />
 
+            <!-- Image -->
             <div class="h-12 w-12 overflow-hidden rounded-lg bg-muted border border-border shrink-0">
               <img
                 v-if="item.image_path"
-                :src="`/storage/${item.image_path}`"
+                :src="item.image_path && /^https?:\/\//.test(item.image_path) ? item.image_path : `/storage/${item.image_path}`"
                 :alt="item.product_name"
                 class="h-full w-full object-cover"
                 loading="lazy"
               />
             </div>
 
+            <!-- Info -->
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium text-foreground line-clamp-2">{{ item.product_name }}</p>
-              <p class="text-xs text-muted-foreground">{{ item.product_description || 'Product description' }}</p>
+              <p class="text-sm font-medium line-clamp-2">{{ item.product_name }}</p>
               <p class="text-sm font-semibold text-[#245c4a] mt-1">{{ formatCurrency(item.unit_price) }}</p>
             </div>
 
-            <div class="flex flex-col items-end gap-2">
+            <!-- Qty + Remove -->
+            <div class="flex flex-col items-end gap-2 shrink-0">
               <button
                 @click="removeCartItem(item.id)"
-                class="text-sm font-medium text-red-600 hover:text-red-700 transition"
+                class="text-xs text-red-600 hover:text-red-700 transition"
               >
                 Remove
               </button>
-
               <div class="flex items-center gap-1 border border-border rounded-lg">
                 <button
                   @click="updateCartItemQty(item.id, Math.max(1, item.quantity - 1))"
@@ -648,14 +678,16 @@ onMounted(() => {
         <!-- Footer -->
         <div v-if="storeCartItems.length > 0" class="border-t border-border p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-base font-semibold text-foreground">Total</span>
-            <span class="text-lg font-semibold text-[#245c4a]">{{ formatCurrency(storeCartTotal) }}</span>
+            <span class="text-sm text-muted-foreground">
+              {{ selectedStoreItemIds.length > 0 ? 'Selected' : 'Total' }}
+            </span>
+            <span class="text-base font-semibold text-[#245c4a]">
+              {{ formatCurrency(selectedStoreItemIds.length > 0 ? storeSelectedTotal : storeCartTotal) }}
+            </span>
           </div>
-
           <Link href="/customer/cart" class="block text-sm text-[#245c4a] hover:underline text-center font-medium">
-            View all cart
+            View full cart
           </Link>
-
           <Button class="w-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white font-medium">
             Pre-order
           </Button>
@@ -663,6 +695,7 @@ onMounted(() => {
       </div>
     </Transition>
 
+    <!-- Toast Notification -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
       enter-from-class="translate-y-4 opacity-0"
@@ -689,3 +722,23 @@ onMounted(() => {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.dashboard-content {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.dashboard-content.sidebar-collapsed {
+  margin-left: 70px;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
