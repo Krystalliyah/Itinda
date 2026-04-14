@@ -39,13 +39,21 @@ const page = usePage();
 
 const profile = computed(() => {
     const props = page.props as any;
-
-    return props.profile ?? {
-        name: props.auth?.user?.name ?? '',
-        email: props.auth?.user?.email ?? '',
-        phone: props.auth?.user?.phone ?? '',
-        email_verified_at: props.auth?.user?.email_verified_at ?? null,
-        login_id: props.auth?.user?.login_id ?? '',
+    
+    // Get the user data from auth
+    const user = props.auth?.user ?? {};
+    
+    // Get any profile-specific data
+    const profileData = props.profile ?? {};
+    
+    // Merge them, prioritizing profile data but falling back to auth user data
+    // This ensures email_verified_at comes from the actual user record
+    return {
+        name: profileData.name || user.name || '',
+        email: profileData.email || user.email || '',
+        phone: profileData.phone || user.phone || '',
+        email_verified_at: user.email_verified_at ?? null, // Always from auth user
+        login_id: user.login_id ?? '',
         role_label: 'Store Admin',
     };
 });

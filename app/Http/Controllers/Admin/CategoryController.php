@@ -13,46 +13,42 @@ use Illuminate\Validation\Rule;
 class CategoryController extends Controller
 {
     public function index()
-    {
-        $categories = Category::with(['children' => function ($q) {
-                            $q->orderBy('name');
-                        }])
-                        ->parents()
-                        ->orderBy('name')
-                        ->get();
-                        
-                        // Return the categories to the frontend
-                        return inertia('admin/Categories', [
-                            'categories' => $categories,
-                        ]);
-        // Aggregate product counts across all tenant databases.
-        // Products live in tenant DBs (category_id FK), categories in central DB.
-        $productCounts = []; // [category_id => count]
+{
+    $categories = Category::with(['children' => function ($q) {
+                        $q->orderBy('name');
+                    }])
+                    ->parents()
+                    ->orderBy('name')
+                    ->get();
+    
+    // Aggregate product counts across all tenant databases.
+    // Products live in tenant DBs (category_id FK), categories in central DB.
+    $productCounts = []; // [category_id => count]
 
-        foreach (Tenant::query()->where('is_approved', true)->get() as $tenant) {
-            try {
-                $tenant->run(function () use (&$productCounts) {
-                    $rows = DB::table('products')
-                        ->selectRaw('category_id, COUNT(*) as cnt')
-                        ->whereNotNull('category_id')
-                        ->groupBy('category_id')
-                        ->get();
+    foreach (Tenant::query()->where('is_approved', true)->get() as $tenant) {
+        try {
+            $tenant->run(function () use (&$productCounts) {
+                $rows = DB::table('products')
+                    ->selectRaw('category_id, COUNT(*) as cnt')
+                    ->whereNotNull('category_id')
+                    ->groupBy('category_id')
+                    ->get();
 
-                    foreach ($rows as $row) {
-                        $productCounts[$row->category_id] = ($productCounts[$row->category_id] ?? 0) + $row->cnt;
-                    }
-                });
-            } catch (\Exception $e) {
-                \Log::warning("Could not read products from tenant {$tenant->id}: " . $e->getMessage());
-            }
+                foreach ($rows as $row) {
+                    $productCounts[$row->category_id] = ($productCounts[$row->category_id] ?? 0) + $row->cnt;
+                }
+            });
+        } catch (\Exception $e) {
+            \Log::warning("Could not read products from tenant {$tenant->id}: " . $e->getMessage());
         }
-
-        $formattedCategories = $categories->map(fn ($cat) => $this->formatCategory($cat, $productCounts));
-
-        return inertia('admin/Categories', [
-            'categories' => $formattedCategories,
-        ]);
     }
+
+    $formattedCategories = $categories->map(fn ($cat) => $this->formatCategory($cat, $productCounts));
+
+    return inertia('admin/Categories', [
+        'categories' => $formattedCategories,
+    ]);
+}
 
     public function store(Request $request)
     {

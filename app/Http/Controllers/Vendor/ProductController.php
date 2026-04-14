@@ -3,20 +3,34 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Models\InventoryDeletionLog;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $totalProducts  = Product::count();
+        $search = $request->query('search', '');
+
+        $query = Product::latest();
+
+        // Apply search filter if provided
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('barcode', 'like', "%{$search}%");
+            });
+        }
+
+        $totalProducts = Product::count();
         $activeProducts = Product::where('is_active', true)->count();
 
-        $products = Product::latest()
-            ->paginate(15)
+        $products = $query->paginate(15)
             ->through(function ($product) {
                 // Fetch category name from central database
                 $category = DB::connection('mysql')
@@ -25,18 +39,20 @@ class ProductController extends Controller
                     ->first();
 
                 return [
-                    'id'          => $product->id,
-                    'product_name'=> $product->name,
+                    'id' => $product->id,
+                    'product_name' => $product->name,
                     'description' => $product->description,
                     'category_name' => $category?->name ?? null,
-                    'barcode'     => $product->barcode,
-                    'price'       => $product->price,
-                    'stock'       => $product->stock,
-                    'image_url'   => $product->image_path
+                    'barcode' => $product->barcode,
+                    'price' => $product->price,
+                    'stock' => $product->stock,
+                    'image_url' => $product->image_path
                         ? Storage::disk('s3')->url($product->image_path)
                         : null,
-                    'is_active'   => $product->is_active,
-                    'created_at'  => $product->created_at,
+                    'is_active' => $product->is_active,
+                    'created_at' => $product->created_at,
+                    'total_reviews' => $product->total_reviews ?? 0,
+                    'average_rating' => $product->average_rating ?? 0,
                 ];
             });
 
@@ -48,13 +64,13 @@ class ProductController extends Controller
             ->get()
             ->map(function ($cat) {
                 return [
-                    'id'          => $cat->id,
+                    'id' => $cat->id,
                     'category_name' => $cat->name,
-                    'slug'        => $cat->slug ?? '',
+                    'slug' => $cat->slug ?? '',
                     'description' => $cat->description ?? null,
-                    'color'       => $cat->color ?? '#000000',
-                    'parent_id'   => $cat->parent_id,
-                    'children'    => [],
+                    'color' => $cat->color ?? '#000000',
+                    'parent_id' => $cat->parent_id,
+                    'children' => [],
                 ];
             })
             ->toArray();
@@ -63,10 +79,11 @@ class ProductController extends Controller
         $categories = $this->buildCategoryTree($allCategories);
 
         return inertia('vendor/Products', [
-            'products'      => $products,
-            'categories'    => $categories,
+            'products' => $products,
+            'categories' => $categories,
             'totalProducts' => $totalProducts,
-            'activeProducts'=> $activeProducts,
+            'activeProducts' => $activeProducts,
+            'search' => $search,
         ]);
     }
 
@@ -97,13 +114,13 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'product_name' => 'required|string|max:255',
-            'description'  => 'nullable|string',
-            'category_id'  => 'nullable|integer',
-            'barcode'      => 'nullable|string',
-            'price'        => 'required|numeric|min:0',
-            'stock'        => 'required|integer|min:0',
-            'is_active'    => 'boolean',
-            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|integer',
+            'barcode' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'is_active' => 'boolean',
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $validated['name'] = $validated['product_name'];
@@ -135,13 +152,13 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'product_name' => 'required|string|max:255',
-            'description'  => 'nullable|string',
-            'category_id'  => 'nullable|integer',
-            'barcode'      => 'nullable|string',
-            'price'        => 'required|numeric|min:0',
-            'stock'        => 'required|integer|min:0',
-            'is_active'    => 'boolean',
-            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|integer',
+            'barcode' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'is_active' => 'boolean',
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $validated['name'] = $validated['product_name'];
@@ -176,6 +193,30 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $user = auth()->user();
+        $deletedBy = $user?->login_id ?? $user?->email ?? 'Unknown user';
+        $totalValue = (float) $product->stock * (float) $product->price;
+
+        InventoryDeletionLog::create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'stock_level' => $product->stock,
+            'unit_price' => $product->price,
+            'total_value' => $totalValue,
+            'deleted_by_id' => $user?->id,
+            'deleted_by' => $deletedBy,
+            'notes' => "Deleted from product catalog by {$deletedBy}. Stock={$product->stock}, unit_price={$product->price}, total_value={$totalValue}",
+        ]);
+
+        Log::info('Product deleted', [
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'stock' => $product->stock,
+            'unit_price' => $product->price,
+            'deleted_by' => $deletedBy,
+            'deleted_by_id' => $user?->id,
+        ]);
+
         // Delete product image from S3 if exists
         if ($product->image_path) {
             Storage::disk('s3')->delete($product->image_path);

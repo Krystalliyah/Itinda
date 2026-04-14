@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
+import { ConfirmationModal } from '@/components/ui/modal';
 import { Star } from 'lucide-vue-next';
 
 type Product = {
@@ -49,6 +50,7 @@ const props = defineProps<{
   categories: Category[];
   totalProducts: number;
   activeProducts: number;
+  search?: string;
 }>();
 
 // DEBUG: Log categories to see what's being received from the backend
@@ -58,14 +60,52 @@ console.log('Categories count:', props.categories.length);
 console.log('First category sample:', props.categories[0]);
 
 const showModal = ref(false);
+const showDeleteModal = ref(false);
+const pendingDeleteProduct = ref<Product | null>(null);
+const deleteProcessing = ref(false);
 const editingProduct = ref<Product | null>(null);
-const search = ref('');
+const search = ref(props.search || '');
+const isSearching = ref(false);
 const imagePreview = ref<string | null>(null);
 const imageInputKey = ref(0);
 let previewObjectUrl: string | null = null;
 const categoryOpen = ref(false);
 const categoryBtnEl = ref<HTMLElement | null>(null);
 const categoryDropdownStyle = ref<Record<string, string>>({});
+
+// Define form early since it's used in computed properties and functions
+const form = useForm<{
+  product_name: string;
+  description: string;
+  category_id: number | string;
+  barcode: string;
+  price: string;
+  stock: string;
+  image: File | null;
+  is_active: boolean;
+  _method?: 'put';
+}>({
+  product_name: '',
+  description: '',
+  category_id: '',
+  barcode: '',
+  price: '',
+  stock: '0',
+  image: null,
+  is_active: true,
+});
+
+// Watch search and trigger server-side search
+watch(search, (newSearch) => {
+  // Reset to page 1 when searching
+  isSearching.value = true;
+  router.get('/vendor/products', { search: newSearch }, { 
+    preserveState: true,
+    onFinish: () => {
+      isSearching.value = false;
+    }
+  });
+}, { debounce: 300 } as any);
 
 // Helper function to build category tree from flat list
 function buildCategoryTree(flatCategories: Category[]): Category[] {
@@ -138,6 +178,28 @@ const selectedCategoryLabel = computed(() => {
   return category?.category_name ?? null;
 });
 
+function formatPrice(value: number | string | null | undefined) {
+  const amount = Number(value ?? 0);
+  return '₱' + amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+const deleteProductDescription = computed(() => {
+  if (!pendingDeleteProduct.value) {
+    return 'Deleting this product will remove it from your catalog and inventory. This action cannot be undone.';
+  }
+
+  const item = pendingDeleteProduct.value;
+  const stock = item.stock ?? 0;
+  const price = Number(item.price ?? 0);
+  const total = stock * price;
+
+  return `Delete "${item.product_name}" permanently? It has ${stock} in stock at ${formatPrice(price)} each, totaling ${formatPrice(total)}. This action is tracked to your account and cannot be undone.`;
+});
+
+const deleteProductDetails = computed(() => {
+  return 'This will permanently remove the product from your catalog, inventory, and all associated sales data. Any existing orders may be affected.';
+});
+
 function openCategoryDropdown() {
   if (categoryBtnEl.value) {
     const rect = categoryBtnEl.value.getBoundingClientRect();
@@ -162,44 +224,9 @@ function selectCategory(id: number) {
   console.log('Selected category ID:', id);
 }
 
-const form = useForm<{
-  product_name: string;
-  description: string;
-  category_id: number | string;
-  barcode: string;
-  price: string;
-  stock: string;
-  image: File | null;
-  is_active: boolean;
-  _method?: 'put';
-}>({
-  product_name: '',
-  description: '',
-  category_id: '',
-  barcode: '',
-  price: '',
-  stock: '0',
-  image: null,
-  is_active: true,
-});
-
 const products = computed(() => props.products.data || []);
 const paginationLinks = computed(() => props.products.links || []);
 const categories = computed(() => props.categories);
-
-const filteredProducts = computed(() => {
-  const q = search.value.trim().toLowerCase();
-  if (!q) return products.value;
-
-  return products.value.filter((p) => {
-    return (
-      p.product_name.toLowerCase().includes(q) ||
-      (p.description ?? '').toLowerCase().includes(q) ||
-      (p.category_name ?? '').toLowerCase().includes(q) ||
-      (p.barcode ?? '').toLowerCase().includes(q)
-    );
-  });
-});
 
 function productStatusBadge(isActive: boolean) {
   return isActive
@@ -308,10 +335,31 @@ function submit() {
   }
 }
 
-function deleteProduct(id: number) {
-  if (confirm('Are you sure you want to delete this product?')) {
-    router.delete(`/vendor/products/${id}`);
+function confirmDeleteProduct(product: Product) {
+  pendingDeleteProduct.value = product;
+  showDeleteModal.value = true;
+}
+
+function deleteProduct() {
+  if (!pendingDeleteProduct.value) {
+    return;
   }
+
+  deleteProcessing.value = true;
+
+  router.delete(`/vendor/products/${pendingDeleteProduct.value.id}`, {
+    preserveState: true,
+    onFinish: () => {
+      deleteProcessing.value = false;
+      showDeleteModal.value = false;
+      pendingDeleteProduct.value = null;
+    },
+  });
+}
+
+function cancelDeleteProduct() {
+  showDeleteModal.value = false;
+  pendingDeleteProduct.value = null;
 }
 </script>
 
@@ -365,17 +413,21 @@ function deleteProduct(id: number) {
 
       <!-- Search Bar -->
       <div class="bg-white rounded-xl border border-border shadow-sm px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 relative">
           <input
             v-model="search"
             placeholder="Search name, description, category, or barcode..."
             class="w-full px-4 py-2.5 rounded-xl border border-border bg-gray-50/50 text-foreground focus:outline-none focus:ring-2 focus:bg-white transition-colors text-sm"
             style="--tw-ring-color: rgba(36,92,74,.35);"
           />
+          <!-- Cute loading spinner -->
+          <div v-if="isSearching" class="absolute right-3 top-1/2 -translate-y-1/2">
+            <div class="w-5 h-5 rounded-full border-2 border-[#245C4A]/20 border-t-[#245C4A] animate-spin"></div>
+          </div>
         </div>
         <div class="sm:text-right flex-shrink-0">
           <p class="text-xs text-muted-foreground bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-            Showing <span class="font-semibold">{{ filteredProducts.length }}</span> of
+            Showing <span class="font-semibold">{{ products.length }}</span> of
             <span class="font-semibold">{{ totalProducts }}</span>
           </p>
         </div>
@@ -383,7 +435,7 @@ function deleteProduct(id: number) {
 
       <!-- No Products State -->
       <div
-        v-if="filteredProducts.length === 0"
+        v-if="products.length === 0"
         class="bg-white rounded-xl border border-border shadow-sm p-10 text-center"
       >
         <div
@@ -408,9 +460,17 @@ function deleteProduct(id: number) {
 
       <template v-else>
         <!-- Mobile view -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden relative">
+          <!-- Loading overlay -->
+          <div v-if="isSearching" class="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl col-span-full">
+            <div class="flex flex-col items-center gap-3">
+              <div class="w-12 h-12 rounded-full border-3 border-[#245C4A]/20 border-t-[#245C4A] animate-spin"></div>
+              <p class="text-sm font-medium text-[#245C4A]">Searching...</p>
+            </div>
+          </div>
+
           <div
-            v-for="product in filteredProducts"
+            v-for="product in products"
             :key="product.id"
             class="bg-white rounded-xl border border-border shadow-sm p-4 transition-all hover:shadow-md"
           >
@@ -477,9 +537,8 @@ function deleteProduct(id: number) {
                 Edit
               </button>
               <button
-                @click="deleteProduct(product.id)"
-                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-xl border"
-                style="border-color:#fecdd3;background:#fff1f2;color:#9f1239"
+                @click="confirmDeleteProduct(product)"
+                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors"
               >
                 Delete
               </button>
@@ -488,7 +547,15 @@ function deleteProduct(id: number) {
         </div>
 
         <!-- Desktop table view -->
-        <div class="hidden lg:block bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+        <div class="hidden lg:block bg-white rounded-xl border border-border shadow-sm overflow-hidden relative">
+          <!-- Loading overlay -->
+          <div v-if="isSearching" class="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+            <div class="flex flex-col items-center gap-3">
+              <div class="w-12 h-12 rounded-full border-3 border-[#245C4A]/20 border-t-[#245C4A] animate-spin"></div>
+              <p class="text-sm font-medium text-[#245C4A]">Searching...</p>
+            </div>
+          </div>
+
           <div class="px-5 py-4 border-b border-border flex items-start justify-between">
             <div>
               <h2 class="text-sm font-semibold" style="color:#245c4a">Product Catalog</h2>
@@ -497,12 +564,12 @@ function deleteProduct(id: number) {
               </p>
             </div>
             <div class="text-xs font-semibold px-2 py-1 rounded" style="background:#f5ead4;color:#7a5800">
-              {{ filteredProducts.length }} shown
-            </div>
+              {{ products.length }} shown
+            </div>  
           </div>
 
           <div class="w-full overflow-x-auto">
-            <table class="min-w-[980px] w-full border-collapse">
+            <table class="min-w-[800px] w-full border-collapse">
               <thead>
                 <tr style="background:hsl(0 0% 96.1%)">
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
@@ -528,7 +595,7 @@ function deleteProduct(id: number) {
 
               <tbody>
                 <tr
-                  v-for="product in filteredProducts"
+                  v-for="product in products"
                   :key="product.id"
                   class="border-b border-border last:border-0 transition-colors hover:bg-[#F9FBF9]"
                 >
@@ -601,9 +668,8 @@ function deleteProduct(id: number) {
                         Edit
                       </button>
                       <button
-                        @click="deleteProduct(product.id)"
-                        class="text-xs font-semibold px-2 py-1 rounded transition-colors"
-                        style="color:#9f1239"
+                        @click="confirmDeleteProduct(product)"
+                        class="text-xs font-semibold px-2 py-1 rounded transition-colors text-rose-600 hover:bg-rose-50"
                       >
                         Delete
                       </button>
@@ -674,6 +740,19 @@ function deleteProduct(id: number) {
           </div>
         </div>
       </template>
+
+      <ConfirmationModal
+        :open="showDeleteModal"
+        title="Delete product permanently?"
+        :description="deleteProductDescription"
+        :details="deleteProductDetails"
+        confirm-text="Delete product"
+        variant="destructive"
+        :loading="deleteProcessing"
+        @update:open="showDeleteModal = $event"
+        @confirm="deleteProduct"
+        @cancel="cancelDeleteProduct"
+      />
 
       <!-- MODAL -->
       <Teleport to="body">
@@ -959,3 +1038,12 @@ function deleteProduct(id: number) {
     </div>
   </VendorLayout>
 </template>
+
+<style scoped>
+@media (max-width: 1024px) {
+  .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>

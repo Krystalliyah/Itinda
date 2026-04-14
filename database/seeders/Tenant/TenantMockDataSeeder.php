@@ -10,10 +10,11 @@ class TenantMockDataSeeder extends Seeder
     {
         $this->call([
             SupplierSeeder::class,
-            ProductSeeder::class, 
+            ProductSeeder::class,
             ProductSupplierSeeder::class,
             InventorySeeder::class,
-            OrderSeeder::class, 
+            OrderSeeder::class,
+            ExpenseSeeder::class,
         ]);
     }
 }

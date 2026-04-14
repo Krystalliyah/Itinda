@@ -141,7 +141,7 @@ class ProductSeeder extends Seeder
                     'category_id' => $category->id,
                     'price' => fake()->randomFloat(2, 10, 500),
                     'stock' => fake()->numberBetween(10, 100),
-                    'image_path' => null,
+                    'image_path' => 'https://picsum.photos/400/400?random=' . fake()->unique()->numberBetween(1, 10000),
                     'is_active' => $index !== 4,
                 ]);
             }

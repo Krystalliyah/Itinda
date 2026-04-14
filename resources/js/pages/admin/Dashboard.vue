@@ -5,6 +5,7 @@ import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import AdminNav from '@/components/navigation/AdminNav.vue';
 import { useSidebar } from '@/composables/useSidebar';
+import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
 import {
     BuildingStorefrontIcon,
     CheckCircleIcon,
@@ -61,14 +62,36 @@ const contentClass = computed(() => ({
     'sidebar-collapsed': isCollapsed.value,
 }));
 
-/* ------------------------------------------------------------------ */
-/*  Approve                                                             */
-/* ------------------------------------------------------------------ */
+const showApproveModal = ref(false);
+const vendorToApprove = ref<PendingVendor | null>(null);
 const approvingId = ref<string | null>(null);
-function approveVendor(id: string) {
-    approvingId.value = id;
-    router.post(`/admin/vendors/${id}/approve`, {}, {
-        onFinish: () => { approvingId.value = null; },
+const approveProcessing = ref(false);
+
+function openApproveModal(id: string) {
+    const vendor = props.pendingVendors.find((v) => v.id === id);
+    if (!vendor) {
+        return;
+    }
+
+    vendorToApprove.value = vendor;
+    showApproveModal.value = true;
+}
+
+function confirmApproveVendor() {
+    if (!vendorToApprove.value) {
+        return;
+    }
+
+    approvingId.value = vendorToApprove.value.id;
+    approveProcessing.value = true;
+
+    router.post(`/admin/vendors/${vendorToApprove.value.id}/approve`, {}, {
+        onFinish: () => {
+            approvingId.value = null;
+            approveProcessing.value = false;
+            showApproveModal.value = false;
+            vendorToApprove.value = null;
+        },
     });
 }
 
@@ -481,7 +504,7 @@ function initials(name: string) {
                                     <p class="item-meta">{{ v.email }}</p>
                                     <p class="item-meta item-date">{{ formatDate(v.created_at) }}</p>
                                 </div>
-                                <button class="approve-btn" :disabled="approvingId === v.id" @click="approveVendor(v.id)">
+                                <button class="approve-btn" :disabled="approvingId === v.id" @click="openApproveModal(v.id)">
                                     <span v-if="approvingId === v.id">…</span>
                                     <span v-else>Approve</span>
                                 </button>
@@ -492,6 +515,20 @@ function initials(name: string) {
                             View all vendors <ArrowRightIcon class="link-icon" />
                         </a>
                     </div>
+
+                    <ConfirmationModal
+                        v-model:open="showApproveModal"
+                        title="Confirm Vendor Approval"
+                        :description="vendorToApprove
+                            ? `Approve ${vendorToApprove.name}? This will create their tenant database and enable vendor access.`
+                            : 'Approve this vendor? This will create their tenant database and enable vendor access.'
+                        "
+                        confirm-text="Approve Vendor"
+                        cancel-text="Cancel"
+                        variant="destructive"
+                        :loading="approveProcessing"
+                        @confirm="confirmApproveVendor"
+                    />
 
                     <!-- Recent Vendor Registrations -->
                     <div class="card">

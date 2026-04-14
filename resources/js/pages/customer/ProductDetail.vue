@@ -22,7 +22,18 @@ import {
   CheckCircle,
   Image as ImageIcon,
   X,
-  Loader2
+  Loader2,
+  Ruler,
+  Scale,
+  Droplet,
+  Flame,
+  Leaf,
+  Shield,
+  Truck,
+  RefreshCw,
+  Clock,
+  Tag,
+  Info
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -36,10 +47,36 @@ const contentClass = computed(() => ({
   'sidebar-collapsed': isCollapsed.value,
 }));
 
+// Track referrer from query parameter
+const referrer = ref<'products' | 'store'>('products');
+
+const backLink = computed(() => {
+  if (referrer.value === 'store') {
+    return `/customer/stores/${props.storeId}`;
+  }
+  return '/customer/products';
+});
+const backLabel = computed(() => {
+  if (referrer.value === 'store') {
+    return 'Back to Store';
+  }
+  return 'Back to Products';
+});
+
 const product = ref<any>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+// Mock product specifications data
+const productSpecs = ref({
+  weight: '500g',
+  dimensions: '25cm x 15cm x 10cm',
+  material: 'Premium Quality',
+  origin: 'Imported',
+  brand: 'Premium Brand',
+  ingredients: 'All-natural ingredients, no preservatives',
+  care_instructions: 'Store in cool dry place. Avoid direct sunlight.'
+});
 
 // Helper function to safely get rating distribution
 const getRatingDistribution = (star: number) => {
@@ -137,7 +174,7 @@ const fetchReviews = async (append = false) => {
     const response = await fetch(`/customer/products/${props.storeId}/${props.productId}/reviews?${params}`);
     const data = await response.json();
     
-    console.log('Fetched reviews:', data); // Debug log
+    console.log('Fetched reviews:', data);
     
     if (data.success && data.data) {
       if (append) {
@@ -145,7 +182,8 @@ const fetchReviews = async (append = false) => {
       } else {
         reviews.value = data.data.data;
       }
-      hasMoreReviews.value = data.data.next_page_url !== null;
+      // FIX #2: Use last_page instead of next_page_url
+      hasMoreReviews.value = data.data.current_page < data.data.last_page;
     }
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -202,9 +240,18 @@ const removeImage = (index: number) => {
   imagePreviews.value.splice(index, 1);
 };
 
-// Open image in new tab
+// Image lightbox
+const lightboxImage = ref<string | undefined>(undefined);
+const showLightbox = ref(false);
+
 const openImage = (url: string) => {
-  window.open(url, '_blank');
+  lightboxImage.value = url;
+  showLightbox.value = true;
+};
+
+const closeLightbox = () => {
+  showLightbox.value = false;
+  lightboxImage.value = undefined;
 };
 
 // Submit review
@@ -241,18 +288,16 @@ const submitReview = async () => {
     
     const data = await response.json();
     
-    console.log('Review submission response:', data); // Debug log
-    
     if (response.ok && data.success) {
       showToast('Review submitted successfully!', 'success');
       showReviewModal.value = false;
       resetReviewForm();
-      // Refresh reviews and stats
+      
       reviewPage.value = 1;
-      fetchReviews();
-      fetchReviewStats();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await fetchReviews();
+      await fetchReviewStats();
     } else {
-      // Show the specific error message from the server
       const errorMessage = data.message || 'Failed to submit review';
       showToast(errorMessage, 'error');
     }
@@ -269,7 +314,7 @@ const markHelpful = async (reviewId: number) => {
   votingReview.value = reviewId;
   
   try {
-    const response = await fetch(`/customer/reviews/${reviewId}/helpful`, {
+    const response = await fetch(`/customer/reviews/${props.storeId}/${reviewId}/helpful`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -278,16 +323,29 @@ const markHelpful = async (reviewId: number) => {
       body: JSON.stringify({ helpful: true }),
     });
     
-    if (response.ok) {
-      // Update local review count
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Response error:', text);
+      showToast('Failed to update vote', 'error');
+      return;
+    }
+    
+    const data = await response.json();
+    
+    if (data.success) {
       const review = reviews.value.find(r => r.id === reviewId);
       if (review) {
-        review.helpful_count++;
+        review.helpful_count = data.helpful_count;
+        review.user_has_voted = data.action === 'voted';
       }
-      showToast('Thanks for your feedback!', 'success');
+      const message = data.action === 'voted' ? 'Thanks for your feedback!' : 'You removed your vote';
+      showToast(message, 'success');
+    } else {
+      showToast(data.message || 'Failed to update vote', 'error');
     }
   } catch (error) {
     console.error('Error marking helpful:', error);
+    showToast('Network error. Please try again.', 'error');
   } finally {
     votingReview.value = null;
   }
@@ -359,9 +417,29 @@ const isLoggedIn = computed(() => {
 });
 
 onMounted(() => {
+  // Check if 'from=store' is in the URL query parameters
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('from') === 'store') {
+    referrer.value = 'store';
+  }
+
   fetchProduct();
   fetchReviews();
   fetchReviewStats();
+
+  // Add keyboard support for closing lightbox
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && showLightbox.value) {
+      closeLightbox();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+
+  // Cleanup
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
 });
 </script>
 
@@ -381,9 +459,9 @@ onMounted(() => {
       <div class="p-6 max-w-5xl mx-auto space-y-6">
 
         <!-- Back -->
-        <Link href="/customer/products" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-[#245c4a] transition">
+        <Link :href="backLink" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-[#245c4a] transition">
           <ChevronLeft class="w-4 h-4" />
-          Back to Products
+          {{ backLabel }}
         </Link>
 
         <!-- Loading -->
@@ -516,6 +594,47 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- Product Specifications Section -->
+        <div v-if="product" class="mt-8 pt-8 border-t border-border">
+          <div class="flex items-center gap-2 mb-4">
+            <Info class="w-5 h-5 text-[#245c4a]" />
+            <h2 class="text-xl font-semibold text-foreground">Product Specifications</h2>
+          </div>
+
+          <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+            <div class="divide-y divide-border">
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Weight</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.weight }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Dimensions</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.dimensions }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Material</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.material }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Origin</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.origin }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Brand</span>
+                <span class="text-sm font-medium text-foreground">{{ productSpecs.brand }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Ingredients</span>
+                <span class="text-sm font-medium text-foreground flex-1">{{ productSpecs.ingredients }}</span>
+              </div>
+              <div class="flex px-4 py-3">
+                <span class="text-sm text-muted-foreground w-32">Care Instructions</span>
+                <span class="text-sm font-medium text-foreground flex-1">{{ productSpecs.care_instructions }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Reviews Section -->
         <div v-if="product" class="mt-8 pt-8 border-t border-border">
           <div class="flex items-center justify-between mb-4">
@@ -531,33 +650,33 @@ onMounted(() => {
           
           <!-- Rating Summary Bar -->
           <div class="bg-white rounded-xl border border-border shadow-sm p-4 mb-4">
-    <div class="flex flex-col md:flex-row gap-6">
-      <div class="text-center md:text-left">
-        <div class="text-4xl font-bold text-foreground">{{ reviewStats.average_rating }}</div>
-        <div class="flex justify-center md:justify-start mt-1">
-          <Star v-for="i in 5" :key="i" 
-            :class="i <= Math.round(reviewStats.average_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
-            class="w-4 h-4" />
-        </div>
-        <div class="text-sm text-muted-foreground mt-1">{{ reviewStats.total_reviews }} reviews</div>
-      </div>
-      
-      <div class="flex-1 space-y-2">
-        <div v-for="star in [5,4,3,2,1]" :key="star" class="flex items-center gap-2">
-          <span class="text-sm w-8">{{ star }}★</span>
-          <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              class="h-full bg-yellow-400 rounded-full"
-              :style="{ width: `${getRatingPercentage(star)}%` }"
-            ></div>
+            <div class="flex flex-col md:flex-row gap-6">
+              <div class="text-center md:text-left">
+                <div class="text-4xl font-bold text-foreground">{{ reviewStats.average_rating }}</div>
+                <div class="flex justify-center md:justify-start mt-1">
+                  <Star v-for="i in 5" :key="i" 
+                    :class="i <= Math.round(reviewStats.average_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                    class="w-4 h-4" />
+                </div>
+                <div class="text-sm text-muted-foreground mt-1">{{ reviewStats.total_reviews }} reviews</div>
+              </div>
+              
+              <div class="flex-1 space-y-2">
+                <div v-for="star in [5,4,3,2,1]" :key="star" class="flex items-center gap-2">
+                  <span class="text-sm w-8">{{ star }}★</span>
+                  <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-yellow-400 rounded-full"
+                      :style="{ width: `${getRatingPercentage(star)}%` }"
+                    ></div>
+                  </div>
+                  <span class="text-xs text-muted-foreground w-12">
+                    {{ getRatingDistribution(star) }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <span class="text-xs text-muted-foreground w-12">
-            {{ getRatingDistribution(star) }}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
           
           <!-- Review Filters -->
           <div class="flex flex-wrap gap-3 mb-4">
@@ -595,7 +714,8 @@ onMounted(() => {
             </div>
             
             <div v-else-if="reviews.length === 0" class="bg-white rounded-xl border border-border shadow-sm p-8 text-center">
-              <p class="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+              <p v-if="reviewFilter === null && reviewStats.total_reviews === 0" class="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+              <p v-else class="text-muted-foreground">No reviews with this rating yet.</p>
             </div>
             
             <div v-for="review in reviews" :key="review.id" class="bg-white rounded-xl border border-border shadow-sm p-4">
@@ -794,4 +914,45 @@ onMounted(() => {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Image Lightbox Modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showLightbox"
+        class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        @click="closeLightbox"
+      >
+        <div class="relative w-full max-w-2xl max-h-[70vh] flex items-center justify-center" @click.stop>
+          <div class="relative w-full h-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden">
+            <img
+              :src="lightboxImage"
+              alt="Full size image"
+              class="w-full h-full object-contain"
+            />
+          </div>
+
+          <button
+            @click="closeLightbox"
+            class="absolute -top-12 right-0 p-2 rounded-full bg-[#245c4a]/80 hover:bg-[#245c4a] text-white transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#245c4a] focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Close image viewer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

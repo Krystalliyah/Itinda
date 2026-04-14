@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOrder;
 use App\Models\Tenant;
-use App\Services\ProductAggregatorService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,13 +26,13 @@ class CustomerPageController extends Controller
         if ($currentOrder) {
             $tenant = Tenant::find($currentOrder->tenant_id);
             $currentOrderData = [
-                'id'               => $currentOrder->id,
-                'order_number'     => $currentOrder->order_number ?? 'N/A',
-                'store'            => $tenant?->name ?? 'Unknown Store',
-                'store_id'         => $currentOrder->tenant_id,
-                'status'           => $currentOrder->status,
-                'total'            => (float) $currentOrder->total,
-                'ordered_at'       => optional($currentOrder->ordered_at)->toISOString(),
+                'id' => $currentOrder->id,
+                'order_number' => $currentOrder->order_number ?? 'N/A',
+                'store' => $tenant?->name ?? 'Unknown Store',
+                'store_id' => $currentOrder->tenant_id,
+                'status' => $currentOrder->status,
+                'total' => (float) $currentOrder->total,
+                'ordered_at' => optional($currentOrder->ordered_at)->toISOString(),
             ];
         }
 
@@ -45,14 +44,15 @@ class CustomerPageController extends Controller
             ->get()
             ->map(function ($order) {
                 $tenant = Tenant::find($order->tenant_id);
+
                 return [
-                    'id'           => $order->id,
+                    'id' => $order->id,
                     'order_number' => $order->order_number ?? 'N/A',
-                    'store'        => $tenant?->name ?? 'Unknown Store',
-                    'store_id'     => $order->tenant_id,
-                    'status'       => $order->status,
-                    'total'        => (float) $order->total,
-                    'ordered_at'   => optional($order->ordered_at)->toISOString(),
+                    'store' => $tenant?->name ?? 'Unknown Store',
+                    'store_id' => $order->tenant_id,
+                    'status' => $order->status,
+                    'total' => (float) $order->total,
+                    'ordered_at' => optional($order->ordered_at)->toISOString(),
                 ];
             });
 
@@ -61,12 +61,12 @@ class CustomerPageController extends Controller
             return Tenant::where('is_approved', true)
                 ->with('domains')
                 ->get()
-                ->map(fn($t) => [
-                    'id'     => $t->id,
-                    'name'   => $t->name,
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'name' => $t->name,
                     'domain' => $t->domains->first()?->domain,
-                    'hours'  => $t->operating_hours,
-                    'logo'   => $t->data['logo'] ?? null,
+                    'hours' => $t->operating_hours,
+                    'logo' => $t->data['logo'] ?? null,
                     'isOpen' => $this->checkStoreIsOpen($t->operating_hours),
                 ]);
         });
@@ -74,7 +74,7 @@ class CustomerPageController extends Controller
         return inertia('customer/Dashboard', [
             'currentOrder' => $currentOrderData,
             'recentOrders' => $recentOrders,
-            'stores'       => $stores,
+            'stores' => $stores,
         ]);
     }
 
@@ -98,7 +98,7 @@ class CustomerPageController extends Controller
     public function showProduct($storeId, $productId)
     {
         return inertia('customer/ProductDetail', [
-            'storeId'   => $storeId,
+            'storeId' => $storeId,
             'productId' => (int) $productId,
         ]);
     }
@@ -123,29 +123,27 @@ class CustomerPageController extends Controller
 
     private function checkStoreIsOpen(?array $operatingHours): bool
     {
-        $now = now();
-        $currentDay = strtolower($now->format('l'));
-
-        if (empty($operatingHours) || !is_array($operatingHours)) {
-            return in_array($currentDay, ['monday','tuesday','wednesday','thursday','friday'])
-                && $now->format('H:i') >= '08:00'
-                && $now->format('H:i') <= '17:00';
-        }
-
-        $schedule = $operatingHours[$currentDay] ?? null;
-
-        if (!$schedule || empty($schedule['is_open'])) {
+        if (empty($operatingHours) || ! is_array($operatingHours)) {
             return false;
         }
 
-        $open  = $schedule['open_time']  ?? null;
+        $now = now();
+        $currentDay = strtolower($now->format('l'));
+        $schedule = $operatingHours[$currentDay] ?? null;
+
+        if (! $schedule || empty($schedule['is_open'])) {
+            return false;
+        }
+
+        $open = $schedule['open_time'] ?? null;
         $close = $schedule['close_time'] ?? null;
 
-        if (!$open || !$close) {
+        if (! $open || ! $close) {
             return false;
         }
 
         $current = $now->format('H:i');
+
         return $current >= $open && $current <= $close;
     }
 }

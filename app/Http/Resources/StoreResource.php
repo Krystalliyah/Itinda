@@ -2,8 +2,8 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
 use Carbon\Carbon;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class StoreResource extends JsonResource
 {
@@ -29,7 +29,7 @@ class StoreResource extends JsonResource
     {
         $default = 'No data available';
 
-        if (empty($operatingHours) || !is_array($operatingHours)) {
+        if (empty($operatingHours) || ! is_array($operatingHours)) {
             return $default;
         }
 
@@ -48,23 +48,25 @@ class StoreResource extends JsonResource
 
         foreach ($days as $day) {
             if (
-                !isset($operatingHours[$day]) ||
-                !isset($operatingHours[$day]['is_open']) ||
-                !$operatingHours[$day]['is_open']
+                ! isset($operatingHours[$day]) ||
+                ! isset($operatingHours[$day]['is_open']) ||
+                ! $operatingHours[$day]['is_open']
             ) {
                 $normalized[$day] = 'closed';
+
                 continue;
             }
 
             $open = $this->formatTime($operatingHours[$day]['open_time'] ?? null);
             $close = $this->formatTime($operatingHours[$day]['close_time'] ?? null);
 
-            if (!$open || !$close) {
+            if (! $open || ! $close) {
                 $normalized[$day] = 'closed';
+
                 continue;
             }
 
-            $normalized[$day] = $open . ' - ' . $close;
+            $normalized[$day] = $open.' - '.$close;
         }
 
         $groups = [];
@@ -87,6 +89,7 @@ class StoreResource extends JsonResource
                     $endDay = null;
                     $currentHours = null;
                 }
+
                 continue;
             }
 
@@ -94,11 +97,13 @@ class StoreResource extends JsonResource
                 $startDay = $day;
                 $endDay = $day;
                 $currentHours = $hours;
+
                 continue;
             }
 
             if ($hours === $currentHours) {
                 $endDay = $day;
+
                 continue;
             }
 
@@ -133,9 +138,9 @@ class StoreResource extends JsonResource
 
             $dayRange = $group['start'] === $group['end']
                 ? $startLabel
-                : $startLabel . ' - ' . $endLabel;
+                : $startLabel.' - '.$endLabel;
 
-            $formatted[] = $dayRange . ': ' . $group['hours'];
+            $formatted[] = $dayRange.': '.$group['hours'];
         }
 
         return implode(', ', $formatted);
@@ -143,32 +148,22 @@ class StoreResource extends JsonResource
 
     private function checkIfOpen($operatingHours): bool
     {
-        if (empty($operatingHours) || !is_array($operatingHours)) {
-            $now = now();
-            $day = strtolower($now->format('l'));
-
-            return in_array($day, ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
-                && $now->format('H:i') >= '08:00'
-                && $now->format('H:i') <= '17:00';
+        if (empty($operatingHours) || ! is_array($operatingHours)) {
+            return false;
         }
 
         $now = now();
         $currentDay = strtolower($now->format('l'));
+        $schedule = $operatingHours[$currentDay] ?? null;
 
-        if (!isset($operatingHours[$currentDay])) {
-            return false;
-        }
-
-        $schedule = $operatingHours[$currentDay];
-
-        if (empty($schedule['is_open'])) {
+        if (! $schedule || empty($schedule['is_open'])) {
             return false;
         }
 
         $openTime = $schedule['open_time'] ?? null;
         $closeTime = $schedule['close_time'] ?? null;
 
-        if (!$openTime || !$closeTime) {
+        if (! $openTime || ! $closeTime) {
             return false;
         }
 
@@ -179,7 +174,7 @@ class StoreResource extends JsonResource
 
     private function formatTime(?string $time): ?string
     {
-        if (!$time) {
+        if (! $time) {
             return null;
         }
 

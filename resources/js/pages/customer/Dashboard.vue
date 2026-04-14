@@ -258,7 +258,6 @@ watch(() => props.currentOrder, (order) => {
             </div>
 
             <div class="divide-y divide-border">
-              <!-- Empty state -->
               <div v-if="stores.length === 0" class="flex flex-col items-center justify-center py-14 text-center px-6">
                 <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <Store class="h-5 w-5 text-muted-foreground" />
@@ -273,7 +272,6 @@ watch(() => props.currentOrder, (order) => {
                 class="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-accent cursor-pointer"
                 @click="$inertia.visit(`/customer/stores/${store.id}`)"
               >
-                <!-- Avatar -->
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF4EF] text-sm font-semibold text-[#17493D]">
                   {{ storeInitials(store.name) }}
                 </div>
@@ -309,106 +307,100 @@ watch(() => props.currentOrder, (order) => {
           </div>
 
           <!-- Current Order -->
-          <div class="overflow-hidden rounded-xl border-0 shadow-[0_18px_40px_rgba(23,73,61,0.18)]" style="background:#17493D">
-            <div class="flex items-start justify-between px-5 py-4">
+          <div class="current-order-container">
+            <div class="current-order-header">
               <div>
-                <h2 class="text-sm font-semibold text-white">Current Order</h2>
-                <p class="mt-0.5 text-xs text-white/60">Your latest pickup at a glance.</p>
+                <h2 class="current-order-title">Current Order</h2>
+                <p class="current-order-subtitle">Your latest pickup at a glance.</p>
               </div>
               <span
                 v-if="currentOrder"
-                :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', currentOrderHeaderBadge]"
+                :class="['current-order-status-badge', currentOrderHeaderBadge]"
               >
                 {{ statusLabel[currentOrder.status] }}
               </span>
             </div>
 
-            <div class="px-5 pb-5 space-y-3">
-              <!-- Empty state -->
-              <div v-if="!currentOrder" class="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                <Package class="mx-auto mb-3 h-8 w-8 text-white/30" />
-                <p class="text-sm font-medium text-white/80">No active orders</p>
-                <p class="mt-1 text-xs text-white/50">Place an order from any store to get started.</p>
+            <div class="current-order-content">
+              <div v-if="!currentOrder" class="current-order-empty">
+                <Package class="current-order-empty-icon" />
+                <p class="current-order-empty-title">No active orders</p>
+                <p class="current-order-empty-text">Place an order from any store to get started.</p>
                 <button
-                  class="mt-4 inline-flex h-9 items-center gap-2 rounded-xl bg-white px-4 text-sm font-medium text-[#17493D] transition-colors hover:bg-[#F4F0E8]"
+                  class="current-order-browse-btn"
                   @click="$inertia.visit('/customer/stores')"
                 >
                   Browse stores <ArrowRight class="h-4 w-4" />
                 </button>
               </div>
 
-              <!-- Active order card -->
               <template v-else>
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="text-[11px] uppercase tracking-[0.18em] text-white/50">
+                <div class="current-order-card">
+                  <div class="current-order-card-inner">
+                    <div class="current-order-card-info">
+                      <p class="current-order-number">
                         {{ currentOrder.order_number }}
                       </p>
-                      <p class="mt-1.5 text-lg font-semibold leading-tight text-white">
+                      <p class="current-order-store">
                         {{ currentOrder.store }}
                       </p>
-                      <p class="mt-1 text-sm font-semibold text-[#FFD88A]">
+                      <p class="current-order-price">
                         ₱{{ currentOrder.total.toFixed(2) }}
                       </p>
                     </div>
-                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                      <Package class="h-5 w-5 text-white" />
+                    <div class="current-order-icon-wrapper">
+                      <Package class="current-order-icon" />
                     </div>
                   </div>
 
-                  <div class="mt-3 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2.5">
-                    <Clock3 class="h-4 w-4 shrink-0 text-white/60" />
+                  <div class="current-order-date">
+                    <Clock3 class="current-order-date-icon" />
                     <div>
-                      <p class="text-[10px] uppercase tracking-wide text-white/50">Ordered</p>
-                      <p class="text-xs font-medium text-white">{{ formatDate(currentOrder.ordered_at) }}</p>
+                      <p class="current-order-date-label">Ordered</p>
+                      <p class="current-order-date-value">{{ formatDate(currentOrder.ordered_at) }}</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- Progress tracker -->
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div class="mb-3 flex items-center justify-between">
-                    <p class="text-xs font-semibold text-white">Pickup progress</p>
-                    <p class="text-xs text-white/55">{{ statusLabel[currentOrder.status] }}</p>
+                <div class="current-order-progress">
+                  <div class="current-order-progress-header">
+                    <p class="current-order-progress-title">Pickup progress</p>
+                    <p class="current-order-progress-status">{{ statusLabel[currentOrder.status] }}</p>
                   </div>
 
-                  <div class="h-1.5 rounded-full bg-white/10">
+                  <div class="current-order-progress-bar">
                     <div
-                      class="h-1.5 rounded-full bg-[#FFD88A] transition-all duration-700"
+                      class="current-order-progress-fill"
                       :style="{ width: `${pickupProgressWidth}%` }"
                     />
                   </div>
 
-                  <div class="mt-3 grid grid-cols-2 gap-2">
+                  <div class="current-order-steps">
                     <div
                       v-for="(step, i) in pickupSteps"
                       :key="step"
-                      class="flex items-center gap-2 rounded-xl px-3 py-2 text-xs"
-                      :class="step === currentOrder.status
-                        ? 'bg-[#FFF1CB] text-[#8A5200]'
-                        : i < currentStepIndex
-                          ? 'bg-white text-[#17493D]'
-                          : 'border border-white/10 bg-white/5 text-white/55'"
+                      class="current-order-step"
+                      :class="{
+                        'step-active': step === currentOrder.status,
+                        'step-completed': i < currentStepIndex && step !== currentOrder.status,
+                        'step-pending': i > currentStepIndex
+                      }"
                     >
-                      <span
-                        class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
-                        :class="step === currentOrder.status
-                          ? 'bg-[#F7D98C] text-[#7A4700]'
-                          : i < currentStepIndex
-                            ? 'bg-[#EAF3EE] text-[#17493D]'
-                            : 'bg-white/10 text-white/55'"
-                      >
+                      <span class="current-order-step-number" :class="{
+                        'step-number-active': step === currentOrder.status,
+                        'step-number-completed': i < currentStepIndex && step !== currentOrder.status,
+                        'step-number-pending': i > currentStepIndex
+                      }">
                         <CheckCircle2 v-if="i < currentStepIndex" class="h-3.5 w-3.5" />
                         <span v-else>{{ i + 1 }}</span>
                       </span>
-                      <span class="truncate">{{ statusLabel[step] }}</span>
+                      <span class="current-order-step-label">{{ statusLabel[step] }}</span>
                     </div>
                   </div>
                 </div>
 
                 <button
-                  class="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-sm font-medium text-[#17493D] transition-colors hover:bg-[#F4F0E8]"
+                  class="current-order-details-btn"
                   @click="$inertia.visit('/customer/orders')"
                 >
                   View order details <ChevronRight class="h-4 w-4" />
@@ -439,7 +431,6 @@ watch(() => props.currentOrder, (order) => {
               </button>
             </div>
 
-            <!-- Recent orders grid -->
             <div v-if="showRecentOrders" class="grid gap-0 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x xl:grid-cols-3">
               <div
                 v-for="order in recentOrders"
@@ -476,7 +467,6 @@ watch(() => props.currentOrder, (order) => {
               </div>
             </div>
 
-            <!-- Stores grid fallback -->
             <div v-else class="grid gap-0 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x xl:grid-cols-3">
               <div
                 v-for="store in stores.slice(0, 6)"
@@ -518,3 +508,312 @@ watch(() => props.currentOrder, (order) => {
     </main>
   </div>
 </template>
+
+<style scoped>
+.current-order-container {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border-width: 0;
+  box-shadow: 0 18px 40px rgba(23, 73, 61, 0.18);
+  background: #17493D;
+}
+
+.current-order-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+}
+
+.current-order-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+}
+
+.current-order-subtitle {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.current-order-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.current-order-content {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.current-order-empty {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.current-order-empty-icon {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.75rem;
+  height: 2rem;
+  width: 2rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.current-order-empty-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.current-order-empty-text {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.current-order-browse-btn {
+  margin-top: 1rem;
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: white;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #17493D;
+  transition-property: background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.current-order-browse-btn:hover {
+  background: #F4F0E8;
+}
+
+.current-order-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+}
+
+.current-order-card-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.current-order-card-info {
+  min-width: 0;
+}
+
+.current-order-number {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.current-order-store {
+  margin-top: 0.375rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: white;
+}
+
+.current-order-price {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FFD88A;
+}
+
+.current-order-icon-wrapper {
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.current-order-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  color: white;
+}
+
+.current-order-date {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.625rem 0.75rem;
+}
+
+.current-order-date-icon {
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.current-order-date-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.current-order-date-value {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+}
+
+.current-order-progress {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+}
+
+.current-order-progress-header {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.current-order-progress-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.current-order-progress-status {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.current-order-progress-bar {
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.current-order-progress-fill {
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: #FFD88A;
+  transition-property: width;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 700ms;
+}
+
+.current-order-steps {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.current-order-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.current-order-step.step-active {
+  background: #FFF1CB;
+  color: #8A5200;
+}
+
+.current-order-step.step-completed {
+  background: white;
+  color: #17493D;
+}
+
+.current-order-step.step-pending {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.current-order-step-number {
+  display: flex;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.current-order-step-number.step-number-active {
+  background: #F7D98C;
+  color: #7A4700;
+}
+
+.current-order-step-number.step-number-completed {
+  background: #EAF3EE;
+  color: #17493D;
+}
+
+.current-order-step-number.step-number-pending {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.current-order-step-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-order-details-btn {
+  display: flex;
+  height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #17493D;
+  transition-property: background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.current-order-details-btn:hover {
+  background: #F4F0E8;
+}
+</style>

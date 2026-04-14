@@ -9,10 +9,10 @@ use App\Models\OrderItem;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AnalyticsController extends Controller
 {
@@ -32,22 +32,22 @@ class AnalyticsController extends Controller
             $maxDays = 365;
             if ($start->diffInDays($end) > $maxDays) {
                 $start = $end->copy()->subDays($maxDays);
-                $rangeLabel = 'Last ' . $maxDays . ' days';
+                $rangeLabel = 'Last '.$maxDays.' days';
             }
 
             // Previous period of equal length for growth comparison
             $length = $start->diffInDays($end);
             $previousStart = $start->copy()->subDays($length + 1)->startOfDay();
-            $previousEnd   = $start->copy()->subDay()->endOfDay();
+            $previousEnd = $start->copy()->subDay()->endOfDay();
 
             // Get all data for the selected date range
-            $weeklySales  = $this->buildDailySales($status, $start, $end);
-            $categoryMix  = $this->buildCategoryMix($status, $start, $end);
-            $peakWindows  = $this->buildPeakWindows($status, $start, $end);
-            $topProducts  = $this->buildTopProducts($status, $start, $end, $previousStart, $previousEnd);
+            $weeklySales = $this->buildDailySales($status, $start, $end);
+            $categoryMix = $this->buildCategoryMix($status, $start, $end);
+            $peakWindows = $this->buildPeakWindows($status, $start, $end);
+            $topProducts = $this->buildTopProducts($status, $start, $end, $previousStart, $previousEnd);
 
             // Calculate totals
-            $currentRevenue  = collect($weeklySales)->sum('revenue');
+            $currentRevenue = collect($weeklySales)->sum('revenue');
             $previousRevenue = (float) Order::where('status', $status)
                 ->whereBetween('placed_at', [$previousStart, $previousEnd])
                 ->sum('total');
@@ -59,7 +59,7 @@ class AnalyticsController extends Controller
             );
 
             // Get historical revenue trends - limit to 6 periods
-            $historicalTrends = $this->getHistoricalRevenueTrendsOptimized($status, $start, $end);
+            $historicalTrends = $this->getHistoricalRevenueTrendsOptimized($status, $start, $end, $currentRevenue);
 
             // Get daily revenue breakdown
             $dailyRevenue = $this->getDailyRevenueBreakdown($status, $start, $end);
@@ -68,49 +68,49 @@ class AnalyticsController extends Controller
             $monthlyRevenue = $this->getMonthlyRevenueOptimized($status, $start, $end);
 
             return Inertia::render('vendor/Analytics', [
-                'weeklySales'      => $weeklySales,
-                'categoryMix'      => $categoryMix,
-                'peakWindows'      => $peakWindows,
-                'topProducts'      => $topProducts,
-                'recentInsights'   => $recentInsights,
-                'growthSignal'     => $growthSignal,
-                'rangeLabel'       => $rangeLabel,
-                'activePreset'     => $request->query('preset', 'this_week'),
-                'activeFrom'       => $request->query('from', ''),
-                'activeTo'         => $request->query('to', ''),
+                'weeklySales' => $weeklySales,
+                'categoryMix' => $categoryMix,
+                'peakWindows' => $peakWindows,
+                'topProducts' => $topProducts,
+                'recentInsights' => $recentInsights,
+                'growthSignal' => $growthSignal,
+                'rangeLabel' => $rangeLabel,
+                'activePreset' => $request->query('preset', 'this_week'),
+                'activeFrom' => $request->query('from', ''),
+                'activeTo' => $request->query('to', ''),
                 'historicalTrends' => $historicalTrends,
-                'dailyRevenue'     => $dailyRevenue,
-                'monthlyRevenue'   => $monthlyRevenue,
-                'totalRevenue'     => $currentRevenue,
-                'totalOrders'      => collect($weeklySales)->sum('orders'),
-                'averageOrderValue'=> $currentRevenue > 0 && collect($weeklySales)->sum('orders') > 0 
-                    ? $currentRevenue / collect($weeklySales)->sum('orders') 
+                'dailyRevenue' => $dailyRevenue,
+                'monthlyRevenue' => $monthlyRevenue,
+                'totalRevenue' => $currentRevenue,
+                'totalOrders' => collect($weeklySales)->sum('orders'),
+                'averageOrderValue' => $currentRevenue > 0 && collect($weeklySales)->sum('orders') > 0
+                    ? $currentRevenue / collect($weeklySales)->sum('orders')
                     : 0,
             ]);
         } catch (\Exception $e) {
-            Log::error('Analytics Error: ' . $e->getMessage(), [
+            Log::error('Analytics Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
             ]);
-            
+
             return Inertia::render('vendor/Analytics', [
-                'weeklySales'      => [],
-                'categoryMix'      => [],
-                'peakWindows'      => [],
-                'topProducts'      => [],
-                'recentInsights'   => ['Unable to load analytics data. Please try again later.'],
-                'growthSignal'     => '0%',
-                'rangeLabel'       => 'Error',
-                'activePreset'     => 'this_week',
-                'activeFrom'       => '',
-                'activeTo'         => '',
+                'weeklySales' => [],
+                'categoryMix' => [],
+                'peakWindows' => [],
+                'topProducts' => [],
+                'recentInsights' => ['Unable to load analytics data. Please try again later.'],
+                'growthSignal' => '0%',
+                'rangeLabel' => 'Error',
+                'activePreset' => 'this_week',
+                'activeFrom' => '',
+                'activeTo' => '',
                 'historicalTrends' => [],
-                'dailyRevenue'     => [],
-                'monthlyRevenue'   => [],
-                'totalRevenue'     => 0,
-                'totalOrders'      => 0,
-                'averageOrderValue'=> 0,
+                'dailyRevenue' => [],
+                'monthlyRevenue' => [],
+                'totalRevenue' => 0,
+                'totalOrders' => 0,
+                'averageOrderValue' => 0,
             ]);
         }
     }
@@ -124,72 +124,86 @@ class AnalyticsController extends Controller
         switch ($preset) {
             case 'today':
                 $start = now()->startOfDay();
-                $end   = now()->endOfDay();
+                $end = now()->endOfDay();
+
                 return [$start, $end, 'Today'];
 
             case 'yesterday':
                 $start = now()->subDay()->startOfDay();
-                $end   = now()->subDay()->endOfDay();
+                $end = now()->subDay()->endOfDay();
+
                 return [$start, $end, 'Yesterday'];
 
             case 'this_week':
                 $start = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
-                $end   = now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+                $end = now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
                 return [$start, $end, 'This week'];
 
             case 'last_week':
                 $start = now()->subWeek()->startOfWeek(Carbon::MONDAY)->startOfDay();
-                $end   = now()->subWeek()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+                $end = now()->subWeek()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
                 return [$start, $end, 'Last week'];
 
             case 'last_7':
                 $start = now()->subDays(6)->startOfDay();
-                $end   = now()->endOfDay();
+                $end = now()->endOfDay();
+
                 return [$start, $end, 'Last 7 days'];
 
             case 'this_month':
                 $start = now()->startOfMonth()->startOfDay();
-                $end   = now()->endOfMonth()->endOfDay();
+                $end = now()->endOfMonth()->endOfDay();
+
                 return [$start, $end, 'This month'];
 
             case 'last_month':
                 $start = now()->subMonth()->startOfMonth()->startOfDay();
-                $end   = now()->subMonth()->endOfMonth()->endOfDay();
+                $end = now()->subMonth()->endOfMonth()->endOfDay();
+
                 return [$start, $end, 'Last month'];
 
             case 'last_30':
                 $start = now()->subDays(29)->startOfDay();
-                $end   = now()->endOfDay();
+                $end = now()->endOfDay();
+
                 return [$start, $end, 'Last 30 days'];
 
             case 'this_quarter':
                 $start = now()->startOfQuarter()->startOfDay();
-                $end   = now()->endOfQuarter()->endOfDay();
+                $end = now()->endOfQuarter()->endOfDay();
+
                 return [$start, $end, 'This quarter'];
 
             case 'last_quarter':
                 $start = now()->subQuarter()->startOfQuarter()->startOfDay();
-                $end   = now()->subQuarter()->endOfQuarter()->endOfDay();
+                $end = now()->subQuarter()->endOfQuarter()->endOfDay();
+
                 return [$start, $end, 'Last quarter'];
 
             case 'this_year':
                 $start = now()->startOfYear()->startOfDay();
-                $end   = now()->endOfYear()->endOfDay();
+                $end = now()->endOfYear()->endOfDay();
+
                 return [$start, $end, 'This year'];
 
             case 'last_year':
                 $start = now()->subYear()->startOfYear()->startOfDay();
-                $end   = now()->subYear()->endOfYear()->endOfDay();
+                $end = now()->subYear()->endOfYear()->endOfDay();
+
                 return [$start, $end, 'Last year'];
 
             case 'custom':
                 $start = $from ? Carbon::parse($from)->startOfDay() : now()->subDays(6)->startOfDay();
-                $end   = $to   ? Carbon::parse($to)->endOfDay()     : now()->endOfDay();
-                return [$start, $end, $start->format('M j') . ' – ' . $end->format('M j, Y')];
+                $end = $to ? Carbon::parse($to)->endOfDay() : now()->endOfDay();
+
+                return [$start, $end, $start->format('M j').' – '.$end->format('M j, Y')];
 
             default:
                 $start = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
-                $end   = now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+                $end = now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
                 return [$start, $end, 'This week'];
         }
     }
@@ -198,35 +212,32 @@ class AnalyticsController extends Controller
     // Optimized methods - Single query approaches
     // -------------------------------------------------------------------------
 
-    private function getHistoricalRevenueTrendsOptimized(string $status, CarbonInterface $start, CarbonInterface $end): array
+    private function getHistoricalRevenueTrendsOptimized(string $status, CarbonInterface $start, CarbonInterface $end, float $currentRevenue): array
     {
         $trends = [];
-        $periods = 6;
-        $daysInRange = $start->diffInDays($end);
-        
-        // Limit to 6 periods max
-        for ($i = $periods - 1; $i >= 0; $i--) {
-            $periodStart = $start->copy()->subDays(($i + 1) * ($daysInRange + 1));
-            $periodEnd = $start->copy()->subDays($i * ($daysInRange + 1))->subDay();
-            
-            $revenue = Order::where('status', $status)
+        $daysInRange = max(1, $start->diffInDays($end));
+
+        // Build 5 previous periods of equal length
+        for ($i = 5; $i >= 1; $i--) {
+            $periodEnd = $start->copy()->subDays(($i - 1) * ($daysInRange + 1) + 1)->endOfDay();
+            $periodStart = $periodEnd->copy()->subDays($daysInRange)->startOfDay();
+
+            $revenue = (float) Order::where('status', $status)
                 ->whereBetween('placed_at', [$periodStart, $periodEnd])
                 ->sum('total');
-            
+
             $trends[] = [
-                'period' => $periodStart->format('M d') . ' - ' . $periodEnd->format('M d'),
-                'revenue' => round((float) $revenue, 2),
+                'period' => $periodStart->format('M d').' – '.$periodEnd->format('M d'),
+                'revenue' => round($revenue, 2),
             ];
         }
-        
-        // Add current period
+
+        // Current period — use already-computed value, no extra query
         $trends[] = [
-            'period' => $start->format('M d') . ' - ' . $end->format('M d'),
-            'revenue' => round((float) Order::where('status', $status)
-                ->whereBetween('placed_at', [$start, $end])
-                ->sum('total'), 2),
+            'period' => $start->format('M d').' – '.$end->format('M d'),
+            'revenue' => round($currentRevenue, 2),
         ];
-        
+
         return $trends;
     }
 
@@ -247,7 +258,7 @@ class AnalyticsController extends Controller
             ->orderBy('year')
             ->orderBy('month')
             ->get();
-        
+
         // Build the result array
         $result = [];
         foreach ($monthlyData as $data) {
@@ -258,17 +269,17 @@ class AnalyticsController extends Controller
                 'revenue' => round((float) $data->revenue, 2),
             ];
         }
-        
+
         // If no data, return empty array
         if (empty($result)) {
             return [];
         }
-        
+
         // Limit to last 12 months if there are more
         if (count($result) > 12) {
             $result = array_slice($result, -12);
         }
-        
+
         return $result;
     }
 
@@ -279,7 +290,7 @@ class AnalyticsController extends Controller
         if ($start->diffInDays($end) > $maxDays) {
             $start = $end->copy()->subDays($maxDays);
         }
-        
+
         $daily = Order::where('status', $status)
             ->whereBetween('placed_at', [$start, $end])
             ->select(
@@ -290,10 +301,10 @@ class AnalyticsController extends Controller
             ->groupBy('date')
             ->orderBy('date')
             ->get();
-        
+
         $totalRevenue = $daily->sum('revenue');
-        
-        return $daily->map(function($day) use ($totalRevenue) {
+
+        return $daily->map(function ($day) use ($totalRevenue) {
             return [
                 'date' => $day->date,
                 'order_count' => (int) $day->order_count,
@@ -309,12 +320,13 @@ class AnalyticsController extends Controller
 
     private function buildDailySales(string $status, CarbonInterface $start, CarbonInterface $end): array
     {
-        // Limit to 90 days max for daily sales
-        $maxDays = 90;
-        if ($start->diffInDays($end) > $maxDays) {
-            $start = $end->copy()->subDays($maxDays);
+        $days = (int) $start->diffInDays($end) + 1;
+
+        // For ranges longer than 14 days, group by week instead
+        if ($days > 14) {
+            return $this->buildWeeklyGroupedSales($status, $start, $end);
         }
-        
+
         $rows = Order::query()
             ->where('status', $status)
             ->whereBetween('placed_at', [$start, $end])
@@ -323,31 +335,41 @@ class AnalyticsController extends Controller
             ->get()
             ->keyBy('order_date');
 
-        $days = (int) $start->diffInDays($end) + 1;
-        
-        // If too many days, return empty to prevent performance issues
-        if ($days > 90) {
-            return [];
-        }
-
         return collect(range(0, $days - 1))
-            ->map(function (int $offset) use ($start, $rows, $days) {
+            ->map(function (int $offset) use ($start, $rows) {
                 $date = $start->copy()->addDays($offset);
-                $key  = $date->toDateString();
-                $row  = $rows->get($key);
-
-                $label = $days > 14
-                    ? $date->format('M j')
-                    : $date->format('D');
+                $key = $date->toDateString();
+                $row = $rows->get($key);
 
                 return [
-                    'day'     => $label,
+                    'day' => $date->format('D'),  // Mon, Tue, etc. for ≤14 days
                     'revenue' => round((float) ($row->revenue ?? 0), 2),
-                    'orders'  => (int) ($row->orders ?? 0),
+                    'orders' => (int) ($row->orders ?? 0),
                 ];
             })
             ->values()
             ->all();
+    }
+
+    private function buildWeeklyGroupedSales(string $status, CarbonInterface $start, CarbonInterface $end): array
+    {
+        $rows = Order::query()
+            ->where('status', $status)
+            ->whereBetween('placed_at', [$start, $end])
+            ->selectRaw('YEARWEEK(placed_at, 1) as week_key, MIN(DATE(placed_at)) as week_start, SUM(total) as revenue, COUNT(*) as orders')
+            ->groupBy('week_key')
+            ->orderBy('week_key')
+            ->get();
+
+        return $rows->map(function ($row) {
+            $weekStart = Carbon::parse($row->week_start);
+
+            return [
+                'day' => $weekStart->format('M j'),  // "Mar 3", "Mar 10", etc.
+                'revenue' => round((float) $row->revenue, 2),
+                'orders' => (int) $row->orders,
+            ];
+        })->values()->all();
     }
 
     private function buildCategoryMix(string $status, CarbonInterface $start, CarbonInterface $end): array
@@ -366,7 +388,9 @@ class AnalyticsController extends Controller
 
         $totalRevenue = (float) $rows->sum('revenue');
 
-        if ($totalRevenue <= 0) return [];
+        if ($totalRevenue <= 0) {
+            return [];
+        }
 
         return $rows
             ->map(fn ($row) => [
@@ -437,10 +461,10 @@ class AnalyticsController extends Controller
 
         return $current
             ->map(fn ($row) => [
-                'name'    => $row->product_name,
-                'orders'  => (int) $row->orders_count,
+                'name' => $row->product_name,
+                'orders' => (int) $row->orders_count,
                 'revenue' => round((float) $row->revenue, 2),
-                'growth'  => $this->formatGrowth((int) $row->orders_count, (int) ($previous[$row->product_id] ?? 0)),
+                'growth' => $this->formatGrowth((int) $row->orders_count, (int) ($previous[$row->product_id] ?? 0)),
             ])
             ->values()
             ->all();
@@ -453,9 +477,9 @@ class AnalyticsController extends Controller
         array $topProducts,
         string $growthSignal
     ): array {
-        $bestDay    = collect($weeklySales)->sortByDesc('revenue')->first();
-        $topCat     = collect($categoryMix)->sortByDesc('value')->first();
-        $topWindow  = collect($peakWindows)->sortByDesc('orders')->first();
+        $bestDay = collect($weeklySales)->sortByDesc('revenue')->first();
+        $topCat = collect($categoryMix)->sortByDesc('value')->first();
+        $topWindow = collect($peakWindows)->sortByDesc('orders')->first();
         $topProduct = collect($topProducts)->first();
 
         $insights = [];
@@ -487,12 +511,15 @@ class AnalyticsController extends Controller
 
     private function formatGrowth(float|int $current, float|int $previous): string
     {
-        $current  = (float) $current;
+        $current = (float) $current;
         $previous = (float) $previous;
 
-        if ($previous <= 0) return $current > 0 ? 'New' : '0%';
+        if ($previous <= 0) {
+            return $current > 0 ? 'New' : '0%';
+        }
 
         $rounded = (int) round((($current - $previous) / $previous) * 100);
-        return ($rounded > 0 ? '+' : '') . $rounded . '%';
+
+        return ($rounded > 0 ? '+' : '').$rounded.'%';
     }
 }

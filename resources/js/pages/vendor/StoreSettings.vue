@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import {
     Bell,
@@ -34,6 +34,29 @@ const storeName = computed(() => tenantInfo.value?.name ?? '');
 
 const saveLabel = ref('Changes not yet published');
 
+const ORDERED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+type DayKey = typeof ORDERED_DAYS[number];
+
+const DAY_LABELS: Record<DayKey, string> = {
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday',
+};
+
+const DEFAULT_HOURS: Record<DayKey, { is_open: boolean; open_time: string; close_time: string }> = {
+    monday: { is_open: true, open_time: '09:00', close_time: '17:00' },
+    tuesday: { is_open: true, open_time: '09:00', close_time: '17:00' },
+    wednesday: { is_open: true, open_time: '09:00', close_time: '17:00' },
+    thursday: { is_open: true, open_time: '09:00', close_time: '17:00' },
+    friday: { is_open: true, open_time: '09:00', close_time: '17:00' },
+    saturday: { is_open: true, open_time: '10:00', close_time: '15:00' },
+    sunday: { is_open: false, open_time: '10:00', close_time: '15:00' },
+};
+
 const storeForm = useForm({
     store_name: tenantInfo.value?.name ?? '',
     store_slug: tenantInfo.value?.id ?? '',
@@ -46,15 +69,7 @@ const storeForm = useForm({
     website: tenantInfo.value?.data?.website ?? '',
     pickup_lead_time: tenantInfo.value?.data?.pickup_lead_time ?? '',
     order_notice: tenantInfo.value?.data?.order_notice ?? '',
-    operating_hours: tenantInfo.value?.operating_hours ?? {
-        monday: { is_open: true, open_time: '08:00', close_time: '18:00' },
-        tuesday: { is_open: true, open_time: '08:00', close_time: '18:00' },
-        wednesday: { is_open: true, open_time: '08:00', close_time: '18:00' },
-        thursday: { is_open: true, open_time: '08:00', close_time: '18:00' },
-        friday: { is_open: true, open_time: '08:00', close_time: '18:00' },
-        saturday: { is_open: true, open_time: '09:00', close_time: '15:00' },
-        sunday: { is_open: false, open_time: '09:00', close_time: '15:00' },
-    },
+    operating_hours: (tenantInfo.value?.operating_hours ?? DEFAULT_HOURS) as Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>,
 });
 
 const storeDomain = computed(() => tenantInfo.value?.domain ?? null);
@@ -68,21 +83,6 @@ const toggles = ref({
     receiveEmailAlerts: true,
 });
 
-const hours = ref([
-    { key: 'monday', day: 'Monday', ...(tenantInfo.value?.operating_hours?.monday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
-    { key: 'tuesday', day: 'Tuesday', ...(tenantInfo.value?.operating_hours?.tuesday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
-    { key: 'wednesday', day: 'Wednesday', ...(tenantInfo.value?.operating_hours?.wednesday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
-    { key: 'thursday', day: 'Thursday', ...(tenantInfo.value?.operating_hours?.thursday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
-    { key: 'friday', day: 'Friday', ...(tenantInfo.value?.operating_hours?.friday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
-    { key: 'saturday', day: 'Saturday', ...(tenantInfo.value?.operating_hours?.saturday ?? { is_open: true, open_time: '09:00', close_time: '15:00' }) },
-    { key: 'sunday', day: 'Sunday', ...(tenantInfo.value?.operating_hours?.sunday ?? { is_open: false, open_time: '09:00', close_time: '15:00' }) },
-].map((day) => ({
-    ...day,
-    enabled: day.is_open,
-    open: day.open_time,
-    close: day.close_time,
-})));
-
 const completionItems = computed(() => [
     { label: 'Store profile', done: true },
     { label: 'Contact details', done: true },
@@ -95,34 +95,19 @@ const completedCount = computed(() => completionItems.value.filter((item) => ite
 const setupProgress = computed(() => Math.round((completedCount.value / completionItems.value.length) * 100));
 
 const saveChanges = () => {
-    const formattedHours = hours.value.reduce((acc, day) => {
-        acc[day.key] = {
-            is_open: day.enabled,
-            open_time: day.open,
-            close_time: day.close,
-        };
-        return acc;
-    }, {} as Record<string, { is_open: boolean; open_time: string; close_time: string }>);
-
-    storeForm.transform((data) => ({
-        store_name: data.store_name,
-        email: data.email,
-        description: data.description,
-        address: data.address,
-        phone: data.phone,
-        operating_hours: formattedHours,
-        tagline: data.tagline,
-        pickup_notes: data.pickup_notes,
-        website: data.website,
-        pickup_lead_time: data.pickup_lead_time,
-        order_notice: data.order_notice,
-    })).put('/vendor/store-settings', {
+    storeForm.put('/vendor/store-settings', {
         onSuccess: () => {
             saveLabel.value = 'Changes saved';
         },
         onError: () => {
             saveLabel.value = 'Could not save changes';
         },
+    });
+};
+
+const saveOperatingHours = () => {
+    router.put('/vendor/store-settings', {
+        operating_hours: storeForm.operating_hours,
     });
 };
 </script>
@@ -141,7 +126,7 @@ const saveChanges = () => {
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
                 <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm">
     <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] px-5 py-7 sm:px-7 sm:py-8">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-2xl">
                 <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#F7E8C6]">
                     <Sparkles class="h-3.5 w-3.5" />
@@ -149,28 +134,19 @@ const saveChanges = () => {
                 </div>
 
                 <h1 class="text-2xl font-semibold tracking-tight !text-white sm:text-3xl lg:text-4xl">
-                    {{ storeName }}
+                    {{ storeName || 'Complete Your Store Setup' }}
                 </h1>
 
                 <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
-                    Keep your storefront polished, informative, and easy to manage across desktop and mobile.
+                    {{ storeName ? 'Keep your storefront polished, informative, and easy to manage.' : 'Fill out the information below to get your store ready for customers.' }}
                 </p>
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Lead time</p>
-                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.pickup_lead_time }}</p>
-                </div>
-
-                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Order notice</p>
-                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.order_notice }}</p>
-                </div>
-
-                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup</p>
-                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
+            <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup Progress</p>
+                <p class="mt-2 text-2xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
+                <div class="mt-2 w-32 h-1.5 rounded-full bg-white/20">
+                    <div class="h-1.5 rounded-full bg-[#F7E8C6]" :style="{ width: `${setupProgress}%` }"></div>
                 </div>
             </div>
         </div>
@@ -326,45 +302,64 @@ const saveChanges = () => {
                                 </label>
                             </div>
 
+                            <div class="mt-6 mb-5 flex flex-col gap-3">
+                                <h3 class="text-sm font-semibold text-[#183D34]">Operating hours</h3>
+                                <p class="text-xs text-[#6E817A]">
+                                    Define when your store is open for pick-ups each day of the week.
+                                </p>
+                            </div>
+
                             <div class="mt-5 grid gap-3">
                                 <div
-                                    v-for="day in hours"
-                                    :key="day.day"
+                                    v-for="dayKey in ORDERED_DAYS"
+                                    :key="dayKey"
                                     class="rounded-2xl border border-[#E4ECE8] bg-[#FBFCFC] p-3 sm:p-4"
                                 >
-                                    <!-- Day label + toggle row (always visible) -->
+                                    <!-- Day label + open toggle -->
                                     <div class="flex items-center justify-between gap-3 mb-3">
                                         <div>
-                                            <p class="text-sm font-semibold text-[#183D34]">{{ day.day }}</p>
-                                            <p class="text-xs text-[#74867F]">{{ day.enabled ? 'Open for pick-up' : 'Closed' }}</p>
+                                            <p class="text-sm font-semibold text-[#183D34]">{{ DAY_LABELS[dayKey] }}</p>
+                                            <p class="text-xs text-[#74867F]">
+                                                {{ storeForm.operating_hours[dayKey]?.is_open ? 'Open for pick-up' : 'Closed' }}
+                                            </p>
                                         </div>
                                         <label class="inline-flex items-center gap-2">
                                             <span class="text-xs font-medium text-[#61766F]">Open</span>
                                             <input
-                                                v-model="day.enabled"
+                                                v-model="storeForm.operating_hours[dayKey].is_open"
                                                 type="checkbox"
                                                 class="h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]"
                                             />
                                         </label>
                                     </div>
-                                    <!-- Time pickers row - always flex-row, gap, wraps if needed -->
+
+                                    <!-- Time pickers — disabled when closed -->
                                     <div class="flex items-center gap-2">
                                         <input
-                                            v-model="day.open"
+                                            v-model="storeForm.operating_hours[dayKey].open_time"
                                             type="time"
-                                            :disabled="!day.enabled"
+                                            :disabled="!storeForm.operating_hours[dayKey]?.is_open"
                                             class="flex-1 min-w-0 h-10 rounded-xl border border-[#D7E3DC] bg-white px-2 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
                                         />
                                         <span class="text-xs text-[#74867F] shrink-0">to</span>
                                         <input
-                                            v-model="day.close"
+                                            v-model="storeForm.operating_hours[dayKey].close_time"
                                             type="time"
-                                            :disabled="!day.enabled"
+                                            :disabled="!storeForm.operating_hours[dayKey]?.is_open"
                                             class="flex-1 min-w-0 h-10 rounded-xl border border-[#D7E3DC] bg-white px-2 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
                                         />
                                     </div>
                                 </div>
                             </div>
+
+                            <button
+                                type="button"
+                                class="mt-6 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#245C4A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4B3C]"
+                                @click="saveOperatingHours"
+                            >
+                                <Save class="h-4 w-4" />
+                                Save operating hours
+                            </button>
                         </section>
                     </div>
 
