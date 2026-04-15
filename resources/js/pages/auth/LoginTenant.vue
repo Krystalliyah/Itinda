@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3'
-import { ref, onMounted } from 'vue'
 import InputError from '@/components/InputError.vue'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -16,146 +15,132 @@ const form = useForm({
   remember: false,
 })
 
-const isSubmitting = ref(false)
-
 function submit() {
-  if (!isSubmitting.value) {
-    isSubmitting.value = true
-    window.history.replaceState(
-      { isLogin: true },
-      document.title,
-      window.location.href
-    )
-  }
-  
   form.post('/login', {
     preserveScroll: true,
-    onFinish: () => {
-      form.reset('password')
-      isSubmitting.value = false
-    },
+    onFinish: () => form.reset('password'),
   })
 }
-
-onMounted(() => {
-  const formEl = document.querySelector('.it-form') as HTMLFormElement
-  if (formEl) {
-    formEl.addEventListener('submit', () => {
-      if (!isSubmitting.value) {
-        isSubmitting.value = true
-      }
-    })
-  }
-})
 </script>
 
 <template>
   <Head title="Store Login — iTinda" />
 
-  <div class="it-tenant-login-root">
-    
-    <!-- ── LEFT PANEL (store-focused branding) ─────── -->
-    <aside class="it-store-panel">
-      <div class="it-panel-grid"></div>
-      <div class="it-panel-glow"></div>
+  <div class="it-root">
 
-      <div class="it-panel-inner">
-        
-        <!-- Store Logo -->
-        <div class="it-store-logo">
-          <div class="it-store-logo-icon">
+    <!-- ── LEFT PANEL ───────────────────────────────────── -->
+    <aside class="it-left">
+      <div class="it-dots"></div>
+      <div class="it-orb it-orb-1"></div>
+      <div class="it-orb it-orb-2"></div>
+      <div class="it-orb it-orb-3"></div>
+
+      <div class="it-inner">
+
+        <!-- Brand -->
+        <div class="it-brand">
+          <div class="it-brand-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <div class="it-store-info">
-            <span class="it-store-name">Your Store</span>
-            <span class="it-store-subtitle">Management Portal</span>
+          <div class="it-brand-text">
+            <span class="it-brand-name">iTinda</span>
+            <span class="it-brand-sub">Store Management</span>
           </div>
         </div>
 
-        <!-- Store-focused copy -->
-        <div class="it-panel-copy">
-          <div class="it-panel-eyebrow">Store Management</div>
-          <h2 class="it-panel-heading">
-            Your business,<br />
-            <span class="it-panel-accent">your control.</span>
+        <!-- Copy -->
+        <div class="it-copy">
+          <div class="it-eyebrow">
+            <span class="it-eyebrow-pip"></span>
+            Store Portal
+          </div>
+          <h2 class="it-heading">
+            Your business,<br>
+            <span class="it-heading-gold">your control.</span>
           </h2>
-          <p class="it-panel-sub">
-            Manage your inventory, track orders, connect with customers, 
-            and grow your business with our comprehensive store management tools.
+          <p class="it-sub">
+            Manage inventory, track orders, and connect
+            with customers — all from one place.
           </p>
         </div>
 
-        <!-- Store features highlight -->
-        <div class="it-feature-card">
-          <div class="it-feature-icon">
+        <!-- Pills -->
+        <div class="it-pills">
+          <div class="it-pill">
+            <span class="it-pill-dot"></span>Real-time updates
+          </div>
+          <div class="it-pill">
+            <span class="it-pill-dot"></span>24/7 access
+          </div>
+        </div>
+
+        <!-- Bottom card -->
+        <div class="it-feat">
+          <div class="it-feat-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <div class="it-feature-content">
-            <h3 class="it-feature-title">Complete Store Analytics</h3>
-            <p class="it-feature-desc">
-              Track sales, monitor inventory, and understand your customers with detailed insights.
-            </p>
-          </div>
-        </div>
-
-        <!-- Store stats -->
-        <div class="it-panel-stats">
-          <div class="it-ps-item">
-            <span class="it-ps-num">24/7</span>
-            <span class="it-ps-label">Store Access</span>
-          </div>
-          <div class="it-ps-div"></div>
-          <div class="it-ps-item">
-            <span class="it-ps-num">Real-time</span>
-            <span class="it-ps-label">Updates</span>
+          <div>
+            <div class="it-feat-title">Complete store analytics</div>
+            <div class="it-feat-desc">Sales, inventory, and customer insights in one dashboard.</div>
           </div>
         </div>
 
       </div>
     </aside>
 
-    <!-- ── RIGHT PANEL (form) ───────────────────────── -->
-    <main class="it-form-panel">
-      <div class="it-form-inner">
+    <!-- ── RIGHT PANEL ──────────────────────────────────── -->
+    <main class="it-right">
 
-        <!-- Mobile store logo -->
-        <div class="it-mobile-store-logo">
-          <div class="it-mobile-store-icon">
+      <!-- Decorative circles (white panel) -->
+      <div class="it-deco-ring it-deco-ring-1"></div>
+      <div class="it-deco-ring it-deco-ring-2"></div>
+      <div class="it-deco-ring it-deco-ring-3"></div>
+
+      <div class="it-form-wrap">
+
+        <!-- Mobile brand -->
+        <div class="it-mobile-brand">
+          <div class="it-brand-icon it-brand-icon--dark">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
           <div>
-            <span class="it-mobile-store-name">Store Portal</span>
-            <span class="it-mobile-store-sub">iTinda</span>
+            <span class="it-mobile-name">iTinda</span>
+            <span class="it-mobile-sub">Store Management</span>
           </div>
         </div>
 
-        <!-- Form header -->
-        <div class="it-form-header">
-          <h1 class="it-form-title">Welcome to your store</h1>
-          <p class="it-form-desc">Sign in to manage your business and connect with customers.</p>
+        <!-- Header -->
+        <div class="it-fhead">
+          <h1 class="it-ftitle">Welcome back</h1>
+          <p class="it-fdesc">Sign in to manage your store and connect with your customers.</p>
         </div>
 
-        <!-- Status message -->
-        <div v-if="status" class="it-status-msg">
-          {{ status }}
+        <!-- Status -->
+        <div v-if="status" class="it-status">{{ status }}</div>
+
+        <!-- Divider -->
+        <div class="it-divider">
+          <span class="it-divider-line"></span>
+          <span class="it-divider-text">Store credentials</span>
+          <span class="it-divider-line"></span>
         </div>
 
         <!-- Form -->
         <form @submit.prevent="submit" class="it-form">
-          <!-- Login ID -->
+
           <div class="it-field">
-            <Label for="email" class="it-label">Login ID or Email</Label>
-            <div class="it-input-wrap">
-              <span class="it-input-icon">
+            <Label for="email" class="it-label">Login ID or email</Label>
+            <div class="it-iw">
+              <span class="it-iico">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -173,14 +158,13 @@ onMounted(() => {
                 class="it-input"
               />
             </div>
-            <InputError :message="form.errors.email" class="it-field-error" />
+            <InputError :message="form.errors.email" class="it-err" />
           </div>
 
-          <!-- Password -->
           <div class="it-field">
             <Label for="password" class="it-label">Password</Label>
-            <div class="it-input-wrap">
-              <span class="it-input-icon">
+            <div class="it-iw">
+              <span class="it-iico">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -197,37 +181,51 @@ onMounted(() => {
                 class="it-input"
               />
             </div>
-            <InputError :message="form.errors.password" class="it-field-error" />
+            <InputError :message="form.errors.password" class="it-err" />
           </div>
 
-          <!-- Remember me -->
-          <div class="it-remember-row">
+          <div class="it-remember">
             <Label for="remember" class="it-remember-label">
-              <Checkbox 
-                id="remember" 
-                v-model:checked="form.remember" 
-                :tabindex="3" 
-                class="it-checkbox" 
+              <Checkbox
+                id="remember"
+                v-model:checked="form.remember"
+                :tabindex="3"
+                class="it-checkbox"
               />
               <span>Keep me signed in</span>
             </Label>
           </div>
 
-          <!-- Submit -->
           <Button
             type="submit"
             :tabindex="4"
             :disabled="form.processing"
-            class="it-submit-btn"
+            class="it-btn"
           >
             <Spinner v-if="form.processing" class="it-spinner" />
-            <span>{{ form.processing ? 'Signing in…' : 'Access Store Dashboard' }}</span>
+            <svg v-else fill="none" stroke="currentColor" viewBox="0 0 24 24" class="it-btn-ico">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            <span>{{ form.processing ? 'Signing in...' : 'Access Store ' }}</span>
           </Button>
+
         </form>
 
-        <p class="it-form-footer">
-          &copy; {{ new Date().getFullYear() }} iTinda Store Management. Secure access to your business.
-        </p>
+        <!-- Admin note -->
+        <div class="it-note">
+          <svg class="it-note-ico" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="it-note-text">
+            <strong>No account yet?</strong> Store accounts are set up by your administrator.
+            Contact your admin or vendor manager for access.
+          </p>
+        </div>
+
+        <p class="it-footer">&copy; {{ new Date().getFullYear() }} iTinda Store Management.</p>
+
       </div>
     </main>
 
@@ -235,466 +233,330 @@ onMounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Lato:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
 
-/* ── Variables (Store-focused green theme) ─────────────────────── */
-.it-tenant-login-root {
-    --store-primary:   #1B4D3E;  /* Emerald green */
-    --store-secondary: #245c4a;  /* Lighter emerald */
-    --store-accent:    #C5A059;  /* Gold accent */
-    --store-accent-light: #d9b87a;
-    --store-accent-pale:  #f5ead4;
-    --smoke:           #F5F5F5;
-    --white:           #ffffff;
-    --text-dark:       #0f2820;
-    --text-body:       #3a4a44;
-    --text-muted:      #7a8f88;
-    --border:          rgba(27, 77, 62, 0.14);
+/* ── Variables ───────────────────────────────────────────── */
+.it-root {
+  --g:        #1B4D3E;
+  --g2:       #163d32;
+  --gold:     #C5A059;
+  --gold-bg:  rgba(197,160,89,0.15);
+  --gold-bd:  rgba(197,160,89,0.25);
+  --smoke:    #F7F6F3;
+  --white:    #ffffff;
+  --dark:     #0f2820;
+  --body:     #3d524b;
+  --muted:    #8a9e97;
+  --border:   rgba(27,77,62,0.13);
 
-    display: flex;
-    min-height: 100vh;
-    font-family: 'Lato', sans-serif;
-    background: var(--smoke);
+  display: flex;
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--smoke);
+}
+.it-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── LEFT ────────────────────────────────────────────────── */
+.it-left {
+  width: 42%;
+  flex-shrink: 0;
+  background: var(--g);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
 }
 
-.it-tenant-login-root * { box-sizing: border-box; margin: 0; padding: 0; }
-.it-tenant-login-root a { text-decoration: none; color: inherit; }
-
-/* ════════════════════════════════════════════════════════════
-   LEFT — STORE PANEL
-   ════════════════════════════════════════════════════════════ */
-.it-store-panel {
-    width: 44%;
-    flex-shrink: 0;
-    background: var(--store-primary);
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: stretch;
+.it-dots {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(197,160,89,0.12) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
+  pointer-events: none;
 }
 
-.it-panel-grid {
-    position: absolute; inset: 0;
-    background-image:
-        linear-gradient(rgba(197,160,89,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(197,160,89,0.05) 1px, transparent 1px);
-    background-size: 52px 52px;
-    pointer-events: none;
+.it-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.it-orb-1 { width: 380px; height: 380px; background: rgba(197,160,89,0.07); top: -110px; right: -120px; }
+.it-orb-2 { width: 260px; height: 260px; background: rgba(197,160,89,0.05); bottom: 20px; left: -90px; }
+.it-orb-3 { width: 140px; height: 140px; background: rgba(255,255,255,0.03); top: 48%; right: 10px; }
+
+.it-inner {
+  position: relative; z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 48px;
+  width: 100%;
+  animation: itUp 0.55s ease both;
 }
 
-.it-panel-glow {
-    position: absolute; inset: 0;
-    background:
-        radial-gradient(ellipse 70% 50% at 80% 15%, rgba(197,160,89,0.13) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 60% at 10% 88%, rgba(197,160,89,0.07) 0%, transparent 55%);
-    pointer-events: none;
+/* Brand */
+.it-brand { display: flex; align-items: center; gap: 13px; }
+
+.it-brand-icon {
+  width: 44px; height: 44px;
+  background: var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.it-brand-icon svg { width: 20px; height: 20px; color: var(--g); }
+
+.it-brand-icon--dark { background: var(--g) !important; }
+.it-brand-icon--dark svg { color: var(--white) !important; }
+
+.it-brand-text { display: flex; flex-direction: column; gap: 1px; }
+.it-brand-name { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.25rem; color: var(--white); }
+.it-brand-sub  { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.48); letter-spacing: 0.4px; }
+
+/* Copy */
+.it-copy { padding: 36px 0 28px; }
+
+.it-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(197,160,89,0.75); margin-bottom: 18px;
+}
+.it-eyebrow-pip { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
+
+.it-heading {
+  font-family: 'Nunito', sans-serif; font-weight: 900;
+  font-size: clamp(1.55rem, 2.3vw, 2rem); line-height: 1.22;
+  color: var(--white); margin-bottom: 14px;
+}
+.it-heading-gold { color: var(--gold); }
+
+.it-sub {
+  font-size: 0.88rem; line-height: 1.78;
+  color: rgba(255,255,255,0.52); max-width: 270px;
 }
 
-.it-panel-inner {
-    position: relative; z-index: 2;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 48px 52px;
-    width: 100%;
-    animation: itFadeUp 0.6s ease both;
+/* Pills */
+.it-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px; }
+.it-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--gold-bd);
+  border-radius: 100px;
+  padding: 7px 14px;
+  font-size: 0.79rem; font-weight: 500; color: rgba(255,255,255,0.78);
+}
+.it-pill-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; flex-shrink: 0; }
+
+/* Bottom feat card */
+.it-feat {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--gold-bd);
+  border-radius: 18px;
+  padding: 20px 22px;
+  display: flex; align-items: flex-start; gap: 15px;
+}
+.it-feat-icon {
+  width: 42px; height: 42px;
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-bd);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.it-feat-icon svg { width: 18px; height: 18px; color: var(--gold); }
+.it-feat-title { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; color: var(--white); margin-bottom: 5px; }
+.it-feat-desc  { font-size: 0.8rem; line-height: 1.55; color: rgba(255,255,255,0.52); }
+
+/* ── RIGHT ───────────────────────────────────────────────── */
+.it-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: var(--smoke);
+  position: relative;
+  overflow: hidden;
 }
 
-/* Store Logo */
-.it-store-logo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+/* Decorative circles on white panel — soft yellow-green, plain */
+.it-deco-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgba(180, 210, 140, 0.18);
+}
+.it-deco-ring-1 { width: 420px; height: 420px; top: -180px; right: -180px; }
+.it-deco-ring-2 { width: 300px; height: 300px; bottom: -120px; left: -120px; }
+.it-deco-ring-3 { width: 110px; height: 110px; bottom: 22%; right: 8%; background: rgba(180, 210, 140, 0.13); }
+
+.it-form-wrap {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 400px;
+  animation: itUp 0.55s 0.1s ease both;
 }
 
-.it-store-logo-icon {
-    width: 42px; height: 42px;
-    background: var(--store-accent);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+/* Mobile brand */
+.it-mobile-brand {
+  display: none;
+  align-items: center; gap: 12px;
+  margin-bottom: 32px;
 }
-
-.it-store-logo-icon svg { 
-    width: 22px; height: 22px; 
-    color: var(--store-primary); 
-}
-
-.it-store-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.it-store-name {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: 1.3rem;
-    color: var(--white);
-}
-
-.it-store-subtitle {
-    font-family: 'Lato', sans-serif;
-    font-weight: 600;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.65);
-    letter-spacing: 0.5px;
-}
-
-/* Panel copy */
-.it-panel-copy { 
-    margin: auto 0; 
-    padding: 40px 0 32px; 
-}
-
-.it-panel-eyebrow {
-    font-family: 'Lato', sans-serif;
-    font-weight: 700;
-    font-size: 0.72rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: rgba(197, 160, 89, 0.7);
-    margin-bottom: 14px;
-}
-
-.it-panel-heading {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: clamp(1.65rem, 2.4vw, 2.2rem);
-    line-height: 1.22;
-    color: var(--white);
-    margin-bottom: 16px;
-}
-
-.it-panel-accent { color: var(--store-accent); }
-
-.it-panel-sub {
-    font-size: 0.93rem;
-    line-height: 1.72;
-    color: rgba(255, 255, 255, 0.58);
-    max-width: 320px;
-}
-
-/* ── Feature card ──────────────────────────────────────────── */
-.it-feature-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(197, 160, 89, 0.2);
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 28px;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-}
-
-.it-feature-icon {
-    width: 40px; height: 40px;
-    background: rgba(197, 160, 89, 0.22);
-    border: 1px solid rgba(197, 160, 89, 0.35);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-
-.it-feature-icon svg { 
-    width: 18px; height: 18px; 
-    color: var(--store-accent); 
-}
-
-.it-feature-content {
-    flex: 1;
-}
-
-.it-feature-title {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: var(--white);
-    margin-bottom: 6px;
-}
-
-.it-feature-desc {
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.65);
-}
-
-/* ── Stats strip ───────────────────────────────────────────── */
-.it-panel-stats {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    padding: 18px 22px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(197, 160, 89, 0.15);
-    border-radius: 12px;
-}
-
-.it-ps-item { display: flex; flex-direction: column; gap: 2px; }
-
-.it-ps-num {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: var(--store-accent);
-}
-
-.it-ps-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
-}
-
-.it-ps-div {
-    width: 1px; height: 28px;
-    background: rgba(255, 255, 255, 0.12);
-}
-
-/* ════════════════════════════════════════════════════════════
-   RIGHT — FORM PANEL
-   ════════════════════════════════════════════════════════════ */
-.it-form-panel {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 40px;
-    background: var(--smoke);
-}
-
-.it-form-inner {
-    width: 100%;
-    max-width: 420px;
-    display: flex;
-    flex-direction: column;
-    animation: itFadeUp 0.6s 0.12s ease both;
-}
-
-/* Mobile store logo */
-.it-mobile-store-logo {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
-}
-
-.it-mobile-store-icon {
-    width: 36px; height: 36px;
-    background: var(--store-primary);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-
-.it-mobile-store-icon svg { 
-    width: 18px; height: 18px; 
-    color: var(--white); 
-}
-
-.it-mobile-store-name {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: 1.2rem;
-    color: var(--store-primary);
-    display: block;
-}
-
-.it-mobile-store-sub {
-    font-family: 'Lato', sans-serif;
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    display: block;
-}
+.it-mobile-name { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.2rem; color: var(--dark); display: block; }
+.it-mobile-sub  { font-size: 0.72rem; color: var(--muted); font-weight: 600; display: block; }
 
 /* Form header */
-.it-form-header { margin-bottom: 32px; }
-
-.it-form-title {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: 1.85rem;
-    color: var(--text-dark);
-    margin-bottom: 8px;
+.it-fhead { margin-bottom: 24px; }
+.it-ftitle {
+  font-family: 'Nunito', sans-serif; font-weight: 900;
+  font-size: 1.8rem; color: var(--dark); margin-bottom: 6px;
 }
-
-.it-form-desc {
-    font-size: 0.93rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-}
+.it-fdesc { font-size: 0.88rem; color: var(--muted); line-height: 1.55; }
 
 /* Status */
-.it-status-msg {
-    background: rgba(27, 77, 62, 0.07);
-    border: 1px solid rgba(27, 77, 62, 0.18);
-    color: var(--store-primary);
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    text-align: center;
+.it-status {
+  background: rgba(27,77,62,0.07);
+  border: 1px solid rgba(27,77,62,0.15);
+  color: var(--g);
+  font-size: 0.85rem; font-weight: 600;
+  padding: 12px 16px; border-radius: 10px;
+  margin-bottom: 18px; text-align: center;
+}
+
+/* Divider */
+.it-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 22px;
+}
+.it-divider-line { flex: 1; height: 1px; background: var(--border); }
+.it-divider-text {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); white-space: nowrap;
 }
 
 /* Form */
-.it-form { display: flex; flex-direction: column; gap: 20px; }
+.it-form { display: flex; flex-direction: column; gap: 16px; }
 
-.it-field { display: flex; flex-direction: column; gap: 7px; }
+.it-field { display: flex; flex-direction: column; gap: 6px; }
 
 .it-label {
-    font-family: 'Lato', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--text-dark);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 600; color: var(--dark);
 }
 
-/* Input with icon */
-.it-input-wrap { position: relative; }
+.it-iw { position: relative; }
+.it-iico {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; pointer-events: none; z-index: 1;
+}
+.it-iico svg { width: 15px; height: 15px; color: var(--muted); }
 
-.it-input-icon {
-    position: absolute;
-    left: 13px; top: 50%;
-    transform: translateY(-50%);
-    display: flex; align-items: center; justify-content: center;
-    pointer-events: none; z-index: 1;
+.it-iw :deep(input) {
+  width: 100%;
+  padding: 11px 14px 11px 38px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--dark);
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+}
+.it-iw :deep(input::placeholder) { color: rgba(138,158,151,0.5); }
+.it-iw :deep(input:focus) {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(197,160,89,0.2);
 }
 
-.it-input-icon svg { width: 16px; height: 16px; color: var(--text-muted); }
-
-.it-input-wrap :deep(input) {
-    width: 100%;
-    padding: 11px 14px 11px 40px;
-    font-family: 'Lato', sans-serif;
-    font-size: 0.93rem;
-    color: var(--text-dark);
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    appearance: none;
-}
-
-.it-input-wrap :deep(input::placeholder) { 
-    color: rgba(122, 143, 136, 0.55); 
-}
-
-.it-input-wrap :deep(input:focus) {
-    border-color: var(--gold);
-    border-width: 2px;
-    box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.25);
-}
-
-.it-field-error { 
-    font-size: 0.8rem; 
-    color: #e53e3e; 
-    margin-top: 2px; 
-}
+.it-err { font-size: 0.78rem; color: #e53e3e; margin-top: 2px; }
 
 /* Remember */
-.it-remember-row { margin-top: -2px; }
-
+.it-remember { margin-top: -2px; }
 .it-remember-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    font-size: 0.88rem;
-    color: var(--text-body);
-    user-select: none;
+  display: flex; align-items: center; gap: 9px;
+  font-size: 0.85rem; color: var(--body); cursor: pointer; user-select: none;
 }
-
 .it-remember-label :deep([data-slot="checkbox"]),
 .it-remember-label :deep([role="checkbox"]) {
-    width: 18px; height: 18px;
-    border: 2px solid var(--border);
-    border-radius: 4px;
-    background: var(--white);
-    transition: border-color 0.2s, background 0.2s;
-    flex-shrink: 0;
+  width: 17px; height: 17px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px; background: var(--white);
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
 }
-
 .it-remember-label :deep([data-slot="checkbox"][data-state="checked"]),
 .it-remember-label :deep([role="checkbox"][aria-checked="true"]) {
-    background: var(--store-primary);
-    border-color: var(--store-primary);
+  background: var(--g); border-color: var(--g);
 }
 
-/* Submit button */
-.it-submit-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 13px 0;
-    background: var(--store-primary) !important;
-    color: var(--white) !important;
-    font-family: 'Montserrat', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    border-radius: 8px !important;
-    border: none !important;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 4px 18px rgba(27, 77, 62, 0.22);
-    margin-top: 4px;
+/* Button */
+.it-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 0;
+  background: var(--g) !important;
+  color: var(--white) !important;
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.95rem !important;
+  border-radius: 12px !important;
+  border: none !important;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 18px rgba(27,77,62,0.22);
+  margin-top: 4px;
 }
-
-.it-submit-btn:hover:not(:disabled) {
-    background: var(--store-secondary) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(27, 77, 62, 0.28);
+.it-btn:hover:not(:disabled) {
+  background: var(--g2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(27,77,62,0.3);
 }
+.it-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.it-btn-ico { width: 16px; height: 16px; }
+.it-spinner  { width: 16px; height: 16px; }
 
-.it-submit-btn:disabled { 
-    opacity: 0.6; 
-    cursor: not-allowed; 
+/* Admin note */
+.it-note {
+  margin-top: 20px;
+  padding: 13px 16px;
+  background: rgba(27,77,62,0.055);
+  border: 1px solid rgba(27,77,62,0.11);
+  border-radius: 12px;
+  display: flex; align-items: flex-start; gap: 10px;
 }
-
-.it-spinner { width: 16px; height: 16px; }
+.it-note-ico { width: 15px; height: 15px; color: var(--g); flex-shrink: 0; margin-top: 2px; }
+.it-note-text { font-size: 0.78rem; line-height: 1.6; color: #4a6258; }
+.it-note-text strong { font-weight: 700; color: var(--g); }
 
 /* Footer */
-.it-form-footer {
-    text-align: center;
-    font-size: 0.77rem;
-    color: rgba(122, 143, 136, 0.5);
-    margin-top: 44px;
+.it-footer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(138,158,151,0.45);
+  margin-top: 36px;
 }
 
-/* ════════════════════════════════════════════════════════════
-   KEYFRAMES
-   ════════════════════════════════════════════════════════════ */
-@keyframes itFadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+/* ── Keyframes ───────────────────────────────────────────── */
+@keyframes itUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ════════════════════════════════════════════════════════════
-   RESPONSIVE — tablet ≤ 900px
-   ════════════════════════════════════════════════════════════ */
+/* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 900px) {
-    .it-store-panel { width: 40%; }
-    .it-panel-inner { padding: 40px 32px; }
-    .it-panel-sub   { display: none; }
-    .it-feature-card { display: none; }
+  .it-left { width: 40%; }
+  .it-inner { padding: 40px 32px; }
+  .it-sub { display: none; }
+  .it-feat { display: none; }
 }
 
-/* ════════════════════════════════════════════════════════════
-   RESPONSIVE — mobile ≤ 640px
-   ════════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
-    .it-tenant-login-root { flex-direction: column; }
-    .it-store-panel { display: none; }
-    .it-form-panel { 
-        padding: 32px 24px 48px; 
-        align-items: flex-start; 
-    }
-    .it-form-inner { max-width: 100%; }
-    .it-mobile-store-logo { display: flex; }
-    .it-form-title { font-size: 1.6rem; }
+  .it-root { flex-direction: column; }
+  .it-left { display: none; }
+  .it-right { padding: 32px 24px 48px; align-items: flex-start; }
+  .it-form-wrap { max-width: 100%; }
+  .it-mobile-brand { display: flex; }
+  .it-ftitle { font-size: 1.6rem; }
 }
 </style>

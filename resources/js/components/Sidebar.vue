@@ -95,7 +95,7 @@ const handleDrawerNavClick = () => {
 
             <div class="sidebar-footer">
                 <Link
-                    href="/settings/profile"
+                    href="/settings/password"
                     class="menu-item"
                     title="Settings"
                     @click="handleDrawerNavClick"

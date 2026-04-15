@@ -1,34 +1,23 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Form, Link } from '@inertiajs/vue3';
+import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
+import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editProfile } from '@/routes/profile';
-import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
-        href: editProfile(),
-    },
-    {
-        title: 'Password',
+        title: 'Password & Appearance',
         href: editPassword(),
-    },
-    /*
-    {
-        title: 'Two-Factor Auth',
-        href: show(),
-    },
-    */
-    {
-        title: 'Appearance',
-        href: editAppearance(),
     },
 ];
 
@@ -39,7 +28,7 @@ const { isCurrentUrl } = useCurrentUrl();
     <div class="px-4 py-6">
         <Heading
             title="Settings"
-            description="Manage your profile and account settings"
+            description="Manage your password and appearance preferences"
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
@@ -69,9 +58,7 @@ const { isCurrentUrl } = useCurrentUrl();
             <Separator class="my-6 lg:hidden" />
 
             <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
-                    <slot />
-                </section>
+                <slot />
             </div>
         </div>
     </div>

@@ -173,7 +173,7 @@ const primaryDomain = (tenant: Tenant | null) => {
 
 <style scoped>
 .store-details-modal {
-    background: #ffffff;
+    background: var(--card);
 }
 
 .modal-hero {
@@ -183,9 +183,9 @@ const primaryDomain = (tenant: Tenant | null) => {
     gap: 1rem;
     padding: 1.5rem 1.5rem 1.25rem;
     background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 35%),
-        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-    border-bottom: 1px solid #e2e8f0;
+        radial-gradient(circle at top left, var(--accent), transparent 35%),
+        linear-gradient(180deg, var(--secondary) 0%, var(--card) 100%);
+    border-bottom: 1px solid var(--border);
 }
 
 .hero-left {
@@ -199,13 +199,13 @@ const primaryDomain = (tenant: Tenant | null) => {
     width: 3rem;
     height: 3rem;
     border-radius: 16px;
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--secondary);
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border: 1px solid #dbeafe;
+    border: 1px solid var(--border);
 }
 
 .hero-icon svg {
@@ -216,13 +216,13 @@ const primaryDomain = (tenant: Tenant | null) => {
 .hero-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     line-height: 1.2;
 }
 
 .hero-subtitle {
     font-size: 0.92rem;
-    color: #64748b;
+    color: var(--muted-foreground);
     max-width: 42rem;
 }
 
@@ -239,13 +239,13 @@ const primaryDomain = (tenant: Tenant | null) => {
 }
 
 .status-badge.approved {
-    background: #dcfce7;
-    color: #15803d;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
 }
 
 .status-badge.pending {
-    background: #fef3c7;
-    color: #b45309;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
 }
 
 .status-icon {
@@ -267,8 +267,8 @@ const primaryDomain = (tenant: Tenant | null) => {
 }
 
 .detail-card {
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border: 1px solid var(--border);
+    background: var(--secondary);
     border-radius: 14px;
     padding: 1rem;
 }
@@ -283,7 +283,7 @@ const primaryDomain = (tenant: Tenant | null) => {
 .detail-icon {
     width: 1rem;
     height: 1rem;
-    color: #64748b;
+    color: var(--muted-foreground);
     flex-shrink: 0;
 }
 
@@ -292,20 +292,20 @@ const primaryDomain = (tenant: Tenant | null) => {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: var(--muted-foreground);
     margin: 0;
 }
 
 .detail-value {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--foreground);
     margin: 0;
     line-height: 1.45;
 }
 
 .detail-link {
-    color: #2563eb;
+    color: var(--primary);
     font-size: 0.95rem;
     font-weight: 600;
     text-decoration: none;
@@ -317,8 +317,8 @@ const primaryDomain = (tenant: Tenant | null) => {
 }
 
 .info-panel {
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
+    border: 1px solid var(--border);
+    background: var(--card);
     border-radius: 14px;
     padding: 1rem;
 }
@@ -326,7 +326,7 @@ const primaryDomain = (tenant: Tenant | null) => {
 .info-title {
     font-size: 0.9rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--foreground);
     margin: 0 0 0.85rem 0;
 }
 
@@ -342,7 +342,7 @@ const primaryDomain = (tenant: Tenant | null) => {
     gap: 1rem;
     align-items: flex-start;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
 }
 
 .summary-row:last-child {
@@ -352,13 +352,13 @@ const primaryDomain = (tenant: Tenant | null) => {
 
 .summary-key {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--muted-foreground);
     font-weight: 500;
 }
 
 .summary-value {
     font-size: 0.9rem;
-    color: #0f172a;
+    color: var(--foreground);
     font-weight: 600;
     text-align: right;
 }
