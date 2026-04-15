@@ -673,9 +673,46 @@ const modalTitle = computed(() => {
     .tree-info { width: 110px; }
 }
 
-/* ── Dark mode — only exceptions tokens can't handle ── */
-/* chip-children needs a dark purple tint not expressible via tokens */
+:global(.dark) .page-header h1 { color: var(--foreground); }
+:global(.dark) .page-header p { color: var(--muted-foreground); }
+
+:global(.dark) .stats-strip {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .strip-label { color: var(--muted-foreground); }
+:global(.dark) .strip-val { color: var(--foreground); }
+
+:global(.dark) .categories-tree {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .tree-toolbar {
+    background: var(--accent);
+    border-bottom-color: var(--border);
+}
+
+:global(.dark) .tree-title { color: var(--foreground); }
+
+:global(.dark) .tree-row { border-bottom-color: var(--border); }
+:global(.dark) .tree-row:hover { background: var(--accent); }
+
+:global(.dark) .tree-name { color: var(--foreground); }
+:global(.dark) .tree-slug { color: var(--muted-foreground); }
+
+:global(.dark) .cat-modal {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .modal-header { border-bottom-color: var(--border); }
+:global(.dark) .modal-title { color: var(--foreground); }
+
+:global(.dark) .field-label { color: var(--foreground); }
+:global(.dark) .field-hint { color: var(--muted-foreground); }
+
 :global(.dark) .chip-children { background-color: rgba(76,29,149,0.4) !important; color: #c4b5fd !important; }
-/* action-sub hover needs a purple tint */
 :global(.dark) .action-sub:hover { background-color: rgba(99,102,241,0.2) !important; border-color: #6366f1 !important; }
 </style>

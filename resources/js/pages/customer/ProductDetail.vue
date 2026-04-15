@@ -131,8 +131,27 @@ const increment = () => {
 const decrement = () => {
   if (quantity.value > 1) quantity.value--;
 };
-const setQty = (val: number) => {
-  quantity.value = Math.min(Math.max(1, val), maxQty.value === Infinity ? val : maxQty.value);
+const setQty = (val: number, event?: Event) => {
+  const max = product.value?.stock_level > 0 ? product.value.stock_level : Infinity;
+  const cleanVal = isNaN(val) ? 1 : Math.max(1, Math.floor(val));
+  const finalVal = Math.min(cleanVal, max)
+  
+  if (cleanVal > max && max !== Infinity) {
+    showToast(`Maximum stock reached: Only ${max} units available.`, 'error')
+  }
+  
+  quantity.value = finalVal
+  
+  if (event && event.target && (event.target as HTMLInputElement).value !== finalVal.toString()) {
+    (event.target as HTMLInputElement).value = finalVal.toString();
+  }
+};
+
+// Prevent invalid characters in number input
+const onQuantityKeydown = (e: KeyboardEvent) => {
+  if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+    e.preventDefault();
+  }
 };
 
 // Fetch product
@@ -391,11 +410,15 @@ const addToCart = async () => {
         quantity: quantity.value,
       }),
     });
-    if (!response.ok) throw new Error('Failed to add to cart');
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to add to cart');
+    }
     showToast(`${quantity.value}× "${product.value.product_name}" added to cart!`);
     quantity.value = 1;
-  } catch {
-    showToast('Failed to add to cart. Please try again.', 'error');
+  } catch (err) {
+    console.error(err);
+    showToast(err instanceof Error ? err.message : 'Failed to add to cart. Please try again.', 'error');
   } finally {
     addingToCart.value = false;
   }
@@ -562,7 +585,8 @@ onMounted(() => {
                   :min="1"
                   :max="product.stock_level > 0 ? product.stock_level : undefined"
                   class="w-14 h-9 text-center text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-[#245c4a] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  @change="setQty(Number(($event.target as HTMLInputElement).value))"
+                  @input="setQty(parseInt(($event.target as HTMLInputElement).value), $event)"
+                  @keydown="onQuantityKeydown"
                   @keydown.up.prevent="increment"
                   @keydown.down.prevent="decrement"
                   aria-label="Quantity"

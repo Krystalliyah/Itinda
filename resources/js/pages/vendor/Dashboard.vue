@@ -134,7 +134,7 @@ function stockClass(level: string) {
   <VendorLayout>
     <!-- ── No store yet ── -->
     <div v-if="!hasStore" class="flex items-center justify-center min-h-[calc(100vh-4rem)] p-6">
-      <div class="w-full max-w-md bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+      <div class="w-full max-w-md bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <div class="px-6 py-8 text-center" style="background:#245c4a">
           <div
             class="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4"
@@ -214,7 +214,7 @@ function stockClass(level: string) {
       v-else-if="hasStore && !storeIsApproved"
       class="flex items-center justify-center min-h-[calc(100vh-4rem)] p-6"
     >
-      <div class="w-full max-w-md bg-white rounded-xl border border-border shadow-sm text-center p-10">
+      <div class="w-full max-w-md bg-card rounded-xl border border-border shadow-sm text-center p-10">
         <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-amber-50">
           <svg class="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -278,7 +278,7 @@ function stockClass(level: string) {
       <!-- Stat cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Orders -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group">
+        <div class="bg-card rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#245c4a,#3d7a5c)"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(36,92,74,.1)">
@@ -298,7 +298,7 @@ function stockClass(level: string) {
         </div>
 
         <!-- Sales -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
+        <div class="bg-card rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#C5A059,#d9b87a)"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(197,160,89,.14)">
@@ -320,7 +320,7 @@ function stockClass(level: string) {
         </div>
 
         <!-- Products -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
+        <div class="bg-card rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,hsl(197 37% 24%),hsl(197 37% 44%))"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-[#EDF6F1]">
@@ -340,7 +340,7 @@ function stockClass(level: string) {
         </div>
 
         <!-- Customers -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
+        <div class="bg-card rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,hsl(12 76% 61%),hsl(27 87% 67%))"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:hsl(12 76% 61% / 0.1)">
@@ -363,7 +363,7 @@ function stockClass(level: string) {
       <!-- Lower grid -->
       <div class="grid grid-cols-1 xl:grid-cols-[1fr_310px] gap-4">
         <!-- Recent Orders -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <div class="px-5 py-4 flex items-start justify-between border-b border-border">
             <div>
               <h2 class="text-sm font-semibold flex items-center gap-2" style="color:#245c4a">
@@ -395,22 +395,12 @@ function stockClass(level: string) {
 
           <table v-else class="w-full border-collapse">
             <thead>
-              <tr style="background:hsl(0 0% 96.1%)">
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-2.5 border-b border-border">
-                  Order ID
-                </th>
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-2.5 border-b border-border">
-                  Customer
-                </th>
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-2.5 border-b border-border">
-                  Items
-                </th>
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-2.5 border-b border-border">
-                  Amount
-                </th>
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-2.5 border-b border-border">
-                  Status
-                </th>
+              <tr class="bg-secondary text-muted-foreground uppercase tracking-wider text-[10px] font-bold">
+                <th class="text-left px-5 py-3 border-b border-border">Order ID</th>
+                <th class="text-left px-5 py-3 border-b border-border">Customer</th>
+                <th class="text-left px-5 py-3 border-b border-border">Items</th>
+                <th class="text-left px-5 py-3 border-b border-border">Amount</th>
+                <th class="text-left px-5 py-3 border-b border-border">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -456,7 +446,7 @@ function stockClass(level: string) {
         <!-- Right column -->
         <div class="flex flex-col gap-4">
           <!-- Quick Actions -->
-          <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+          <div class="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-border">
               <h2 class="text-sm font-semibold flex items-center gap-2" style="color:#245c4a">
                 <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:#C5A059"></span>
@@ -475,7 +465,7 @@ function stockClass(level: string) {
                 ]"
                 :key="action.label"
                 :href="action.href"
-                class="flex flex-col gap-1.5 p-3 rounded-lg border border-border bg-white
+                class="flex flex-col gap-1.5 p-3 rounded-lg border border-border bg-card
                        text-decoration-none transition-all duration-150 cursor-pointer
                        hover:border-[#C5A059] hover:-translate-y-px"
                 style="text-decoration:none"
@@ -522,7 +512,7 @@ function stockClass(level: string) {
           </div>
 
           <!-- Stock Alerts -->
-          <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden flex-1">
+          <div class="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex-1">
             <div class="px-5 py-4 flex items-start justify-between border-b border-border">
               <div>
                 <h2 class="text-sm font-semibold flex items-center gap-2" style="color:#245c4a">
@@ -556,7 +546,7 @@ function stockClass(level: string) {
                 :key="item.id"
                 class="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 transition-colors cursor-pointer hover:bg-accent"
               >
-                <div class="w-8 h-8 rounded flex items-center justify-center text-base flex-shrink-0" style="background:hsl(0 0% 96.1%)">
+                <div class="w-8 h-8 rounded flex items-center justify-center text-base flex-shrink-0 bg-secondary">
                   {{ item.emoji ?? '📦' }}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -626,7 +616,7 @@ function stockClass(level: string) {
 
         <!-- Panel -->
         <div
-          class="relative w-full sm:max-w-lg bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden
+          class="relative w-full sm:max-w-lg bg-card rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden
                  max-h-[calc(100vh-2rem)] flex flex-col"
         >
           <!-- Header (fixed inside modal panel) -->

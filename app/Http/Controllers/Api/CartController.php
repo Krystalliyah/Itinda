@@ -76,6 +76,42 @@ class CartController extends Controller
             'quantity'   => 'required|integer|min:1',
         ]);
 
+        $tenant = Tenant::find($validated['store_id']);
+        if (!$tenant) {
+            return response()->json(['message' => 'Store not found'], 404);
+        }
+
+        $existingQty = Cart::where([
+            'user_id'    => auth()->id(),
+            'store_id'   => $validated['store_id'],
+            'product_id' => $validated['product_id'],
+        ])->value('quantity') ?? 0;
+
+        // Check stock in tenant database
+        $stockError = $tenant->run(function () use ($validated, $existingQty) {
+            $product = \App\Models\Product::find($validated['product_id']);
+            if (!$product) {
+                return 'Product not found';
+            }
+            if (!$product->is_active) {
+                return 'Product is currently unavailable';
+            }
+
+            if ($product->stock < ($existingQty + $validated['quantity'])) {
+                if ($existingQty > 0) {
+                    $remaining = $product->stock - $existingQty;
+                    return "Insufficient stock. You already have {$existingQty} in your cart. Only {$remaining} more can be added.";
+                }
+                return "Insufficient stock. Only {$product->stock} available.";
+            }
+
+            return null;
+        });
+
+        if ($stockError) {
+            return response()->json(['message' => $stockError], 422);
+        }
+
         $cart = Cart::where([
             'user_id'    => auth()->id(),
             'store_id'   => $validated['store_id'],
@@ -83,7 +119,6 @@ class CartController extends Controller
         ])->first();
 
         if ($cart) {
-            // Increment existing quantity
             $cart->increment('quantity', $validated['quantity']);
         } else {
             $cart = Cart::create([
@@ -110,6 +145,22 @@ class CartController extends Controller
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
         ]);
+
+        $tenant = Tenant::find($cart->store_id);
+        if ($tenant) {
+            $stockError = $tenant->run(function () use ($cart, $validated) {
+                $product = \App\Models\Product::find($cart->product_id);
+                if (!$product) return 'Product not found';
+                if ($product->stock < $validated['quantity']) {
+                    return "Insufficient stock. Only {$product->stock} available.";
+                }
+                return null;
+            });
+
+            if ($stockError) {
+                return response()->json(['message' => $stockError], 422);
+            }
+        }
 
         $cart->update($validated);
 

@@ -12,10 +12,8 @@ import {
     ClockIcon,
     TrashIcon,
     CheckIcon,
-    PlusIcon,
     BuildingStorefrontIcon,
     GlobeAltIcon,
-    XMarkIcon,
     CalendarIcon,
     Squares2X2Icon,
     TableCellsIcon,
@@ -47,7 +45,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const { isCollapsed } = useSidebar();
-const showCreateForm = ref(false);
 const viewMode = ref<'cards' | 'table'>('table');
 
 const showStoreDetailsModal = ref(false);
@@ -65,38 +62,16 @@ const contentClass = computed(() => ({
     'sidebar-collapsed': isCollapsed.value,
 }));
 
-const form = useForm({
-    name: '',
-    email: '',
-    subdomain: '',
-});
-
-const submit = () => {
-    form.post('/admin/vendors', {
-        onSuccess: () => {
-            form.reset();
-            showCreateForm.value = false;
-        },
-    });
-};
-
 const deleteVendor = (id: string) => {
     const tenant = props.tenants.data.find((t) => t.id === id);
-    if (!tenant) {
-        return;
-    }
-
+    if (!tenant) return;
     tenantToDelete.value = tenant;
     showDeleteModal.value = true;
 };
 
 const confirmDeleteVendor = () => {
-    if (!tenantToDelete.value) {
-        return;
-    }
-
+    if (!tenantToDelete.value) return;
     deleteProcessing.value = true;
-
     router.delete(`/admin/vendors/${tenantToDelete.value.id}`, {
         onFinish: () => {
             deleteProcessing.value = false;
@@ -118,7 +93,6 @@ const requestApproveVendor = (tenant: Tenant) => {
 
 const confirmApproveVendor = () => {
     if (!tenantToApprove.value) return;
-
     router.post(`/admin/vendors/${tenantToApprove.value.id}/approve`, {}, {
         onSuccess: () => {
             showApproveModal.value = false;
@@ -141,6 +115,9 @@ const pendingVendors = computed(() =>
 );
 
 const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
+
+const getInitials = (name: string) =>
+    name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 </script>
 
 <template>
@@ -154,68 +131,66 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
         <main :class="contentClass">
             <div class="page-container">
+
+                <!-- ── Page Header ── -->
                 <div class="page-header">
                     <div class="header-left">
                         <div class="page-title-wrapper">
-                            <div class="page-icon">
-                                <BuildingStorefrontIcon />
+                            <div class="page-icon-wrap">
+                                <BuildingStorefrontIcon class="page-icon-svg" />
                             </div>
                             <div>
                                 <h1 class="page-title">Vendor Management</h1>
-                                <p class="page-subtitle">Manage vendor stores and databases</p>
+                                <p class="page-subtitle">Manage vendor stores, approvals &amp; databases</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="header-right">
-                        <div class="stats-row">
-                            <div class="stat-box stat-total">
-                                <BuildingStorefrontIcon class="stat-icon" />
-                                <div class="stat-info">
-                                    <span class="stat-value">{{ totalVendors }}</span>
-                                    <span class="stat-label">Total</span>
-                                </div>
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-card-icon total-icon">
+                                <BuildingStorefrontIcon />
                             </div>
-                            <div class="stat-box stat-active">
-                                <CheckCircleIcon class="stat-icon" />
-                                <div class="stat-info">
-                                    <span class="stat-value">{{ approvedVendors.length }}</span>
-                                    <span class="stat-label">Active</span>
-                                </div>
-                            </div>
-                            <div class="stat-box stat-pending">
-                                <ClockIcon class="stat-icon" />
-                                <div class="stat-info">
-                                    <span class="stat-value">{{ pendingVendors.length }}</span>
-                                    <span class="stat-label">Pending</span>
-                                </div>
+                            <div class="stat-card-body">
+                                <span class="stat-card-value">{{ totalVendors }}</span>
+                                <span class="stat-card-label">Total</span>
                             </div>
                         </div>
-
+                        <div class="stat-card">
+                            <div class="stat-card-icon active-icon">
+                                <CheckCircleIcon />
+                            </div>
+                            <div class="stat-card-body">
+                                <span class="stat-card-value">{{ approvedVendors.length }}</span>
+                                <span class="stat-card-label">Active</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon pending-icon">
+                                <ClockIcon />
+                            </div>
+                            <div class="stat-card-body">
+                                <span class="stat-card-value">{{ pendingVendors.length }}</span>
+                                <span class="stat-card-label">Pending</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- ── Active Vendors ── -->
                 <div class="section-card">
                     <div class="section-header">
                         <div class="section-title-wrapper">
-                            <CheckCircleIcon class="section-icon active-icon" />
+                            <span class="section-accent active-accent"></span>
+                            <CheckCircleIcon class="section-icon active-section-icon" />
                             <h2 class="section-title">Active Vendors</h2>
                             <span class="section-badge active-badge">{{ approvedVendors.length }}</span>
                         </div>
-
                         <div class="view-toggle">
-                            <button
-                                @click="viewMode = 'table'"
-                                :class="['toggle-btn', { active: viewMode === 'table' }]"
-                                title="Table View"
-                            >
+                            <button @click="viewMode = 'table'" :class="['toggle-btn', { active: viewMode === 'table' }]" title="Table View">
                                 <TableCellsIcon class="toggle-icon" />
                             </button>
-                            <button
-                                @click="viewMode = 'cards'"
-                                :class="['toggle-btn', { active: viewMode === 'cards' }]"
-                                title="Card View"
-                            >
+                            <button @click="viewMode = 'cards'" :class="['toggle-btn', { active: viewMode === 'cards' }]" title="Card View">
                                 <Squares2X2Icon class="toggle-icon" />
                             </button>
                         </div>
@@ -233,12 +208,10 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="tenant in approvedVendors" :key="tenant.id">
+                                <tr v-for="tenant in approvedVendors" :key="tenant.id" class="table-row">
                                     <td>
                                         <div class="table-vendor-info">
-                                            <div class="table-avatar">
-                                                <BuildingStorefrontIcon />
-                                            </div>
+                                            <div class="table-avatar active-avatar">{{ getInitials(tenant.name) }}</div>
                                             <div>
                                                 <div class="table-vendor-name">{{ tenant.name }}</div>
                                                 <div class="table-vendor-email">{{ tenant.email }}</div>
@@ -246,36 +219,18 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                         </div>
                                     </td>
                                     <td>
-                                        <a
-                                            v-if="tenant.domains?.length"
-                                            :href="`http://${tenant.domains[0]?.domain}`"
-                                            target="_blank"
-                                            class="table-link"
-                                        >
+                                        <a v-if="tenant.domains?.length" :href="`http://${tenant.domains[0]?.domain}`" target="_blank" class="table-link">
                                             <GlobeAltIcon class="link-icon" />
                                             {{ tenant.domains[0]?.domain }}
                                         </a>
-                                        <span v-else class="table-muted">No domain</span>
+                                        <span v-else class="table-muted">—</span>
                                     </td>
-                                    <td>
-                                        <span class="table-db-badge">tenant{{ tenant.id }}</span>
-                                    </td>
-                                    <td class="table-muted">
-                                        {{ new Date(tenant.created_at).toLocaleDateString() }}
-                                    </td>
+                                    <td><span class="db-badge">tenant{{ tenant.id }}</span></td>
+                                    <td><span class="date-cell">{{ new Date(tenant.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span></td>
                                     <td>
                                         <div class="table-actions">
-                                            <button
-                                                @click="openStoreDetails(tenant)"
-                                                class="table-action-btn view"
-                                                title="View store details"
-                                            >
-                                                <EyeIcon class="action-icon" />
-                                            </button>
-
-                                            <button @click="deleteVendor(tenant.id)" class="table-action-btn delete">
-                                                <TrashIcon class="action-icon" />
-                                            </button>
+                                            <button @click="openStoreDetails(tenant)" class="action-btn view-action" data-tip="View details"><EyeIcon /></button>
+                                            <button @click="deleteVendor(tenant.id)" class="action-btn delete-action" data-tip="Delete vendor"><TrashIcon /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -285,82 +240,56 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
                     <div v-else-if="approvedVendors.length > 0 && viewMode === 'cards'" class="vendors-grid">
                         <div v-for="tenant in approvedVendors" :key="tenant.id" class="vendor-card active-card">
-                            <div class="card-header-row">
-                                <div class="card-avatar">
-                                    <BuildingStorefrontIcon />
-                                </div>
+                            <div class="card-top">
+                                <div class="card-avatar active-avatar">{{ getInitials(tenant.name) }}</div>
                                 <div class="card-info">
                                     <h3 class="card-name">{{ tenant.name }}</h3>
                                     <p class="card-email">{{ tenant.email }}</p>
                                 </div>
+                                <span class="status-dot active-dot"></span>
                             </div>
-
-                            <div class="card-details">
-                                <div class="detail-row">
-                                    <GlobeAltIcon class="detail-icon" />
-                                    <a
-                                        v-if="tenant.domains?.length"
-                                        :href="`http://${tenant.domains[0]?.domain}`"
-                                        target="_blank"
-                                        class="detail-link"
-                                    >
-                                        {{ tenant.domains[0]?.domain }}
-                                    </a>
-                                    <span v-else class="detail-text">No domain</span>
+                            <div class="card-meta">
+                                <div class="meta-row">
+                                    <GlobeAltIcon class="meta-icon" />
+                                    <a v-if="tenant.domains?.length" :href="`http://${tenant.domains[0]?.domain}`" target="_blank" class="meta-link">{{ tenant.domains[0]?.domain }}</a>
+                                    <span v-else class="meta-muted">No domain</span>
                                 </div>
-                                <div class="detail-row">
-                                    <CalendarIcon class="detail-icon" />
-                                    <span class="detail-text">{{ new Date(tenant.created_at).toLocaleDateString() }}</span>
+                                <div class="meta-row">
+                                    <CalendarIcon class="meta-icon" />
+                                    <span class="meta-muted">{{ new Date(tenant.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span>
                                 </div>
                             </div>
-
                             <div class="card-footer">
-                                <span class="db-badge-small">tenant{{ tenant.id }}</span>
+                                <span class="db-badge">tenant{{ tenant.id }}</span>
                                 <div class="card-actions">
-                                    <button
-                                        @click="openStoreDetails(tenant)"
-                                        class="card-action-btn view-btn"
-                                        title="View store details"
-                                    >
-                                        <EyeIcon class="action-icon" />
-                                    </button>
-
-                                    <button @click="deleteVendor(tenant.id)" class="card-action-btn delete-btn">
-                                        <TrashIcon class="action-icon" />
-                                    </button>
+                                    <button @click="openStoreDetails(tenant)" class="action-btn view-action"><EyeIcon /></button>
+                                    <button @click="deleteVendor(tenant.id)" class="action-btn delete-action"><TrashIcon /></button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div v-else class="empty-state">
-                        <CheckCircleIcon class="empty-icon" />
+                        <div class="empty-illustration"><BuildingStorefrontIcon class="empty-icon" /></div>
                         <p class="empty-text">No active vendors yet</p>
                         <p class="empty-hint">Approve pending vendors below to get started</p>
                     </div>
                 </div>
 
+                <!-- ── Pending Approval ── -->
                 <div class="section-card">
                     <div class="section-header">
                         <div class="section-title-wrapper">
-                            <ClockIcon class="section-icon pending-icon" />
+                            <span class="section-accent pending-accent"></span>
+                            <ClockIcon class="section-icon pending-section-icon" />
                             <h2 class="section-title">Pending Approval</h2>
                             <span class="section-badge pending-badge">{{ pendingVendors.length }}</span>
                         </div>
-
                         <div class="view-toggle">
-                            <button
-                                @click="viewMode = 'table'"
-                                :class="['toggle-btn', { active: viewMode === 'table' }]"
-                                title="Table View"
-                            >
+                            <button @click="viewMode = 'table'" :class="['toggle-btn', { active: viewMode === 'table' }]" title="Table View">
                                 <TableCellsIcon class="toggle-icon" />
                             </button>
-                            <button
-                                @click="viewMode = 'cards'"
-                                :class="['toggle-btn', { active: viewMode === 'cards' }]"
-                                title="Card View"
-                            >
+                            <button @click="viewMode = 'cards'" :class="['toggle-btn', { active: viewMode === 'cards' }]" title="Card View">
                                 <Squares2X2Icon class="toggle-icon" />
                             </button>
                         </div>
@@ -372,50 +301,30 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                                 <tr>
                                     <th>Vendor</th>
                                     <th>Domain</th>
+                                    <th>Database</th>
                                     <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="tenant in pendingVendors" :key="tenant.id" class="pending-row">
+                                <tr v-for="tenant in pendingVendors" :key="tenant.id" class="table-row">
                                     <td>
                                         <div class="table-vendor-info">
-                                            <div class="table-avatar pending">
-                                                <BuildingStorefrontIcon />
-                                            </div>
+                                            <div class="table-avatar pending-avatar">{{ getInitials(tenant.name) }}</div>
                                             <div>
                                                 <div class="table-vendor-name">{{ tenant.name }}</div>
                                                 <div class="table-vendor-email">{{ tenant.email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span class="table-muted">{{ tenant.domains?.[0]?.domain || 'No domain' }}</span>
-                                    </td>
-                                    <td class="table-muted">
-                                        {{ new Date(tenant.created_at).toLocaleDateString() }}
-                                    </td>
+                                    <td><span class="table-muted">{{ tenant.domains?.[0]?.domain || '—' }}</span></td>
+                                    <td><span class="db-badge pending-db">Not provisioned</span></td>
+                                    <td><span class="date-cell">{{ new Date(tenant.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span></td>
                                     <td>
                                         <div class="table-actions">
-                                            <button
-                                                @click="openStoreDetails(tenant)"
-                                                class="table-action-btn view"
-                                                title="View store details"
-                                            >
-                                                <EyeIcon class="action-icon" />
-                                            </button>
-
-                                            <button
-                                                @click="requestApproveVendor(tenant)"
-                                                class="table-action-btn approve"
-                                                title="Approve vendor"
-                                            >
-                                                <CheckIcon class="action-icon" />
-                                            </button>
-
-                                            <button @click="deleteVendor(tenant.id)" class="table-action-btn delete">
-                                                <TrashIcon class="action-icon" />
-                                            </button>
+                                            <button @click="openStoreDetails(tenant)" class="action-btn view-action" data-tip="View details"><EyeIcon /></button>
+                                            <button @click="requestApproveVendor(tenant)" class="action-btn approve-action" data-tip="Approve vendor"><CheckIcon /></button>
+                                            <button @click="deleteVendor(tenant.id)" class="action-btn delete-action" data-tip="Delete"><TrashIcon /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -425,75 +334,50 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 
                     <div v-else-if="pendingVendors.length > 0 && viewMode === 'cards'" class="vendors-grid">
                         <div v-for="tenant in pendingVendors" :key="tenant.id" class="vendor-card pending-card">
-                            <div class="card-header-row">
-                                <div class="card-avatar pending">
-                                    <BuildingStorefrontIcon />
-                                </div>
+                            <div class="card-top">
+                                <div class="card-avatar pending-avatar">{{ getInitials(tenant.name) }}</div>
                                 <div class="card-info">
                                     <h3 class="card-name">{{ tenant.name }}</h3>
                                     <p class="card-email">{{ tenant.email }}</p>
                                 </div>
+                                <span class="status-dot pending-dot"></span>
                             </div>
-
-                            <div class="card-details">
-                                <div class="detail-row">
-                                    <GlobeAltIcon class="detail-icon" />
-                                    <span class="detail-text">{{ tenant.domains?.[0]?.domain || 'No domain' }}</span>
+                            <div class="card-meta">
+                                <div class="meta-row">
+                                    <GlobeAltIcon class="meta-icon" />
+                                    <span class="meta-muted">{{ tenant.domains?.[0]?.domain || 'No domain' }}</span>
                                 </div>
-                                <div class="detail-row">
-                                    <CalendarIcon class="detail-icon" />
-                                    <span class="detail-text">{{ new Date(tenant.created_at).toLocaleDateString() }}</span>
+                                <div class="meta-row">
+                                    <CalendarIcon class="meta-icon" />
+                                    <span class="meta-muted">{{ new Date(tenant.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span>
                                 </div>
                             </div>
-
                             <div class="card-footer">
+                                <span class="db-badge pending-db">Not provisioned</span>
                                 <div class="card-actions">
-                                    <button
-                                        @click="openStoreDetails(tenant)"
-                                        class="card-action-btn view-btn"
-                                        title="View store details"
-                                    >
-                                        <EyeIcon class="action-icon" />
-                                    </button>
-
-                                    <button
-                                        @click="requestApproveVendor(tenant)"
-                                        class="card-action-btn approve-btn"
-                                        title="Approve vendor"
-                                    >
-                                        <CheckIcon class="action-icon" />
-                                    </button>
-
-                                    <button @click="deleteVendor(tenant.id)" class="card-action-btn delete-btn">
-                                        <TrashIcon class="action-icon" />
-                                    </button>
+                                    <button @click="openStoreDetails(tenant)" class="action-btn view-action"><EyeIcon /></button>
+                                    <button @click="requestApproveVendor(tenant)" class="action-btn approve-action"><CheckIcon /></button>
+                                    <button @click="deleteVendor(tenant.id)" class="action-btn delete-action"><TrashIcon /></button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div v-else class="empty-state">
-                        <ClockIcon class="empty-icon" />
+                        <div class="empty-illustration"><ClockIcon class="empty-icon" /></div>
                         <p class="empty-text">No pending vendors</p>
-                        <p class="empty-hint">All vendors have been reviewed</p>
+                        <p class="empty-hint">All vendor applications have been reviewed</p>
                     </div>
                 </div>
+
             </div>
 
-            <StoreDetailsModal
-                :open="showStoreDetailsModal"
-                :tenant="selectedTenant"
-                @update:open="showStoreDetailsModal = $event"
-            />
+            <StoreDetailsModal :open="showStoreDetailsModal" :tenant="selectedTenant" @update:open="showStoreDetailsModal = $event" />
 
             <ConfirmationModal
                 v-model:open="showApproveModal"
                 title="Confirm Vendor Approval"
-                :description="
-                    tenantToApprove
-                        ? `Approve ${tenantToApprove.name}? This will create their tenant database and enable vendor access.`
-                        : 'Approve this vendor? This will create their tenant database and enable vendor access.'
-                "
+                :description="tenantToApprove ? `Approve ${tenantToApprove.name}? This will create their tenant database and enable vendor access.` : 'Approve this vendor?'"
                 confirm-text="Approve Vendor"
                 cancel-text="Cancel"
                 variant="destructive"
@@ -503,18 +387,8 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
             <ConfirmationModal
                 v-model:open="showDeleteModal"
                 title="Delete Vendor"
-                :description="tenantToDelete
-                    ? tenantToDelete.is_approved
-                        ? `Delete ${tenantToDelete.name} and its tenant database permanently?`
-                        : `Delete ${tenantToDelete.name}? This vendor has not been approved yet and no tenant database exists.`
-                    : 'Delete this vendor?'
-                "
-                :details="tenantToDelete
-                    ? tenantToDelete.is_approved
-                        ? `Tenant ID: ${tenantToDelete.id}. This action cannot be undone and will remove the tenant database.`
-                        : `Vendor ID: ${tenantToDelete.id}. The tenant database has not been created yet.`
-                    : 'This action cannot be undone.'
-                "
+                :description="tenantToDelete ? (tenantToDelete.is_approved ? `Delete ${tenantToDelete.name} and its tenant database permanently?` : `Delete ${tenantToDelete.name}? No tenant database exists yet.`) : 'Delete this vendor?'"
+                :details="tenantToDelete ? (tenantToDelete.is_approved ? `Tenant ID: ${tenantToDelete.id}. This action cannot be undone.` : `Vendor ID: ${tenantToDelete.id}. The database has not been created yet.`) : 'This action cannot be undone.'"
                 confirm-text="Delete Vendor"
                 cancel-text="Cancel"
                 variant="destructive"
@@ -527,609 +401,423 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap');
 
-* {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
+* { font-family: 'DM Sans', sans-serif; }
 
+/* ── Layout ── */
 .page-container {
-    padding: 2rem;
+    padding: 2rem 2.5rem;
     background: var(--background);
     min-height: 100vh;
 }
 
+/* ── Page Header ── */
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 2rem;
     margin-bottom: 2rem;
     flex-wrap: wrap;
 }
 
-.header-left {
-    flex: 1;
-    min-width: 300px;
-}
-
 .page-title-wrapper {
     display: flex;
+    align-items: center;
     gap: 1rem;
-    align-items: flex-start;
 }
 
-.page-icon {
-    width: 48px;
-    height: 48px;
+.page-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--brand-green) 0%, color-mix(in srgb, var(--brand-green) 60%, #000) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--muted-foreground);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 35%, transparent);
     flex-shrink: 0;
 }
 
-.page-icon svg {
-    width: 32px;
-    height: 32px;
+.page-icon-svg {
+    width: 26px;
+    height: 26px;
+    color: var(--primary-foreground);
 }
 
 .page-title {
-    font-size: 1.75rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: var(--brand-green-dark);
-    margin: 0 0 0.25rem 0;
+    color: var(--foreground);
+    margin: 0 0 0.2rem 0;
+    letter-spacing: -0.025em;
 }
 
 .page-subtitle {
-    font-size: 0.95rem;
-    color: var(--brand-muted);
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
     margin: 0;
 }
 
-.header-right {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
+/* ── Stat Cards ── */
 .stats-row {
     display: flex;
     gap: 0.75rem;
 }
 
-.stat-box {
+.stat-card {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
+    gap: 0.875rem;
+    padding: 0.875rem 1.125rem;
     background: var(--card);
     border: 1px solid var(--border);
+    border-radius: 12px;
+    min-width: 120px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s, transform 0.2s;
 }
 
-.stat-icon {
-    width: 20px;
-    height: 20px;
-    color: var(--muted-foreground);
+.stat-card:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+
+.stat-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
 }
+.stat-card-icon svg { width: 17px; height: 17px; }
 
-.stat-info {
-    display: flex;
-    flex-direction: column;
-}
+.total-icon   { background: color-mix(in srgb, var(--muted-foreground) 10%, transparent); color: var(--muted-foreground); }
+.active-icon  { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.pending-icon { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
 
-.stat-value {
+.stat-card-body { display: flex; flex-direction: column; }
+
+.stat-card-value {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--foreground);
     line-height: 1;
+    letter-spacing: -0.025em;
 }
 
-.stat-label {
-    font-size: 0.75rem;
+.stat-card-label {
+    font-size: 0.68rem;
     color: var(--muted-foreground);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
+    margin-top: 0.2rem;
 }
 
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-primary:hover {
-    opacity: 0.9;
-}
-
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--card);
-    color: var(--muted-foreground);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-secondary:hover {
-    border-color: var(--muted-foreground);
-    color: var(--foreground);
-}
-
-.btn-icon {
-    width: 18px;
-    height: 18px;
-}
-
-.create-card {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border: 1px solid var(--border);
-}
-
-.create-header {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.create-icon {
-    width: 24px;
-    height: 24px;
-    color: var(--muted-foreground);
-    flex-shrink: 0;
-}
-
-.create-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--foreground);
-    margin: 0 0 0.25rem 0;
-}
-
-.create-subtitle {
-    font-size: 0.9rem;
-    color: var(--muted-foreground);
-    margin: 0;
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.field-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--foreground);
-}
-
-.field-input {
-    padding: 0.75rem 1rem;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    color: var(--foreground);
-    background: var(--input);
-    transition: all 0.2s;
-}
-
-.field-input:focus {
-    outline: none;
-    border-color: var(--ring);
-    background: var(--card);
-    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.12);
-}
-
-.subdomain-preview {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.85rem;
-    color: var(--muted-foreground);
-    font-weight: 500;
-}
-
-.preview-icon {
-    width: 16px;
-    height: 16px;
-    color: var(--muted-foreground);
-}
-
-.field-error {
-    font-size: 0.8rem;
-    color: #ef4444;
-    font-weight: 500;
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
+/* ── Section Cards ── */
 .section-card {
     background: var(--card);
     border-radius: 16px;
-    padding: 2rem;
-    margin-bottom: 2rem;
     border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
 }
 
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    padding: 1.125rem 1.5rem;
     border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--secondary) 50%, var(--card));
 }
 
 .section-title-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.625rem;
 }
 
-.section-icon {
-    width: 20px;
-    height: 20px;
-    color: var(--muted-foreground);
+.section-accent {
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    flex-shrink: 0;
 }
+.active-accent  { background: linear-gradient(180deg, #10b981, #34d399); }
+.pending-accent { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
+
+.section-icon { width: 17px; height: 17px; }
+.active-section-icon  { color: #10b981; }
+.pending-section-icon { color: #f59e0b; }
 
 .section-title {
-    font-size: 1.25rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--foreground);
     margin: 0;
+    letter-spacing: -0.01em;
 }
 
 .section-badge {
-    padding: 0.25rem 0.75rem;
+    padding: 0.18rem 0.6rem;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    background: var(--secondary);
-    color: var(--muted-foreground);
 }
+.active-badge  { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.pending-badge { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
 
+/* ── View Toggle ── */
 .view-toggle {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.2rem;
     background: var(--secondary);
-    padding: 0.25rem;
+    padding: 0.2rem;
     border-radius: 8px;
+    border: 1px solid var(--border);
 }
 
 .toggle-btn {
-    padding: 0.5rem;
+    padding: 0.35rem;
     background: transparent;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
     color: var(--muted-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+.toggle-btn:hover { color: var(--foreground); background: var(--accent); }
+.toggle-btn.active { background: var(--card); color: var(--foreground); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.toggle-icon { width: 15px; height: 15px; }
 
-.toggle-btn:hover {
-    background: var(--accent);
-    color: var(--foreground);
-}
-
-.toggle-btn.active {
-    background: var(--card);
-    color: var(--foreground);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.toggle-icon {
-    width: 20px;
-    height: 20px;
-}
-
-/* Find and update the .table-container rule */
+/* ── Table ── */
 .table-container {
     overflow-x: auto;
     width: 100%;
     -webkit-overflow-scrolling: touch;
-    position: relative;
-}
-
-.table-container::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 30px;
-    background: linear-gradient(to right, transparent, var(--card));
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
 }
 
 .vendors-table {
-    min-width: 800px;
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
 }
 
 .vendors-table thead th {
     text-align: left;
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
+    padding: 0.7rem 1.25rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--muted-foreground);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: var(--secondary);
+    letter-spacing: 0.08em;
     border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--secondary) 40%, var(--card));
+    white-space: nowrap;
 }
 
 .vendors-table tbody td {
-    padding: 1rem;
+    padding: 0.875rem 1.25rem;
     border-bottom: 1px solid var(--border);
-    color: var(--foreground);
+    vertical-align: middle;
 }
+.vendors-table tbody tr:last-child td { border-bottom: none; }
 
-.vendors-table tbody tr:hover {
-    background: var(--accent);
-}
+.table-row { transition: background 0.12s; }
+.table-row:hover { background: color-mix(in srgb, var(--accent) 70%, transparent); }
 
-.pending-row {
-    background: rgba(120, 53, 15, 0.08);
-}
-
-.pending-row:hover {
-    background: rgba(120, 53, 15, 0.15) !important;
-}
-
-.table-vendor-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.table-avatar {
-    width: 40px;
-    height: 40px;
-    background: var(--secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+/* ── Avatars ── */
+.table-avatar,
+.card-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 700;
     flex-shrink: 0;
+    letter-spacing: 0.03em;
 }
 
-.table-avatar.pending {
-    background: rgba(120, 53, 15, 0.15);
-    border-color: rgba(245, 158, 11, 0.4);
+.active-avatar {
+    background: linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.07) 100%);
+    color: #059669;
+    border: 1px solid rgba(16,185,129,0.22);
 }
 
-.table-avatar svg {
-    width: 20px;
-    height: 20px;
+.pending-avatar {
+    background: linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.07) 100%);
+    color: #b45309;
+    border: 1px solid rgba(245,158,11,0.25);
 }
 
-.table-vendor-name {
-    font-weight: 600;
-    color: var(--foreground);
-    font-size: 0.95rem;
-}
-
-.table-vendor-email {
-    font-size: 0.85rem;
-    color: var(--muted-foreground);
-}
+.table-vendor-info { display: flex; align-items: center; gap: 0.75rem; }
+.table-vendor-name { font-weight: 600; color: var(--foreground); font-size: 0.875rem; }
+.table-vendor-email { font-size: 0.775rem; color: var(--muted-foreground); margin-top: 0.1rem; }
 
 .table-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    color: #60a5fa;
+    gap: 0.35rem;
+    color: #3b82f6;
     text-decoration: none;
+    font-size: 0.85rem;
     font-weight: 500;
-    font-size: 0.9rem;
+    transition: color 0.15s;
 }
+.table-link:hover { color: #60a5fa; }
+.link-icon { width: 13px; height: 13px; flex-shrink: 0; }
 
-.table-link:hover {
-    color: #93c5fd;
-    text-decoration: underline;
-}
+.table-muted { color: var(--muted-foreground); font-size: 0.85rem; }
 
-.link-icon {
-    width: 16px;
-    height: 16px;
-}
-
-.table-muted {
+.date-cell {
     color: var(--muted-foreground);
-    font-size: 0.9rem;
+    font-size: 0.825rem;
 }
 
-.table-db-badge {
-    padding: 0.25rem 0.75rem;
-    background: var(--secondary);
+/* ── DB Badges ── */
+.db-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    background: color-mix(in srgb, var(--muted-foreground) 8%, transparent);
     color: var(--muted-foreground);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    font-family: 'Courier New', monospace;
+    white-space: nowrap;
 }
 
-.table-actions {
+.db-badge.pending-db {
+    font-family: 'DM Sans', sans-serif;
+    font-style: italic;
+    font-size: 0.75rem;
+    background: rgba(245,158,11,0.08);
+    color: #d97706;
+    border-color: rgba(245,158,11,0.25);
+}
+
+/* ── Action Buttons ── */
+.table-actions, .card-actions {
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-.table-action-btn {
-    width: 32px;
-    height: 32px;
+.action-btn {
+    position: relative;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
-    border-radius: 6px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
+    background: var(--card);
 }
+.action-btn svg { width: 14px; height: 14px; }
 
-.table-action-btn.view {
-    background: var(--secondary);
-    color: #60a5fa;
-    border: 1px solid var(--border);
+/* Tooltip */
+.action-btn[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--foreground);
+    color: var(--background);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.22rem 0.5rem;
+    border-radius: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 20;
 }
+.action-btn[data-tip]:hover::after { opacity: 1; }
 
-.table-action-btn.view:hover {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
+.view-action    { color: #3b82f6; }
+.approve-action { color: #10b981; }
+.delete-action  { color: #f87171; }
 
-.table-action-btn.approve {
-    background: var(--secondary);
-    color: #34d399;
-    border: 1px solid var(--border);
-}
+.view-action:hover    { background: #3b82f6; color: #fff; border-color: #3b82f6; box-shadow: 0 3px 8px rgba(59,130,246,0.28); }
+.approve-action:hover { background: #10b981; color: #fff; border-color: #10b981; box-shadow: 0 3px 8px rgba(16,185,129,0.28); }
+.delete-action:hover  { background: #ef4444; color: #fff; border-color: #ef4444; box-shadow: 0 3px 8px rgba(239,68,68,0.28); }
 
-.table-action-btn.approve:hover {
-    background: #10b981;
-    color: white;
-    border-color: #10b981;
-}
-
-.table-action-btn.delete {
-    background: var(--secondary);
-    color: #f87171;
-    border: 1px solid var(--border);
-}
-
-.table-action-btn.delete:hover {
-    background: #ef4444;
-    color: white;
-    border-color: #ef4444;
-}
-
-.action-icon {
-    width: 16px;
-    height: 16px;
-}
-
+/* ── Card Grid ── */
 .vendors-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
     gap: 1rem;
+    padding: 1.25rem;
 }
 
 .vendor-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 13px;
     padding: 1.25rem;
-    transition: all 0.2s;
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
 }
+
+/* top color bar */
+.vendor-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+}
+.active-card::before  { background: linear-gradient(90deg, #10b981, #6ee7b7); }
+.pending-card::before { background: linear-gradient(90deg, #f59e0b, #fde68a); }
 
 .vendor-card:hover {
-    border-color: var(--muted-foreground);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.09);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--muted-foreground) 25%, transparent);
 }
 
-.active-card {
-    border-left: 2px solid var(--muted-foreground);
-}
-
-.pending-card {
-    border-left: 2px solid #f59e0b;
-    background: rgba(120, 53, 15, 0.08);
-}
-
-.card-header-row {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.card-avatar {
-    width: 40px;
-    height: 40px;
-    background: var(--secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+.card-top {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--muted-foreground);
-    flex-shrink: 0;
+    gap: 0.75rem;
+    margin-bottom: 0.875rem;
 }
 
-.card-avatar.pending {
-    background: rgba(120, 53, 15, 0.15);
-    border-color: rgba(245, 158, 11, 0.4);
-}
+.card-avatar { width: 40px; height: 40px; font-size: 0.8rem; }
 
-.card-avatar svg {
-    width: 20px;
-    height: 20px;
-}
-
-.card-info {
-    flex: 1;
-    min-width: 0;
-}
+.card-info { flex: 1; min-width: 0; }
 
 .card-name {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--foreground);
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.12rem 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: -0.01em;
 }
 
 .card-email {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--muted-foreground);
     margin: 0;
     white-space: nowrap;
@@ -1137,218 +825,125 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     text-overflow: ellipsis;
 }
 
-.card-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: var(--secondary);
-    border-radius: 6px;
-}
-
-.detail-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-}
-
-.detail-icon {
-    width: 14px;
-    height: 14px;
-    color: var(--muted-foreground);
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
     flex-shrink: 0;
 }
+.active-dot  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+.pending-dot { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
 
-.detail-link {
-    color: #60a5fa;
-    text-decoration: none;
-    font-weight: 500;
+.card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.7rem 0.875rem;
+    background: color-mix(in srgb, var(--secondary) 60%, transparent);
+    border-radius: 8px;
+    margin-bottom: 0.875rem;
+    border: 1px solid var(--border);
 }
 
-.detail-link:hover {
-    color: #93c5fd;
-    text-decoration: underline;
-}
-
-.detail-text {
-    color: var(--muted-foreground);
-}
+.meta-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; }
+.meta-icon { width: 12px; height: 12px; color: var(--muted-foreground); flex-shrink: 0; }
+.meta-link { color: #3b82f6; text-decoration: none; font-weight: 500; }
+.meta-link:hover { color: #60a5fa; }
+.meta-muted { color: var(--muted-foreground); }
 
 .card-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
 }
 
-.card-actions {
+/* ── Empty State ── */
+.empty-state {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    gap: 0.4rem;
 }
 
-.db-badge-small {
-    padding: 0.25rem 0.5rem;
-    background: var(--secondary);
-    color: var(--muted-foreground);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    font-family: 'Courier New', monospace;
-}
-
-.card-action-btn {
-    width: 32px;
-    height: 32px;
+.empty-illustration {
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--border) 35%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
+    margin-bottom: 0.75rem;
 }
 
-.view-btn {
-    background: var(--secondary);
-    color: #60a5fa;
-    border: 1px solid var(--border);
-}
+.empty-icon { width: 32px; height: 32px; color: var(--muted-foreground); opacity: 0.45; }
+.empty-text { font-size: 0.95rem; font-weight: 600; color: var(--foreground); margin: 0; }
+.empty-hint { font-size: 0.825rem; color: var(--muted-foreground); margin: 0; }
 
-.view-btn:hover {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
-
-.approve-btn {
-    background: var(--secondary);
-    color: #34d399;
-    border: 1px solid var(--border);
-}
-
-.approve-btn:hover {
-    background: #10b981;
-    color: white;
-    border-color: #10b981;
-}
-
-.delete-btn {
-    background: var(--secondary);
-    color: #f87171;
-    border: 1px solid var(--border);
-}
-
-.delete-btn:hover {
-    background: #ef4444;
-    color: white;
-    border-color: #ef4444;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 3rem 1rem;
-}
-
-.empty-icon {
-    width: 64px;
-    height: 64px;
-    color: var(--border);
-    margin: 0 auto 1rem;
-}
-
-.empty-text {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--foreground);
-    margin: 0 0 0.5rem 0;
-}
-
-.empty-hint {
-    font-size: 0.9rem;
-    color: var(--muted-foreground);
-    margin: 0;
-}
-
-.slide-fade-enter-active {
-    transition: all 0.3s ease-out;
-}
-
-.slide-fade-leave-active {
-    transition: all 0.2s ease-in;
-}
-
-.slide-fade-enter-from {
-    transform: translateY(-20px);
-    opacity: 0;
-}
-
-.slide-fade-leave-to {
-    transform: translateY(-10px);
-    opacity: 0;
-}
-
+/* ── Responsive ── */
 @media (max-width: 1024px) {
-    .stats-row {
-        display: none;
-    }
+    .stats-row { gap: 0.5rem; }
 }
 
 @media (max-width: 768px) {
-    .page-container {
-        padding: 1.25rem 1rem;
-    }
-    .page-header {
-        flex-direction: column;
-    }
-
-    .header-right {
-        width: 100%;
-        justify-content: stretch;
-    }
-    
-    .table-container {
-        margin: 0 -0.5rem;
-        padding: 0 0.5rem;
-    }
-    
-    .table-container::after {
-        opacity: 1;
-    }
-
-    .btn-primary {
-        flex: 1;
-        justify-content: center;
-    }
-
-    .vendors-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
+    .page-container { padding: 1.25rem 1rem; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .stats-row { width: 100%; }
+    .stat-card { flex: 1; min-width: unset; }
+    .section-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; padding: 1rem; }
+    .vendors-grid { padding: 1rem; grid-template-columns: 1fr; }
 }
 
-/* ── Dark mode — only exceptions tokens can't handle alone ── */
-:global(.dark) .page-title    { color: var(--foreground); }
-:global(.dark) .page-subtitle { color: var(--muted-foreground); }
+/* ── Dark mode ── */
+:global(.dark) .active-avatar   { background: rgba(16,185,129,0.15);  color: #34d399; border-color: rgba(16,185,129,0.25); }
+:global(.dark) .pending-avatar  { background: rgba(245,158,11,0.15);  color: #fbbf24; border-color: rgba(245,158,11,0.28); }
+:global(.dark) .db-badge.pending-db { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.28); }
+:global(.dark) .active-badge    { background: rgba(16,185,129,0.15);  color: #34d399; }
+:global(.dark) .pending-badge   { background: rgba(245,158,11,0.15);  color: #fbbf24; }
+:global(.dark) .vendor-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.35); }
+:global(.dark) .page-header h1 { color: var(--foreground); }
+:global(.dark) .page-header p { color: var(--muted-foreground); }
 
-/* pending-row needs a different tint in dark vs light */
-:global(.dark) .pending-row         { background: rgba(120, 53, 15, 0.15) !important; }
-:global(.dark) .pending-row:hover   { background: rgba(120, 53, 15, 0.25) !important; }
-:global(.dark) .pending-card        { background: rgba(120, 53, 15, 0.12); }
-:global(.dark) .table-avatar.pending { background: rgba(120, 53, 15, 0.2); border-color: rgba(245, 158, 11, 0.4); }
-:global(.dark) .card-avatar.pending  { background: rgba(120, 53, 15, 0.2); border-color: rgba(245, 158, 11, 0.4); }
+:global(.dark) .stat-card {
+    background: var(--card);
+    border-color: var(--border);
+}
 
-/* active-icon / pending-icon semantic colors */
-:global(.dark) .active-icon  { color: #34d399; }
-:global(.dark) .pending-icon { color: #fbbf24; }
-:global(.dark) .active-badge { background: rgba(6,95,70,0.3);   color: #6ee7b7; }
-:global(.dark) .pending-badge { background: rgba(120,53,15,0.3); color: #fde68a; }
+:global(.dark) .stat-label { color: var(--muted-foreground); }
+:global(.dark) .stat-value { color: var(--foreground); }
+
+:global(.dark) .vendors-section {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .section-header {
+    background: var(--accent);
+    border-bottom-color: var(--border);
+}
+
+:global(.dark) .section-title { color: var(--foreground); }
+
+:global(.dark) .vendor-row { border-bottom-color: var(--border); }
+:global(.dark) .vendor-row:hover { background: var(--accent); }
+
+:global(.dark) .vendor-name { color: var(--foreground); }
+:global(.dark) .vendor-metadata { color: var(--muted-foreground); }
+
+:global(.dark) .status-pill.active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+:global(.dark) .status-pill.pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+:global(.dark) .approve-btn {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+:global(.dark) .approve-btn:hover {
+    background: rgba(16, 185, 129, 0.35);
+}
+
+:global(.dark) .empty-state h3 { color: var(--foreground); }
+:global(.dark) .empty-state p { color: var(--muted-foreground); }
 </style>

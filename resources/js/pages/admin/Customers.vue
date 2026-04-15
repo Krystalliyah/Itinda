@@ -623,4 +623,43 @@ tr:hover td {
 /* ── Dark mode — only exceptions tokens can't handle ── */
 :global(.dark) .page-header h1 { color: var(--foreground); }
 :global(.dark) .page-header p  { color: var(--muted-foreground); }
+:global(.dark) .page-header h1 { color: var(--foreground); }
+:global(.dark) .page-header p { color: var(--muted-foreground); }
+
+:global(.dark) .stat-card {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .stat-label { color: var(--muted-foreground); }
+:global(.dark) .stat-value { color: var(--foreground); }
+
+:global(.dark) .customers-section {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .section-header {
+    background: var(--accent);
+    border-bottom-color: var(--border);
+}
+
+:global(.dark) .section-title { color: var(--foreground); }
+
+:global(.dark) .customer-row { border-bottom-color: var(--border); }
+:global(.dark) .customer-row:hover { background: var(--accent); }
+
+:global(.dark) .customer-name { color: var(--foreground); }
+:global(.dark) .customer-email { color: var(--muted-foreground); }
+:global(.dark) .meta-label { color: var(--muted-foreground); }
+:global(.dark) .meta-value { color: var(--foreground); }
+
+:global(.dark) .status-pill.verified { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+:global(.dark) .status-pill.pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+:global(.dark) .avatar { background: var(--accent); color: var(--foreground); }
+:global(.dark) .avatar-text { color: var(--brand-gold); }
+
+:global(.dark) .empty-state h3 { color: var(--foreground); }
+:global(.dark) .empty-state p { color: var(--muted-foreground); }
 </style>

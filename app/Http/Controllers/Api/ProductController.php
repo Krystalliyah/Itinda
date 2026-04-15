@@ -21,12 +21,23 @@ class ProductController extends Controller
             return null;
         }
 
-        // Check if we're using S3
-        if (config('filesystems.default') === 's3') {
+        // If it's already a full URL (e.g. already resolved), return as-is
+        if (str_starts_with($product->image_path, 'http')) {
+            return $product->image_path;
+        }
+
+        // Always check local public disk first — this handles seeded/dev images
+        // that were never uploaded to S3
+        if (Storage::disk('public')->exists($product->image_path)) {
+            return Storage::disk('public')->url($product->image_path);
+        }
+
+        // File not local — try S3 if configured
+        if (config('filesystems.default') === 's3' || config('filesystems.cloud') === 's3') {
             return Storage::disk('s3')->url($product->image_path);
         }
 
-        // Fallback to local storage
+        // Final fallback to local asset helper
         return asset('storage/' . $product->image_path);
     }
 
