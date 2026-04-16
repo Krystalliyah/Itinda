@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\StoreResource;
+use App\Models\Store;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
 
@@ -91,4 +92,14 @@ class StoreController extends Controller
             'data' => $products
         ]);
     }
+
+
+    // In StoreController.php
+public function getStoresData()
+{
+    $stores = Store::select('id', 'name', 'address', 'phone', 'hours', 'is_open as isOpen', 'logo', 'cover')
+        ->get();
+    
+    return response()->json(['data' => $stores]);
+}
 }

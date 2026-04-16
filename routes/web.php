@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -12,14 +14,75 @@ Route::domain(config('app.domain'))->group(function () {
             return redirect()->route('dashboard');
         }
 
+        $tenants = Tenant::where('is_approved', true)->get();
+
+        $openStoresCollection = $tenants->filter(function ($tenant) {
+            $hours = $tenant->operating_hours;
+
+            if (empty($hours) || ! is_array($hours)) {
+                return false;
+            }
+
+            $now        = now();
+            $currentDay = strtolower($now->format('l'));
+            $schedule   = $hours[$currentDay] ?? null;
+
+            if (! $schedule || empty($schedule['is_open'])) {
+                return false;
+            }
+
+            $open  = $schedule['open_time'] ?? null;
+            $close = $schedule['close_time'] ?? null;
+
+            if (! $open || ! $close) {
+                return false;
+            }
+
+            $current = $now->format('H:i');
+
+            return $current >= $open && $current <= $close;
+        });
+
+        $openStoreCount = $openStoresCollection->count();
+
+        $openStoresData = $openStoresCollection->take(3)->map(function($t) {
+            $products = [];
+            try {
+                $t->run(function () use (&$products) {
+                    $products = \App\Models\Product::where('is_active', true)
+                        ->latest()
+                        ->take(4)
+                        ->get(['id', 'name', 'price'])
+                        ->toArray();
+                });
+            } catch (\Exception $e) {
+                // Ignore missing DBs in demo data
+            }
+
+            return [
+                'id' => $t->id,
+                'name' => $t->name ?? 'Unnamed Store',
+                'address' => $t->address ?? 'No address provided',
+                'phone' => $t->phone ?? '',
+                'hours' => 'Open Today', 
+                'isOpen' => true,
+                'logo' => $t->data['logo'] ?? null,
+                'cover' => $t->data['cover'] ?? null,
+                'products' => $products,
+            ];
+        })->values()->all();
+
         return Inertia::render('Welcome', [
-            'canRegister' => Features::enabled(Features::registration()),
+            'canRegister'    => Features::enabled(Features::registration()),
+            'vendorCount'    => $tenants->count(),
+            'customerCount'  => User::role('customer')->count(),
+            'openStoreCount' => $openStoreCount,
+            'openStores'     => $openStoresData,
         ]);
     })->name('home');
 
     Route::middleware(['auth'])->get('/dashboard', function () {
         $user = auth()->user();
-        $justLoggedIn = request()->session()->get('just_logged_in', false);
 
         if ($user->hasRole('admin')) {
             return redirect()->route('admin.dashboard');
