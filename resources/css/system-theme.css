@@ -1,0 +1,313 @@
+/* ================================================================
+   DASHBOARD THEME — Consolidated Styles
+   Includes Layout, Dark Mode, and Bridge Overrides
+   ================================================================ */
+
+:root {
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 78px;
+}
+
+/* ── Layout (formerly dashboard.css) ─────────────────────────── */
+.dashboard-wrapper {
+    min-height: 100vh;
+    background: var(--background);
+}
+
+.dashboard-content {
+    margin-left: var(--sidebar-width);
+    margin-top: 64px;
+    padding: 32px;
+    background: var(--background);
+    transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+        padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 0;
+}
+
+.dashboard-content.sidebar-collapsed {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+@media (max-width: 1023px) {
+    .dashboard-content {
+        padding: 24px 20px;
+    }
+}
+
+@media (max-width: 767px) {
+
+    .dashboard-content,
+    .dashboard-content.sidebar-collapsed {
+        margin-left: 0;
+        padding: 20px 16px;
+    }
+}
+
+.dashboard-content h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    color: var(--brand-green-dark);
+    margin-bottom: 10px;
+}
+
+.dark .dashboard-content h1 {
+    color: var(--foreground);
+}
+
+.dashboard-content p {
+    color: var(--muted-foreground);
+}
+
+/* ── Sidebar & Components (formerly dark-theme.css) ────────── */
+
+/* App shell overrides */
+.dark .app-header {
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+}
+
+.dark .header-title {
+    color: var(--foreground);
+}
+
+.dark .user-name {
+    color: var(--foreground);
+}
+
+.dark .menu-toggle svg {
+    color: var(--brand-gold);
+    stroke: var(--brand-gold);
+}
+
+.dark .user-avatar {
+    background: var(--brand-gold);
+    color: var(--sidebar-background);
+}
+
+/* Sidebar */
+.dark .sidebar {
+    background: var(--sidebar-background);
+    border-right: 1px solid var(--sidebar-border);
+}
+
+.dark .sidebar-header {
+    border-bottom-color: var(--sidebar-border);
+}
+
+.dark .sidebar-footer {
+    border-top-color: var(--sidebar-border);
+}
+
+.dark .sidebar-logo {
+    background: var(--sidebar-accent);
+}
+
+.dark .sidebar-logo svg {
+    color: var(--sidebar-accent-foreground);
+}
+
+.dark .sidebar-title {
+    color: #ffffff;
+}
+
+.dark .sidebar-nav-item,
+.dark .sidebar .menu-item {
+    color: var(--sidebar-foreground);
+}
+
+.dark .sidebar-nav-item:hover,
+.dark .sidebar .menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.dark .sidebar-nav-item.active,
+.dark .sidebar .menu-item.active {
+    background: var(--sidebar-primary);
+    color: #ffffff;
+}
+
+/* ── Sidebar Collapse Logic (Theme Bridge) ─────────────────── */
+.sidebar.collapsed .sidebar-title,
+.sidebar.collapsed .menu-text,
+.sidebar.collapsed .sidebar-nav-label {
+    display: none !important;
+    opacity: 0 !important;
+}
+
+.sidebar.collapsed .menu-item,
+.sidebar.collapsed .sidebar-nav-item {
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    margin: 4px auto !important;
+}
+
+/* Tooltips for collapsed items */
+.sidebar.collapsed .menu-item:hover::after,
+.sidebar.collapsed .sidebar-nav-item:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--brand-green-dark);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+/* ── Modal & Overlay Fixes ────────────────────────────────── */
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: none !important;
+    z-index: 50;
+}
+
+.modal-content {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Adjust fixed elements to not be covered by sidebar */
+@media (min-width: 768px) {
+    .fixed-adjust-sidebar {
+        left: var(--sidebar-width) !important;
+    }
+
+    .sidebar.collapsed~.fixed-adjust-sidebar,
+    body:has(.sidebar.collapsed) .fixed-adjust-sidebar {
+        left: var(--sidebar-collapsed-width) !important;
+    }
+}
+
+/* ── Surface & Color Correction (Hardcoded Overrides) ──────── */
+
+/* Force card backgrounds on white surfaces in dark mode */
+.dark .bg-white {
+    background-color: var(--card) !important;
+    color: var(--card-foreground) !important;
+}
+
+/* Correct hardcoded brand colors to match theme */
+[class*="text-[#183D34]"],
+[class*="text-[#1E4138]"],
+[class*="text-[#245C4A]"] {
+    color: var(--brand-green-dark);
+}
+
+.dark [class*="text-[#183D34]"],
+.dark [class*="text-[#1E4138]"],
+.dark [class*="text-[#245C4A]"] {
+    color: var(--foreground) !important;
+}
+
+/* Badge colors */
+.dark .bg-amber-100,
+.dark .bg-amber-50 {
+    background-color: rgba(120, 53, 15, 0.4) !important;
+    color: #fde68a !important;
+}
+
+.dark .bg-green-100,
+.dark .bg-green-50 {
+    background-color: rgba(6, 95, 70, 0.4) !important;
+    color: #6ee7b7 !important;
+}
+
+.dark .bg-red-100,
+.dark .bg-red-50 {
+    background-color: rgba(127, 29, 29, 0.4) !important;
+    color: #fca5a5 !important;
+}
+
+.dark .bg-blue-100,
+.dark .bg-blue-50 {
+    background-color: rgba(30, 58, 138, 0.4) !important;
+    color: #93c5fd !important;
+}
+
+/* ── Tables (Enhanced Dark Mode) ─────────────────────────── */
+.dark table {
+    background-color: var(--card);
+}
+
+.dark thead tr {
+    background-color: var(--secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.dark th {
+    background-color: var(--secondary) !important;
+    color: var(--muted-foreground) !important;
+}
+
+.dark td {
+    border-color: var(--border) !important;
+    color: var(--card-foreground) !important;
+}
+
+.dark tr:hover td {
+    background-color: var(--accent) !important;
+}
+
+/* ── Form Inputs ─────────────────────────────────────────── */
+.dark input,
+.dark textarea,
+.dark select {
+    background-color: var(--input) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border) !important;
+}
+
+.dark input::placeholder {
+    color: var(--muted-foreground) !important;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: var(--border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+}
+
+/* Force clock icon colors */
+section .lucide-clock {
+    color: #d97706 !important;
+    stroke: #d97706 !important;
+}
+
+.dark section .lucide-clock {
+    color: #fbbf24 !important;
+    stroke: #fbbf24 !important;
+}

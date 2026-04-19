@@ -61,13 +61,7 @@ onMounted(() => {
 
                 <!-- Logo -->
                 <a href="/" class="it-panel-logo">
-                    <div class="it-panel-logo-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </div>
-                    <span>iTinda</span>
+                    <img src="/itinda-logo-2.png" alt="iTinda Logo" class="it-auth-logo-img" />
                 </a>
 
                 <!-- Community headline -->
@@ -128,13 +122,7 @@ onMounted(() => {
 
                 <!-- Mobile logo -->
                 <a href="/" class="it-mobile-logo">
-                    <div class="it-mobile-logo-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </div>
-                    <span>iTinda</span>
+                    <img src="/itinda-logo-2.png" alt="iTinda Logo" class="it-auth-mobile-logo-img" />
                 </a>
 
                 <!-- Form header -->
@@ -327,17 +315,14 @@ onMounted(() => {
     font-family: 'Montserrat', sans-serif;
     font-weight: 900;
     font-size: 1.4rem;
-    color: var(--gold);
+    color: #f4e187;
 }
 
-.it-panel-logo-icon {
-    width: 34px; height: 34px;
-    background: var(--gold);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
+.it-auth-logo-img {
+    height: 42px;
+    width: auto;
+    object-fit: contain;
 }
-
-.it-panel-logo-icon svg { width: 18px; height: 18px; color: var(--emerald); }
 
 /* Eyebrow + heading */
 .it-panel-copy { margin: auto 0; padding: 40px 0 32px; }
@@ -496,18 +481,15 @@ onMounted(() => {
     font-family: 'Montserrat', sans-serif;
     font-weight: 900;
     font-size: 1.3rem;
-    color: var(--emerald);
+    color: #f4e187;
     margin-bottom: 32px;
 }
 
-.it-mobile-logo-icon {
-    width: 32px; height: 32px;
-    background: var(--emerald);
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
+.it-auth-mobile-logo-img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
 }
-
-.it-mobile-logo-icon svg { width: 16px; height: 16px; color: var(--white); }
 
 /* Form header */
 .it-form-header { margin-bottom: 32px; }

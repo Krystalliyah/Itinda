@@ -60,15 +60,11 @@ const DEFAULT_HOURS: Record<DayKey, { is_open: boolean; open_time: string; close
 const storeForm = useForm({
     store_name: tenantInfo.value?.name ?? '',
     store_slug: tenantInfo.value?.id ?? '',
-    tagline: tenantInfo.value?.data?.tagline ?? '',
     email: tenantInfo.value?.email ?? '',
     phone: tenantInfo.value?.phone ?? '',
     address: tenantInfo.value?.address ?? '',
-    pickup_notes: tenantInfo.value?.data?.pickup_notes ?? '',
     description: tenantInfo.value?.description ?? '',
     website: tenantInfo.value?.data?.website ?? '',
-    pickup_lead_time: tenantInfo.value?.data?.pickup_lead_time ?? '',
-    order_notice: tenantInfo.value?.data?.order_notice ?? '',
     operating_hours: (tenantInfo.value?.operating_hours ?? DEFAULT_HOURS) as Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>,
 });
 
@@ -83,12 +79,47 @@ const toggles = ref({
     receiveEmailAlerts: true,
 });
 
+const hasText = (value: unknown) => {
+    return typeof value === 'string' ? value.trim().length > 0 : !!value;
+};
+
+const hasValidOperatingHours = (
+    hours: Partial<Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>> | null | undefined
+) => {
+    if (!hours) return false;
+
+    return ORDERED_DAYS.every((dayKey) => {
+        const day = hours[dayKey];
+        if (!day || typeof day.is_open !== 'boolean') {
+            return false;
+        }
+
+        if (!day.is_open) {
+            return true;
+        }
+
+        return hasText(day.open_time) && hasText(day.close_time);
+    });
+};
+
 const completionItems = computed(() => [
-    { label: 'Store profile', done: true },
-    { label: 'Contact details', done: true },
-    { label: 'Pick-up schedule', done: true },
-    { label: 'Notifications', done: true },
-    { label: 'Brand assets', done: false },
+    {
+        label: 'Store profile',
+        done:
+            hasText(storeForm.store_name) &&
+            hasText(storeForm.description),
+    },
+    {
+        label: 'Contact details',
+        done:
+            hasText(storeForm.email) &&
+            hasText(storeForm.phone) &&
+            hasText(storeForm.address),
+    },
+    {
+        label: 'Pick-up schedule',
+        done: hasValidOperatingHours(storeForm.operating_hours),
+    },
 ]);
 
 const completedCount = computed(() => completionItems.value.filter((item) => item.done).length);
@@ -124,53 +155,56 @@ const saveOperatingHours = () => {
 
         <main :class="contentClass">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
-                <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm">
-    <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] px-5 py-7 sm:px-7 sm:py-8">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div class="max-w-2xl">
-                <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#F7E8C6]">
-                    <Sparkles class="h-3.5 w-3.5" />
-                    Store settings
-                </div>
+                <!-- Hero Section -->
+                <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                    <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] dark:bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_100%)] px-5 py-7 sm:px-7 sm:py-8">
+                        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                            <div class="max-w-2xl">
+                                <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#F7E8C6]">
+                                    <Sparkles class="h-3.5 w-3.5" />
+                                    Store settings
+                                </div>
 
-                <h1 class="text-2xl font-semibold tracking-tight !text-white sm:text-3xl lg:text-4xl">
-                    {{ storeName || 'Complete Your Store Setup' }}
-                </h1>
+                                <h1 class="text-2xl font-semibold tracking-tight !text-white sm:text-3xl lg:text-4xl">
+                                    {{ storeName || 'Complete Your Store Setup' }}
+                                </h1>
 
-                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
-                    {{ storeName ? 'Keep your storefront polished, informative, and easy to manage.' : 'Fill out the information below to get your store ready for customers.' }}
-                </p>
-            </div>
+                                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base opacity-90">
+                                    {{ storeName ? 'Keep your storefront polished, informative, and easy to manage.' : 'Fill out the information below to get your store ready for customers.' }}
+                                </p>
+                            </div>
 
-            <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup Progress</p>
-                <p class="mt-2 text-2xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
-                <div class="mt-2 w-32 h-1.5 rounded-full bg-white/20">
-                    <div class="h-1.5 rounded-full bg-[#F7E8C6]" :style="{ width: `${setupProgress}%` }"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+                            <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center bg-white/10 border border-white/10">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-white">Setup Progress</p>
+                                <p class="mt-2 text-2xl font-semibold text-white">{{ setupProgress }}% complete</p>
+                                <div class="mt-2 w-32 h-1.5 rounded-full bg-white/20">
+                                    <div class="h-1.5 rounded-full bg-[#F7E8C6]" :style="{ width: `${setupProgress}%` }"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
+                    <!-- Main Content area -->
                     <div class="grid gap-6">
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-6 shadow-sm">
+                        <!-- Basic Information -->
+                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-6 shadow-sm">
                             <div class="mb-5 flex flex-col gap-3">
                                 <div>
-                                    <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#EDF6F1] px-3 py-1 text-xs font-semibold text-[#245C4A]">
+                                    <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground">
                                         <Store class="h-3.5 w-3.5" />
                                         Storefront
                                     </div>
-                                    <h2 class="text-base sm:text-lg font-semibold text-[#183D34]">Basic information</h2>
-                                    <p class="mt-1 text-xs sm:text-sm text-[#6E817A]">
+                                    <h2 class="text-base sm:text-lg font-semibold text-foreground">Basic information</h2>
+                                    <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
                                         These details help customers quickly understand your store.
                                     </p>
                                 </div>
 
                                 <button
                                     type="button"
-                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#245C4A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4B3C]"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-brand-green px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 dark:bg-emerald-600"
                                     @click="saveChanges"
                                 >
                                     <Save class="h-4 w-4" />
@@ -180,131 +214,86 @@ const saveOperatingHours = () => {
 
                             <div class="grid gap-4 md:grid-cols-2">
                                 <label class="block">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">Store name</span>
+                                    <span class="mb-2 block text-sm font-medium text-foreground">Store name</span>
                                     <input
                                         v-model="storeForm.store_name"
                                         type="text"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
+                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
                                     />
                                 </label>
 
                                 <label class="block">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">Store slug</span>
-                                    <div class="flex overflow-hidden rounded-xl border border-[#D7E3DC] bg-[#F3F7F5]">
-                                        <span class="flex items-center border-r border-[#E5EEEA] bg-[#EAEFEC] px-3 text-xs text-[#70867D] shrink-0">
+                                    <span class="mb-2 block text-sm font-medium text-foreground">Store slug</span>
+                                    <div class="flex overflow-hidden rounded-xl border border-border bg-secondary/50">
+                                        <span class="flex items-center border-r border-border bg-secondary px-3 text-xs text-muted-foreground shrink-0">
                                             {{ storeDomain ? storeDomain.replace(storeForm.store_slug, '') : 'your-domain/' }}
                                         </span>
                                         <input
                                             v-model="storeForm.store_slug"
                                             type="text"
                                             readonly
-                                            title="Store slug is set at provisioning and cannot be changed here."
-                                            class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#70867D] outline-none cursor-not-allowed select-all"
+                                            class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-muted-foreground outline-none cursor-not-allowed select-all"
                                         />
                                     </div>
-                                    <p class="mt-1 text-xs text-[#8A9C95]">Slug is fixed after store creation.</p>
-                                </label>
-
-                                <label class="block md:col-span-2">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">Short tagline</span>
-                                    <input
-                                        v-model="storeForm.tagline"
-                                        type="text"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
-                                    />
+                                    <p class="mt-1 text-xs text-muted-foreground opacity-70">Slug is fixed after store creation.</p>
                                 </label>
 
                                 <label class="block">
-                                    <span class="mb-2 flex items-center gap-2 text-sm font-medium text-[#183D34]">
-                                        <Mail class="h-4 w-4 text-[#245C4A]" />
+                                    <span class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                                        <Mail class="h-4 w-4 text-brand-green dark:text-emerald-500" />
                                         Contact email
                                     </span>
                                     <input
                                         v-model="storeForm.email"
                                         type="email"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
+                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
                                     />
                                 </label>
 
                                 <label class="block">
-                                    <span class="mb-2 flex items-center gap-2 text-sm font-medium text-[#183D34]">
-                                        <Phone class="h-4 w-4 text-[#245C4A]" />
+                                    <span class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                                        <Phone class="h-4 w-4 text-brand-green dark:text-emerald-500" />
                                         Contact number
                                     </span>
                                     <input
                                         v-model="storeForm.phone"
                                         type="text"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
+                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
                                     />
                                 </label>
 
                                 <label class="block md:col-span-2">
-                                    <span class="mb-2 flex items-center gap-2 text-sm font-medium text-[#183D34]">
-                                        <MapPin class="h-4 w-4 text-[#245C4A]" />
+                                    <span class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                                        <MapPin class="h-4 w-4 text-brand-green dark:text-emerald-500" />
                                         Pick-up address
                                     </span>
                                     <input
                                         v-model="storeForm.address"
                                         type="text"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
+                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
                                     />
                                 </label>
 
                                 <label class="block md:col-span-2">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">About your store</span>
+                                    <span class="mb-2 block text-sm font-medium text-foreground">About your store</span>
                                     <textarea
                                         v-model="storeForm.description"
                                         rows="4"
-                                        class="w-full rounded-2xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 py-3 text-sm leading-6 text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
+                                        class="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
                                     ></textarea>
                                 </label>
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-6 shadow-sm">
+                        <!-- Pick-up Operations (Operating Hours) -->
+                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-6 shadow-sm">
                             <div class="mb-5">
-                                <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#FFF7EA] px-3 py-1 text-xs font-semibold text-[#A56D17]">
-                                    <Clock3 class="h-3.5 w-3.5" />
+                                <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                    <Clock3 class="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                     Pick-up operations
                                 </div>
-                                <h2 class="text-base sm:text-lg font-semibold text-[#183D34]">Schedule and order settings</h2>
-                                <p class="mt-1 text-xs sm:text-sm text-[#6E817A]">
-                                    Set the hours and notes customers see when ordering from your store.
-                                </p>
-                            </div>
-
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <label class="block">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">Estimated lead time</span>
-                                    <input
-                                        v-model="storeForm.pickup_lead_time"
-                                        type="text"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
-                                    />
-                                </label>
-
-                                <label class="block">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">Customer order notice</span>
-                                    <input
-                                        v-model="storeForm.order_notice"
-                                        type="text"
-                                        class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
-                                    />
-                                </label>
-
-                                <label class="block md:col-span-2">
-                                    <span class="mb-2 block text-sm font-medium text-[#183D34]">Pick-up instructions</span>
-                                    <textarea
-                                        v-model="storeForm.pickup_notes"
-                                        rows="3"
-                                        class="w-full rounded-2xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 py-3 text-sm leading-6 text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
-                                    ></textarea>
-                                </label>
-                            </div>
-
-                            <div class="mt-6 mb-5 flex flex-col gap-3">
-                                <h3 class="text-sm font-semibold text-[#183D34]">Operating hours</h3>
-                                <p class="text-xs text-[#6E817A]">
+                                <h2 class="text-base sm:text-lg font-semibold text-foreground">Operating hours</h2>
+                                <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
                                     Define when your store is open for pick-ups each day of the week.
                                 </p>
                             </div>
@@ -313,40 +302,38 @@ const saveOperatingHours = () => {
                                 <div
                                     v-for="dayKey in ORDERED_DAYS"
                                     :key="dayKey"
-                                    class="rounded-2xl border border-[#E4ECE8] bg-[#FBFCFC] p-3 sm:p-4"
+                                    class="rounded-2xl border border-border bg-secondary/30 p-3 sm:p-4 dark:bg-slate-900/40"
                                 >
-                                    <!-- Day label + open toggle -->
                                     <div class="flex items-center justify-between gap-3 mb-3">
                                         <div>
-                                            <p class="text-sm font-semibold text-[#183D34]">{{ DAY_LABELS[dayKey] }}</p>
-                                            <p class="text-xs text-[#74867F]">
+                                            <p class="text-sm font-semibold text-foreground">{{ DAY_LABELS[dayKey] }}</p>
+                                            <p class="text-xs text-muted-foreground">
                                                 {{ storeForm.operating_hours[dayKey]?.is_open ? 'Open for pick-up' : 'Closed' }}
                                             </p>
                                         </div>
-                                        <label class="inline-flex items-center gap-2">
-                                            <span class="text-xs font-medium text-[#61766F]">Open</span>
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <span class="text-xs font-medium text-muted-foreground">Open</span>
                                             <input
                                                 v-model="storeForm.operating_hours[dayKey].is_open"
                                                 type="checkbox"
-                                                class="h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]"
+                                                class="h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20"
                                             />
                                         </label>
                                     </div>
 
-                                    <!-- Time pickers — disabled when closed -->
                                     <div class="flex items-center gap-2">
                                         <input
                                             v-model="storeForm.operating_hours[dayKey].open_time"
                                             type="time"
                                             :disabled="!storeForm.operating_hours[dayKey]?.is_open"
-                                            class="flex-1 min-w-0 h-10 rounded-xl border border-[#D7E3DC] bg-white px-2 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
+                                            class="flex-1 min-w-0 h-10 rounded-xl border border-border bg-background px-2 text-sm text-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                         />
-                                        <span class="text-xs text-[#74867F] shrink-0">to</span>
+                                        <span class="text-xs text-muted-foreground shrink-0">to</span>
                                         <input
                                             v-model="storeForm.operating_hours[dayKey].close_time"
                                             type="time"
                                             :disabled="!storeForm.operating_hours[dayKey]?.is_open"
-                                            class="flex-1 min-w-0 h-10 rounded-xl border border-[#D7E3DC] bg-white px-2 text-sm text-[#1E4138] outline-none disabled:cursor-not-allowed disabled:bg-[#EFF4F1] disabled:text-[#90A39B]"
+                                            class="flex-1 min-w-0 h-10 rounded-xl border border-border bg-background px-2 text-sm text-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                         />
                                     </div>
                                 </div>
@@ -354,7 +341,7 @@ const saveOperatingHours = () => {
 
                             <button
                                 type="button"
-                                class="mt-6 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#245C4A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4B3C]"
+                                class="mt-6 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-brand-green px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 dark:bg-emerald-600"
                                 @click="saveOperatingHours"
                             >
                                 <Save class="h-4 w-4" />
@@ -363,34 +350,36 @@ const saveOperatingHours = () => {
                         </section>
                     </div>
 
+                    <!-- Sidebar area (Preferences, Notifications, Public Preview) -->
                     <aside class="grid gap-6 order-first xl:order-last">
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-5 shadow-sm">
+                        <!-- Store Readiness -->
+                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <CheckCircle2 class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
-                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Store readiness</h3>
+                                <CheckCircle2 class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
+                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Store readiness</h3>
                             </div>
 
                             <div class="mb-4 flex items-center justify-between">
-                                <p class="text-sm text-[#70827B]">Profile completion</p>
-                                <span class="rounded-full bg-[#EDF6F1] px-3 py-1 text-sm font-semibold text-[#245C4A]">
+                                <p class="text-sm text-muted-foreground">Profile completion</p>
+                                <span class="rounded-full bg-secondary px-3 py-1 text-sm font-semibold text-foreground">
                                     {{ setupProgress }}%
                                 </span>
                             </div>
 
-                            <div class="mb-5 h-2 rounded-full bg-[#ECF2EF]">
-                                <div class="h-2 rounded-full bg-[#245C4A]" :style="{ width: `${setupProgress}%` }"></div>
+                            <div class="mb-5 h-2 rounded-full bg-secondary">
+                                <div class="h-2 rounded-full bg-brand-green" :style="{ width: `${setupProgress}%` }"></div>
                             </div>
 
                             <div class="space-y-3">
                                 <div
                                     v-for="item in completionItems"
                                     :key="item.label"
-                                    class="flex items-center justify-between rounded-2xl border border-[#E6EEEA] px-4 py-3"
+                                    class="flex items-center justify-between rounded-2xl border border-border px-4 py-3 bg-background/40"
                                 >
-                                    <span class="text-sm font-medium text-[#183D34]">{{ item.label }}</span>
+                                    <span class="text-sm font-medium text-foreground">{{ item.label }}</span>
                                     <span
                                         class="rounded-full px-2.5 py-1 text-xs font-semibold"
-                                        :class="item.done ? 'bg-[#EDF7F2] text-[#1D6B55]' : 'bg-[#FFF5E7] text-[#A16B19]'"
+                                        :class="item.done ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'"
                                     >
                                         {{ item.done ? 'Done' : 'Pending' }}
                                     </span>
@@ -398,99 +387,96 @@ const saveOperatingHours = () => {
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-5 shadow-sm">
+                        <!-- Store Preferences -->
+                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <Settings2 class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
-                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Store preferences</h3>
+                                <Settings2 class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
+                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Store preferences</h3>
                             </div>
 
                             <div class="space-y-3">
-                                <label class="flex items-start gap-3 rounded-2xl border border-[#E5EEEA] bg-[#FBFCFC] p-4">
-                                    <input v-model="toggles.acceptPreOrders" type="checkbox" class="mt-1 h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]" />
+                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <input v-model="toggles.acceptPreOrders" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
                                     <span>
-                                        <span class="block font-semibold text-[#183D34]">Accept pre-orders</span>
-                                        <span class="mt-1 block text-sm leading-6 text-[#70827B]">Let customers place orders ahead of busy hours.</span>
+                                        <span class="block font-semibold text-foreground">Accept pre-orders</span>
+                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Let customers place orders ahead of busy hours.</span>
                                     </span>
                                 </label>
 
-                                <label class="flex items-start gap-3 rounded-2xl border border-[#E5EEEA] bg-[#FBFCFC] p-4">
-                                    <input v-model="toggles.showInventoryCount" type="checkbox" class="mt-1 h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]" />
+                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <input v-model="toggles.showInventoryCount" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
                                     <span>
-                                        <span class="block font-semibold text-[#183D34]">Show item availability</span>
-                                        <span class="mt-1 block text-sm leading-6 text-[#70827B]">Display stock visibility to help customers decide faster.</span>
+                                        <span class="block font-semibold text-foreground">Show item availability</span>
+                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Display stock visibility to help customers decide faster.</span>
                                     </span>
                                 </label>
 
-                                <label class="flex items-start gap-3 rounded-2xl border border-[#E5EEEA] bg-[#FBFCFC] p-4">
-                                    <input v-model="toggles.showPickupInstructions" type="checkbox" class="mt-1 h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]" />
+                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <input v-model="toggles.showPickupInstructions" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
                                     <span>
-                                        <span class="block font-semibold text-[#183D34]">Show pick-up instructions</span>
-                                        <span class="mt-1 block text-sm leading-6 text-[#70827B]">Surface order claim reminders during checkout.</span>
+                                        <span class="block font-semibold text-foreground">Show pick-up instructions</span>
+                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Surface order claim reminders during checkout.</span>
                                     </span>
                                 </label>
 
-                                <label class="flex items-start gap-3 rounded-2xl border border-[#E5EEEA] bg-[#FBFCFC] p-4">
-                                    <input v-model="toggles.autoAcceptOrders" type="checkbox" class="mt-1 h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]" />
+                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <input v-model="toggles.autoAcceptOrders" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
                                     <span>
-                                        <span class="block font-semibold text-[#183D34]">Auto-accept orders</span>
-                                        <span class="mt-1 block text-sm leading-6 text-[#70827B]">Instantly confirm orders without manual approval.</span>
+                                        <span class="block font-semibold text-foreground">Auto-accept orders</span>
+                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Instantly confirm orders without manual approval.</span>
                                     </span>
                                 </label>
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-white p-4 sm:p-5 shadow-sm">
+                        <!-- Notifications -->
+                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-5 shadow-sm">
                             <div class="mb-4 flex items-center gap-2">
-                                <Bell class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
-                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Notifications</h3>
+                                <Bell class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
+                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Notifications</h3>
                             </div>
 
                             <div class="space-y-3">
-                                <label class="flex items-start gap-3 rounded-2xl border border-[#E5EEEA] bg-[#FBFCFC] p-4">
-                                    <input v-model="toggles.receiveSmsAlerts" type="checkbox" class="mt-1 h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]" />
+                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <input v-model="toggles.receiveSmsAlerts" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
                                     <span>
-                                        <span class="block font-semibold text-[#183D34]">SMS alerts</span>
-                                        <span class="mt-1 block text-sm leading-6 text-[#70827B]">Receive immediate updates for new or urgent orders.</span>
+                                        <span class="block font-semibold text-foreground">SMS alerts</span>
+                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Receive immediate updates for new or urgent orders.</span>
                                     </span>
                                 </label>
 
-                                <label class="flex items-start gap-3 rounded-2xl border border-[#E5EEEA] bg-[#FBFCFC] p-4">
-                                    <input v-model="toggles.receiveEmailAlerts" type="checkbox" class="mt-1 h-4 w-4 rounded border-[#B8CCC3] text-[#245C4A] focus:ring-[#245C4A]" />
+                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <input v-model="toggles.receiveEmailAlerts" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
                                     <span>
-                                        <span class="block font-semibold text-[#183D34]">Email digests</span>
-                                        <span class="mt-1 block text-sm leading-6 text-[#70827B]">Get daily summaries of orders, performance, and activity.</span>
+                                        <span class="block font-semibold text-foreground">Email digests</span>
+                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Get daily summaries of orders, performance, and activity.</span>
                                     </span>
                                 </label>
                             </div>
                         </section>
 
-                        <section class="rounded-[28px] border border-[#DCE8E1] bg-[#F7FAF8] p-4 sm:p-5 shadow-sm">
+                        <!-- Public Preview -->
+                        <section class="rounded-[28px] border border-border bg-secondary/10 p-4 sm:p-5 shadow-sm dark:bg-slate-900/40">
                             <div class="mb-4 flex items-center gap-2">
-                                <ShieldCheck class="h-4 w-4 sm:h-5 sm:w-5 text-[#245C4A]" />
-                                <h3 class="text-sm sm:text-base font-semibold text-[#183D34]">Public preview</h3>
+                                <ShieldCheck class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
+                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Public preview</h3>
                             </div>
 
-                            <div class="space-y-3 text-sm leading-6 text-[#6C8079]">
-                                <p>
-                                    Your store currently shows a
-                                    <span class="font-semibold text-[#183D34]">{{ storeForm.pickup_lead_time }}</span>
-                                    estimated lead time and a customer notice of
-                                    <span class="font-semibold text-[#183D34]">{{ storeForm.order_notice }}</span>.
-                                </p>
+                            <div class="space-y-3 text-sm leading-6 text-muted-foreground">
 
-                                <div class="rounded-2xl border border-dashed border-[#CBD9D2] bg-white p-4">
+                                <div class="rounded-2xl border border-dashed border-border bg-card p-4">
                                     <div class="flex items-start gap-3">
-                                        <ImageIcon class="mt-0.5 h-5 w-5 text-[#245C4A]" />
+                                        <ImageIcon class="mt-0.5 h-5 w-5 text-brand-green dark:text-emerald-500" />
                                         <div>
-                                            <p class="font-semibold text-[#183D34]">Branding reminder</p>
-                                            <p class="mt-1 text-sm text-[#70827B]">
+                                            <p class="font-semibold text-foreground">Branding reminder</p>
+                                            <p class="mt-1 text-sm text-muted-foreground">
                                                 Add a cover photo and profile logo to make your storefront feel more complete.
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <p class="text-xs font-medium uppercase tracking-[0.2em] text-[#8A9C95]">
+                                <p class="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground opacity-60">
                                     {{ saveLabel }}
                                 </p>
                             </div>

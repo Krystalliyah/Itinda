@@ -709,6 +709,42 @@ function formatDate(d: string | null) {
 /* Chart dot fill */
 .trend-svg circle[fill="white"] { fill: var(--card); }
 
+:global(.dark) .kpi-card {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .kpi-label { color: var(--muted-foreground); }
+:global(.dark) .kpi-val { color: var(--foreground); }
+:global(.dark) .kpi-sub { color: var(--muted-foreground); }
+
+:global(.dark) .tab-bar {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .tab-btn { color: var(--muted-foreground); }
+:global(.dark) .tab-btn:hover { background: var(--accent) !important; color: var(--foreground); }
+
+:global(.dark) .card {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+:global(.dark) .data-table th { border-bottom-color: var(--border); }
+:global(.dark) .data-table td { border-bottom-color: var(--border); }
+:global(.dark) .data-table tbody tr:hover td { background-color: var(--accent); }
+
+:global(.dark) .status-pill.pill-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+:global(.dark) .status-pill.pill-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+:global(.dark) .avatar-indigo { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+:global(.dark) .avatar-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+:global(.dark) .days-badge { background: var(--accent); color: var(--muted-foreground); }
+
+:global(.dark) .cat-bar-track { background: var(--accent); }
+:global(.dark) .cat-chip { border-color: rgba(255,255,255,0.1) !important; }
 /* ── Responsive ── */
 @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 

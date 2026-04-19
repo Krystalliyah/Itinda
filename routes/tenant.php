@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Vendor\AnalyticsController;
 use App\Http\Controllers\Vendor\ExpenseController;
 use App\Http\Controllers\Vendor\InventoryController;
+use App\Http\Controllers\Vendor\ListingController;
 use App\Http\Controllers\Vendor\OrderController;
 use App\Http\Controllers\Vendor\ProductController;
 /*
@@ -147,6 +148,7 @@ Route::middleware([
                 'lowStockItems' => $lowStockItems,
             ]);
         })->name('dashboard');
+
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
@@ -156,6 +158,7 @@ Route::middleware([
         // Products management
         Route::middleware('permission:manage-products')->group(function () {
             Route::apiResource('products', ProductController::class)->except(['show']);
+            Route::apiResource('listings', ListingController::class)->except(['show']);
         });
 
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory')->middleware('permission:manage-inventory');

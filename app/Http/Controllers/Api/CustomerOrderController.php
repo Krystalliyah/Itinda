@@ -8,9 +8,12 @@ use App\Models\CustomerOrder;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Support\ChecksStoreReadiness;
 
 class CustomerOrderController extends Controller
 {
+    use ChecksStoreReadiness;
+
     public function index(Request $request)
     {
         $orders = CustomerOrder::where('user_id', $request->user()->id)
@@ -43,8 +46,11 @@ class CustomerOrderController extends Controller
         $order->update(['status' => 'cancelled']);
 
         // Sync cancellation to the tenant order
-        $tenant = Tenant::find($order->tenant_id);
-        if ($tenant) {
+        $tenant = Tenant::where('id', $order->tenant_id)
+            ->where('is_approved', 1)
+            ->first();
+
+        if ($tenant && $this->isStoreReady($tenant)) {
             $tenant->run(function () use ($order) {
                 \App\Models\Order::where('id', $order->order_id)->update(['status' => 'cancelled']);
             });
@@ -55,7 +61,13 @@ class CustomerOrderController extends Controller
 
     private function transformOrder(CustomerOrder $customerOrder): array
     {
-        $tenant = Tenant::find($customerOrder->tenant_id);
+        $tenant = Tenant::where('id', $customerOrder->tenant_id)
+            ->where('is_approved', 1)
+            ->first();
+
+        if ($tenant && !$this->isStoreReady($tenant)) {
+            $tenant = null;
+        }
 
         $items = $tenant ? $this->getTenantOrderItems($tenant, $customerOrder->order_id) : [];
 

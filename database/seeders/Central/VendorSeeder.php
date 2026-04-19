@@ -44,6 +44,16 @@ class VendorSeeder extends Seeder
             // Assign vendor role
             $user->assignRole('vendor');
 
+            // Define the operating hours array
+            $operatingHours = [
+                "monday" => ["is_open" => true, "open_time" => "08:00", "close_time" => "18:00"],
+                "tuesday" => ["is_open" => true, "open_time" => "08:00", "close_time" => "18:00"],
+                "wednesday" => ["is_open" => true, "open_time" => "08:00", "close_time" => "18:00"],
+                "thursday" => ["is_open" => true, "open_time" => "08:00", "close_time" => "18:00"],
+                "friday" => ["is_open" => true, "open_time" => "08:00", "close_time" => "18:00"],
+                "saturday" => ["is_open" => false, "open_time" => "09:00", "close_time" => "15:00"],
+                "sunday" => ["is_open" => false, "open_time" => "09:00", "close_time" => "15:00"],
+            ];
             // Create tenant
             $tenant = Tenant::create([
                 'id' => $subdomain,
@@ -52,6 +62,7 @@ class VendorSeeder extends Seeder
                 'email' => $email,
                 'is_approved' => false,
                 'user_id' => $user->id,
+                'operating_hours' => $operatingHours,
             ]);
 
             // Create domain

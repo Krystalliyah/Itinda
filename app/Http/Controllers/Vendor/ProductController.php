@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryDeletionLog;
+use App\Models\Listing;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,11 +13,44 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    /**
+     * Get product image URL - tries S3 first, then local storage fallback.
+     */
+    private function getProductImageUrl($product): ?string
+    {
+        if (! $product->image_path) {
+            return null;
+        }
+
+        if (str_starts_with($product->image_path, 'http')) {
+            return $product->image_path;
+        }
+
+        // Try S3 first if configured
+        if (config('filesystems.default') === 's3' || config('filesystems.cloud') === 's3') {
+            try {
+                if (Storage::disk('s3')->exists($product->image_path)) {
+                    return Storage::disk('s3')->url($product->image_path);
+                }
+            } catch (\Throwable $e) {
+                // S3 not reachable — fall through to local
+            }
+        }
+
+        // Fallback to local public disk
+        if (Storage::disk('public')->exists($product->image_path)) {
+            return Storage::disk('public')->url($product->image_path);
+        }
+
+        // Last resort — asset helper
+        return asset('storage/'.$product->image_path);
+    }
+
     public function index(Request $request)
     {
         $search = $request->query('search', '');
 
-        $query = Product::latest();
+        $query = Product::with('listings')->latest();
 
         // Apply search filter if provided
         if ($search) {
@@ -42,13 +76,14 @@ class ProductController extends Controller
                     'id' => $product->id,
                     'product_name' => $product->name,
                     'description' => $product->description,
+                    'category_id' => $product->category_id,
                     'category_name' => $category?->name ?? null,
+                    'listing_ids' => $product->listings->pluck('id')->values(),
+                    'listing_names' => $product->listings->pluck('name')->values(),
                     'barcode' => $product->barcode,
                     'price' => $product->price,
                     'stock' => $product->stock,
-                    'image_url' => $product->image_path
-                        ? Storage::disk('s3')->url($product->image_path)
-                        : null,
+                    'image_url' => $this->getProductImageUrl($product),
                     'is_active' => $product->is_active,
                     'created_at' => $product->created_at,
                     'total_reviews' => $product->total_reviews ?? 0,
@@ -78,9 +113,20 @@ class ProductController extends Controller
         // Build the category tree
         $categories = $this->buildCategoryTree($allCategories);
 
+        $listings = Listing::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'description', 'is_active'])
+            ->map(fn ($listing) => [
+                'id' => $listing->id,
+                'name' => $listing->name,
+                'description' => $listing->description,
+                'is_active' => (bool) $listing->is_active,
+            ]);
+
         return inertia('vendor/Products', [
             'products' => $products,
             'categories' => $categories,
+            'listings' => $listings,
             'totalProducts' => $totalProducts,
             'activeProducts' => $activeProducts,
             'search' => $search,
@@ -116,6 +162,8 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'nullable|integer',
+            'listing_ids' => 'nullable|array',
+            'listing_ids.*' => 'integer|exists:listings,id',
             'barcode' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -143,7 +191,9 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        $product->listings()->sync($request->input('listing_ids', []));
 
         return back()->with('success', 'Product created successfully!');
     }
@@ -154,6 +204,8 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'nullable|integer',
+            'listing_ids' => 'nullable|array',
+            'listing_ids.*' => 'integer|exists:listings,id',
             'barcode' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -176,8 +228,7 @@ class ProductController extends Controller
                 Storage::disk('s3')->delete($product->image_path);
             }
 
-            $path = $request->file('image')
-                ->store('products', ['disk' => 's3']);
+            $path = $request->file('image')->store('products', ['disk' => 's3']);
 
             if (! $path) {
                 return back()->withErrors(['image' => 'Unable to upload image to S3.']);
@@ -187,6 +238,8 @@ class ProductController extends Controller
         }
 
         $product->update($validated);
+
+        $product->listings()->sync($request->input('listing_ids', []));
 
         return back()->with('success', 'Product updated successfully!');
     }

@@ -7,9 +7,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Tenant;
+use App\Support\ChecksStoreReadiness;
 
 class ProductReviewController extends Controller
 {
+    use ChecksStoreReadiness;
+
     /**
      * Initialize tenancy, run callback, then end tenancy.
      * IMPORTANT: Always return plain arrays/scalars from the callback,
@@ -34,9 +38,12 @@ class ProductReviewController extends Controller
     $user    = auth()->user();
     $userId  = $user?->id;
 
-    $tenant = \App\Models\Tenant::find($storeId);
-    if (!$tenant) {
-        return response()->json(['error' => 'Store not found'], 404);
+    $tenant = Tenant::where('id', $storeId)
+        ->where('is_approved', 1)
+        ->first();
+
+    if (!$tenant || !$this->isStoreReady($tenant)) {
+        return response()->json(['error' => 'Store not found or not available'], 404);
     }
 
     // Extract everything as plain arrays INSIDE the tenant context
@@ -108,9 +115,12 @@ class ProductReviewController extends Controller
 
     public function stats($storeId, $productId)
     {
-        $tenant = \App\Models\Tenant::find($storeId);
-        if (!$tenant) {
-            return response()->json(['error' => 'Store not found'], 404);
+        $tenant = Tenant::where('id', $storeId)
+            ->where('is_approved', 1)
+            ->first();
+
+        if (!$tenant || !$this->isStoreReady($tenant)) {
+            return response()->json(['error' => 'Store not found or not available'], 404);
         }
 
         $stats = $this->runForTenant($tenant, function () use ($productId) {
@@ -156,9 +166,12 @@ class ProductReviewController extends Controller
                 return response()->json(['success' => false, 'message' => 'Please login to leave a review'], 401);
             }
 
-            $tenant = \App\Models\Tenant::find($storeId);
-            if (!$tenant) {
-                return response()->json(['success' => false, 'message' => 'Store not found'], 404);
+            $tenant = Tenant::where('id', $storeId)
+                ->where('is_approved', 1)
+                ->first();
+
+            if (!$tenant || !$this->isStoreReady($tenant)) {
+                return response()->json(['error' => 'Store not found or not available'], 404);
             }
 
             // S3 uploads happen BEFORE tenant context — S3 is global, not tenant-specific
@@ -232,8 +245,13 @@ public function helpful(Request $request, $storeId, $reviewId)
 
     if (!$user) return response()->json(['message' => 'Please login'], 401);
 
-    $tenant = \App\Models\Tenant::find($storeId);
-    if (!$tenant) return response()->json(['message' => 'Store not found'], 404);
+    $tenant = Tenant::where('id', $storeId)
+        ->where('is_approved', 1)
+        ->first();
+
+    if (!$tenant || !$this->isStoreReady($tenant)) {
+        return response()->json(['error' => 'Store not found or not available'], 404);
+    }
 
     try {
         // Return plain scalar from callback

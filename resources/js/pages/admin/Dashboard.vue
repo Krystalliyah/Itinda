@@ -323,7 +323,7 @@ function initials(name: string) {
                                     v-for="(y, i) in gridLines" :key="i"
                                     :x1="PAD_LEFT" :x2="CHART_W - PAD_RIGHT"
                                     :y1="y" :y2="y"
-                                    stroke="#f1f5f9" stroke-width="1"
+                                    stroke="var(--border)" stroke-width="1"
                                 />
 
                                 <!-- Area fills -->
@@ -335,14 +335,14 @@ function initials(name: string) {
                                 <polyline :points="polyline(vendorPts)"   fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 
                                 <!-- Dots -->
-                                <circle v-for="p in vendorPts"   :key="`v${p.x}`" :cx="p.x" :cy="p.y" r="4" fill="white" stroke="#10b981" stroke-width="2"/>
-                                <circle v-for="p in customerPts" :key="`c${p.x}`" :cx="p.x" :cy="p.y" r="4" fill="white" stroke="#3b82f6" stroke-width="2"/>
+                                <circle v-for="p in vendorPts"   :key="`v${p.x}`" :cx="p.x" :cy="p.y" r="4" fill="var(--card)" stroke="#10b981" stroke-width="2"/>
+                                <circle v-for="p in customerPts" :key="`c${p.x}`" :cx="p.x" :cy="p.y" r="4" fill="var(--card)" stroke="#3b82f6" stroke-width="2"/>
 
                                 <!-- X-axis labels -->
                                 <text
                                     v-for="l in xLabels" :key="l.label"
                                     :x="l.x" :y="CHART_H - 4"
-                                    text-anchor="middle" font-size="10" fill="#94a3b8" font-family="inherit"
+                                    text-anchor="middle" font-size="10" fill="var(--muted-foreground)" font-family="inherit"
                                 >{{ l.label }}</text>
                             </svg>
                         </div>
@@ -401,7 +401,7 @@ function initials(name: string) {
                         <div class="donut-body">
                             <svg width="112" height="112" viewBox="0 0 112 112">
                                 <circle :cx="DONUT_CX" :cy="DONUT_CY" :r="DONUT_R"
-                                    fill="none" stroke="#f1f5f9" :stroke-width="DONUT_STROKE" />
+                                    fill="none" stroke="var(--border)" :stroke-width="DONUT_STROKE" />
                                 <circle :cx="DONUT_CX" :cy="DONUT_CY" :r="DONUT_R"
                                     fill="none" stroke="#10b981" :stroke-width="DONUT_STROKE"
                                     stroke-linecap="round"
@@ -409,8 +409,8 @@ function initials(name: string) {
                                     :stroke-dashoffset="CIRC * 0.25"
                                     style="transition: stroke-dasharray 0.6s ease"
                                 />
-                                <text x="56" y="52" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a" font-family="inherit">{{ approvalRate }}%</text>
-                                <text x="56" y="66" text-anchor="middle" font-size="9"  fill="#94a3b8"   font-family="inherit">approved</text>
+                                <text x="56" y="52" text-anchor="middle" font-size="18" font-weight="700" fill="var(--foreground)" font-family="inherit">{{ approvalRate }}%</text>
+                                <text x="56" y="66" text-anchor="middle" font-size="9"  fill="var(--muted-foreground)"   font-family="inherit">approved</text>
                             </svg>
                             <div class="donut-legend">
                                 <div class="donut-stat">
@@ -424,7 +424,7 @@ function initials(name: string) {
                                     <span class="ds-val">{{ vendorStats.pending }}</span>
                                 </div>
                                 <div class="donut-stat">
-                                    <span class="ds-dot" style="background:#e2e8f0"></span>
+                                    <span class="ds-dot" style="background:var(--border)"></span>
                                     <span class="ds-label">Total</span>
                                     <span class="ds-val">{{ vendorStats.total }}</span>
                                 </div>
@@ -449,11 +449,11 @@ function initials(name: string) {
                             <div class="health-score-row">
                                 <span class="health-score-num" :style="{ color: healthLabel.color }">{{ props.healthScore }}</span>
                                 <span class="health-score-den">/100</span>
-                                <span class="health-badge" :style="{ background: healthLabel.color + '1a', color: healthLabel.color }">
+                                <span class="health-badge" :style="{ background: healthLabel.color + '25', color: healthLabel.color }">
                                     {{ healthLabel.text }}
                                 </span>
                             </div>
-                            <div class="health-bar-track">
+                            <div class="health-bar-track" style="background: var(--accent)">
                                 <div class="health-bar-fill" :style="{ width: props.healthScore + '%', background: healthLabel.color }"></div>
                             </div>
                             <div class="health-metrics">
@@ -627,11 +627,11 @@ function initials(name: string) {
     gap: 1.25rem;
 }
 .stat-card {
-    background: white;
+    background: var(--card);
     border-radius: 14px;
     padding: 1.4rem 1.4rem 1rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     display: grid;
     grid-template-rows: auto auto;
     grid-template-columns: auto 1fr;
@@ -655,10 +655,10 @@ function initials(name: string) {
 
 .stat-content { grid-area: content; }
 .stat-label {
-    font-size: 0.73rem; font-weight: 600; color: #64748b;
+    font-size: 0.73rem; font-weight: 600; color: var(--muted-foreground);
     text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.25rem;
 }
-.stat-value { font-size: 1.9rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1; }
+.stat-value { font-size: 1.9rem; font-weight: 700; color: var(--foreground); margin: 0; line-height: 1; }
 
 .stat-action {
     grid-area: action;
@@ -672,19 +672,19 @@ function initials(name: string) {
     transition: background 0.15s;
     width: fit-content;
 }
-.stat-action-green { background:#f0fdf4; color:#059669; border-color:#bbf7d0; }
-.stat-action-green:hover { background:#dcfce7; }
-.stat-action-amber { background:#fffbeb; color:#b45309; border-color:#fde68a; }
-.stat-action-amber:hover { background:#fef3c7; }
-.stat-action-blue  { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
-.stat-action-blue:hover  { background:#dbeafe; }
+.stat-action-green { background: color-mix(in srgb, #10b981 10%, transparent); color:#10b981; border-color: color-mix(in srgb, #10b981 20%, transparent); }
+.stat-action-green:hover { background: color-mix(in srgb, #10b981 18%, transparent); }
+.stat-action-amber { background: color-mix(in srgb, #f59e0b 10%, transparent); color:#f59e0b; border-color: color-mix(in srgb, #f59e0b 20%, transparent); }
+.stat-action-amber:hover { background: color-mix(in srgb, #f59e0b 18%, transparent); }
+.stat-action-blue  { background: color-mix(in srgb, #3b82f6 10%, transparent); color:#3b82f6; border-color: color-mix(in srgb, #3b82f6 20%, transparent); }
+.stat-action-blue:hover  { background: color-mix(in srgb, #3b82f6 18%, transparent); }
 .stat-action-icon { width: 13px; height: 13px; }
 
 /* ── Cards base ── */
 .card {
-    background: white;
+    background: var(--card);
     border-radius: 14px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     overflow: hidden;
     display: flex;
@@ -693,13 +693,13 @@ function initials(name: string) {
 .card-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 1.1rem 1.4rem 0.9rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
     gap: 0.75rem; flex-wrap: wrap;
 }
 .card-title-group { display: flex; align-items: center; gap: 0.55rem; }
 .card-title-icon  { width: 18px; height: 18px; flex-shrink: 0; }
-.card-title    { font-size: 0.92rem; font-weight: 600; color: #0f172a; margin: 0; line-height: 1.2; }
-.card-subtitle { font-size: 0.72rem; color: #94a3b8; margin: 0.1rem 0 0; }
+.card-title    { font-size: 0.92rem; font-weight: 600; color: var(--foreground); margin: 0; line-height: 1.2; }
+.card-subtitle { font-size: 0.72rem; color: var(--muted-foreground); margin: 0.1rem 0 0; }
 
 .badge { font-size: 0.68rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 99px; }
 .badge-green { background:#d1fae5; color:#065f46; }
@@ -757,23 +757,23 @@ function initials(name: string) {
 /* Chart legend */
 .chart-legend { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; flex-wrap: wrap; }
 .legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.legend-label { font-size: 0.75rem; color: #64748b; font-weight: 500; }
+.legend-label { font-size: 0.75rem; color: var(--muted-foreground); font-weight: 500; }
 
 /* Footer deltas */
 .chart-footer {
     display: flex; align-items: center;
     padding: 0.85rem 1.4rem;
-    border-top: 1px solid #f8fafc;
+    border-top: 1px solid var(--border);
     flex-wrap: wrap; gap: 0.5rem 0;
 }
 .delta-item    { display: flex; flex-direction: column; gap: 0.1rem; padding: 0 1rem; flex: 1; min-width: 90px; }
 .delta-item:first-child { padding-left: 0; }
 .delta-divider { width: 1px; height: 28px; background: #e2e8f0; flex-shrink: 0; }
-.delta-label   { font-size: 0.67rem; color: #94a3b8; font-weight: 500; white-space: nowrap; }
+.delta-label   { font-size: 0.67rem; color: var(--muted-foreground); font-weight: 500; white-space: nowrap; }
 .delta-value   { font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.15rem; }
 .delta-up      { color: #10b981; }
 .delta-down    { color: #ef4444; }
-.delta-neutral { color: #0f172a; }
+.delta-neutral { color: var(--foreground); }
 .delta-arrow   { width: 12px; height: 12px; }
 
 /* Donut */
@@ -786,8 +786,8 @@ function initials(name: string) {
 .donut-stat   { display: flex; align-items: center; gap: 0.5rem; }
 .ds-dot       { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 .ds-dot-outline { background: #fef3c7; border: 1.5px solid #f59e0b; }
-.ds-label     { font-size: 0.77rem; color: #64748b; flex: 1; }
-.ds-val       { font-size: 0.85rem; font-weight: 700; color: #0f172a; }
+.ds-label     { font-size: 0.77rem; color: var(--muted-foreground); flex: 1; }
+.ds-val       { font-size: 0.85rem; font-weight: 700; color: var(--foreground); }
 
 /* Tooltip icon */
 .info-tooltip {
@@ -797,8 +797,8 @@ function initials(name: string) {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #e2e8f0;
-    color: #475569;
+    background: var(--secondary);
+    color: var(--muted-foreground);
     font-size: 12px;
     font-weight: 600;
     cursor: help;
@@ -809,14 +809,14 @@ function initials(name: string) {
 .health-body { padding: 1rem 1.4rem 1.2rem; display: flex; flex-direction: column; gap: 0.8rem; flex: 1; }
 .health-score-row { display: flex; align-items: baseline; gap: 0.3rem; }
 .health-score-num { font-size: 2.1rem; font-weight: 800; line-height: 1; }
-.health-score-den { font-size: 0.88rem; color: #94a3b8; font-weight: 500; }
+.health-score-den { font-size: 0.88rem; color: var(--muted-foreground); font-weight: 500; }
 .health-badge { margin-left: auto; font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 99px; }
-.health-bar-track { height: 6px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+.health-bar-track { height: 6px; background: var(--accent); border-radius: 99px; overflow: hidden; }
 .health-bar-fill  { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
 .health-metrics   { display: flex; flex-direction: column; gap: 0.4rem; }
 .hm-row   { display: flex; justify-content: space-between; align-items: center; }
-.hm-label { font-size: 0.74rem; color: #64748b; }
-.hm-val   { font-size: 0.77rem; font-weight: 600; color: #0f172a; }
+.hm-label { font-size: 0.74rem; color: var(--muted-foreground); }
+.hm-val   { font-size: 0.77rem; font-weight: 600; color: var(--foreground); }
 
 /* ── Three-col bottom ── */
 .three-col-grid {
@@ -830,11 +830,11 @@ function initials(name: string) {
 .item-row {
     display: flex; align-items: center; gap: 0.75rem;
     padding: 0.8rem 1.4rem;
-    border-bottom: 1px solid #f8fafc;
+    border-bottom: 1px solid var(--border);
     transition: background 0.13s;
 }
 .item-row:last-child { border-bottom: none; }
-.item-row:hover { background: #f8fafc; }
+.item-row:hover { background: var(--accent); }
 
 .avatar {
     width: 34px; height: 34px; border-radius: 9px;
@@ -846,9 +846,9 @@ function initials(name: string) {
 .avatar-blue  { background:#dbeafe; color:#1e40af; }
 
 .item-info  { flex: 1; min-width: 0; }
-.item-name  { font-size: 0.83rem; font-weight: 600; color: #0f172a; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-meta  { font-size: 0.73rem; color: #94a3b8; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-date  { color: #cbd5e1; font-size: 0.68rem; }
+.item-name  { font-size: 0.83rem; font-weight: 600; color: var(--foreground); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-meta  { font-size: 0.73rem; color: var(--muted-foreground); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-date  { color: var(--muted-foreground); font-size: 0.68rem; opacity: 0.8; }
 
 .status-pill { font-size: 0.67rem; font-weight: 600; padding: 0.18rem 0.5rem; border-radius: 99px; flex-shrink: 0; }
 .pill-active  { background:#d1fae5; color:#065f46; }
@@ -867,8 +867,8 @@ function initials(name: string) {
 .card-footer-link {
     display: flex; align-items: center; gap: 0.3rem;
     padding: 0.75rem 1.4rem;
-    font-size: 0.78rem; font-weight: 600; color: #64748b;
-    text-decoration: none; border-top: 1px solid #f1f5f9;
+    font-size: 0.78rem; font-weight: 600; color: var(--muted-foreground);
+    text-decoration: none; border-top: 1px solid var(--border);
     transition: color 0.15s; margin-top: auto;
 }
 .card-footer-link:hover { color: #10b981; }
@@ -878,7 +878,7 @@ function initials(name: string) {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 0.5rem; padding: 2.5rem 1rem;
 }
-.empty-icon { width: 34px; height: 34px; color: #e2e8f0; }
+.empty-icon { width: 34px; height: 34px; color: var(--border); }
 .empty-state p { font-size: 0.83rem; margin: 0; color: #94a3b8; }
 
 .pending-card { border-top: 3px solid #f59e0b; }
@@ -977,6 +977,17 @@ function initials(name: string) {
 :global(.dark) .approve-btn:hover {
     background: rgba(6,95,70,0.35);
 }
+
+:global(.dark) .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+:global(.dark) .badge-blue  { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+:global(.dark) .badge-amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+:global(.dark) .avatar-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+:global(.dark) .avatar-amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+:global(.dark) .avatar-blue  { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+:global(.dark) .pill-active  { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+:global(.dark) .pill-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 
 :global(.dark) .card-footer-link { color: var(--muted-foreground); border-top-color: var(--border); }
 :global(.dark) .card-footer-link:hover { color: var(--foreground); }

@@ -79,11 +79,7 @@ class StoreSettingsController extends Controller
             'operating_hours.*.is_open' => ['required', 'boolean'],
             'operating_hours.*.open_time' => ['nullable', 'string'],
             'operating_hours.*.close_time' => ['nullable', 'string'],
-            'tagline' => ['nullable', 'string', 'max:255'],
-            'pickup_notes' => ['nullable', 'string'],
             'website' => ['nullable', 'string', 'max:255'],
-            'pickup_lead_time' => ['nullable', 'string', 'max:100'],
-            'order_notice' => ['nullable', 'string', 'max:100'],
         ]);
 
         $existingData = is_array($tenantRecord->data) ? $tenantRecord->data : [];
@@ -96,11 +92,7 @@ class StoreSettingsController extends Controller
             'phone' => $validated['phone'] ?? null,
             'operating_hours' => $validated['operating_hours'] ?? null,
             'data' => array_merge($existingData, [
-                'tagline' => $validated['tagline'] ?? null,
-                'pickup_notes' => $validated['pickup_notes'] ?? null,
                 'website' => $validated['website'] ?? null,
-                'pickup_lead_time' => $validated['pickup_lead_time'] ?? null,
-                'order_notice' => $validated['order_notice'] ?? null,
             ]),
         ]);
 

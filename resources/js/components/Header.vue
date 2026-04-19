@@ -16,7 +16,7 @@ const user = computed(() => page.props.auth?.user);
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
             </button>
-            <h1 class="header-title">iTinda</h1>
+            <img src="/itinda-logo-2.png" alt="iTinda Logo" class="header-logo-img" />
         </div>
         
         <div class="header-right" v-if="user">
@@ -37,8 +37,8 @@ const user = computed(() => page.props.auth?.user);
     left: 0;
     right: 0;
     height: 64px;
-    background: var(--background);
-    border-bottom: 1px solid var(--border);
+    background: #143926;
+    border-bottom: 1px solid #1f5d42;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -68,23 +68,21 @@ const user = computed(() => page.props.auth?.user);
 }
 
 .menu-toggle:hover {
-    background: var(--muted);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .menu-toggle svg {
     width: 24px;
     height: 24px;
-    color: var(--brand-green);
-    stroke: var(--brand-green);
+    color: #C5A059;
+    stroke: #C5A059;
 }
 
-.header-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--brand-green);
-    margin: 0;
-    font-family: 'Montserrat', sans-serif;
-    white-space: nowrap;
+.header-logo-img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+    display: block;
 }
 
 .header-right {
@@ -102,7 +100,7 @@ const user = computed(() => page.props.auth?.user);
 .user-name {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--foreground);
+    color: #ffffff;
     white-space: nowrap;
 }
 
@@ -110,8 +108,8 @@ const user = computed(() => page.props.auth?.user);
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--brand-gold);
-    color: var(--brand-green);
+    background: #C5A059;
+    color: #0e250f;
     display: flex;
     align-items: center;
     justify-content: center;

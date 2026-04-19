@@ -132,17 +132,38 @@ const filteredProducts = computed(() => {
   return result
 })
 
-const quantities = reactive<Record<number, number>>({})
+// Per-product quantity state keyed by storeId_productId
+const quantities = reactive<Record<string, number>>({})
 
-const getQty = (product: any): number => quantities[product.id] ?? 1
+const getQtyKey = (product: any): string => `${props.storeId}_${product.id}`
 
-const setQty = (product: any, val: number) => {
+const getQty = (product: any): number => quantities[getQtyKey(product)] ?? 1
+
+const setQty = (product: any, val: number, event?: Event) => {
   const max = product.stock_level > 0 ? product.stock_level : Infinity
-  quantities[product.id] = Math.min(Math.max(1, val), max)
+  const cleanVal = isNaN(val) ? 1 : Math.max(1, Math.floor(val))
+  const finalVal = Math.min(cleanVal, max)
+  
+  if (cleanVal > max && max !== Infinity) {
+    showToast(`Maximum stock reached: Only ${max} units available.`, 'error')
+  }
+  
+  quantities[getQtyKey(product)] = finalVal
+  
+  if (event && event.target && (event.target as HTMLInputElement).value !== finalVal.toString()) {
+    (event.target as HTMLInputElement).value = finalVal.toString()
+  }
 }
 
 const increment = (product: any) => setQty(product, getQty(product) + 1)
 const decrement = (product: any) => setQty(product, getQty(product) - 1)
+
+// Prevent invalid characters in number input
+const onQuantityKeydown = (e: KeyboardEvent) => {
+  if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+    e.preventDefault()
+  }
+}
 
 const cartItems = ref<any[]>([])
 const storeCartModalOpen = ref(false)
@@ -191,7 +212,13 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
   toastTimer = setTimeout(() => { toast.value = null }, 3000)
 }
 
+const addingToCart = ref<Record<string, boolean>>({})
+
 const addToCart = async (product: any) => {
+  const productKey = getQtyKey(product)
+  if (addingToCart.value[productKey]) return
+  
+  addingToCart.value[productKey] = true
   const qty = getQty(product)
   try {
     const response = await fetch('/customer/cart/add', {
@@ -209,8 +236,11 @@ const addToCart = async (product: any) => {
       }),
     })
 
-    if (!response.ok) throw new Error('Failed to add to cart')
-    quantities[product.id] = 1
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.message || 'Failed to add to cart')
+    }
+    quantities[getQtyKey(product)] = 1
     showToast(`${qty}× "${product.product_name}" added to cart!`)
     
     await fetchCartItems()
@@ -219,7 +249,9 @@ const addToCart = async (product: any) => {
     storeCartModalOpen.value = true
   } catch (err) {
     console.error(err)
-    showToast('Failed to add to cart. Please try again.', 'error')
+    showToast(err instanceof Error ? err.message : 'Failed to add to cart. Please try again.', 'error')
+  } finally {
+    addingToCart.value[productKey] = false
   }
 }
 
@@ -371,21 +403,20 @@ onMounted(() => {
             </Button>
           </Link>
         </div>
-
         <div class="max-w-6xl mx-auto px-6">
-          <div class="relative h-64 w-full overflow-hidden rounded-2xl">
+          <div class="relative h-64 w-full overflow-hidden rounded-2xl shadow-lg border border-border">
             <img :src="store.cover" class="h-full w-full object-cover" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           </div>
         </div>
 
         <div class="max-w-6xl mx-auto px-6">
-          <div class="p-8 space-y-6">
-            <h1 class="text-3xl font-semibold text-[#245c4a]">{{ store.name }}</h1>
+          <div class="p-8 space-y-6 bg-card rounded-[28px] border border-border mt-[-2rem] relative z-10 shadow-sm">
+            <h1 class="text-3xl font-semibold text-brand-green dark:text-emerald-500">{{ store.name }}</h1>
 
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-4">
-                <img :src="store.logo" class="h-14 w-14 rounded-xl shadow-md object-cover border" />
+                <img :src="store.logo" class="h-14 w-14 rounded-xl shadow-md object-cover border border-border" />
                 <div>
                   <p class="text-base text-muted-foreground">{{ store.address }}</p>
                   <p class="text-sm text-muted-foreground">{{ store.phone }}</p>
@@ -393,7 +424,7 @@ onMounted(() => {
               </div>
               <span
                 class="px-4 py-1.5 text-sm rounded-full font-medium"
-                :class="store.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                :class="store.isOpen ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'"
               >
                 {{ store.isOpen ? 'Open' : 'Closed' }}
               </span>
@@ -413,20 +444,20 @@ onMounted(() => {
         </div>
 
         <div class="max-w-6xl mx-auto px-6">
-          <h2 class="text-xl font-semibold text-[#245c4a] mb-6">Products</h2>
+          <h2 class="text-xl font-semibold text-brand-green dark:text-emerald-500 mb-6">Products</h2>
 
           <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between mb-6">
-            <Input v-model="searchProduct" placeholder="Search products..." class="w-full lg:max-w-sm" />
+            <Input v-model="searchProduct" placeholder="Search products..." class="w-full lg:max-w-sm bg-background" />
 
             <div class="flex gap-3 w-full lg:w-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="w-36 justify-between">
+                  <Button variant="outline" class="w-36 justify-between bg-background">
                     Category
                     <ChevronDown class="w-4 h-4 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent class="bg-card border-border">
                   <DropdownMenuItem @click="selectedCategory = 'all'">All</DropdownMenuItem>
                   <DropdownMenuItem @click="selectedCategory = 1">Fruits</DropdownMenuItem>
                   <DropdownMenuItem @click="selectedCategory = 2">Dairy</DropdownMenuItem>
@@ -436,12 +467,12 @@ onMounted(() => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="w-30 justify-between">
+                  <Button variant="outline" class="w-30 justify-between bg-background">
                     Sort
                     <ChevronDown class="w-4 h-4 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent class="bg-card border-border">
                   <DropdownMenuItem @click="sortBy = 'name'">Name</DropdownMenuItem>
                   <DropdownMenuItem @click="sortBy = 'price_low'">Price: Low to High</DropdownMenuItem>
                   <DropdownMenuItem @click="sortBy = 'price_high'">Price: High to Low</DropdownMenuItem>
@@ -458,25 +489,25 @@ onMounted(() => {
             <Card
               v-for="product in filteredProducts"
               :key="product.id"
-              class="group rounded-xl border border-border bg-white dark:bg-muted shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer p-0"
+              class="group rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
             >
-              <Link :href="`/customer/products/${props.storeId}/${product.id}?from=store`" class="block relative w-full aspect-square overflow-hidden bg-gray-100">
+              <Link :href="`/customer/products/${props.storeId}/${product.id}?from=store`" class="block relative w-full aspect-square overflow-hidden bg-secondary/20">
                 <img :src="product.image_url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 <span v-if="!product.is_available" class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-xl">
                   Sold Out
                 </span>
               </Link>
 
-              <CardContent class="space-y-2">
-                <Link :href="`/customer/products/${props.storeId}/${product.id}?from=store`" class="block text-sm font-medium text-foreground hover:text-[#245c4a] transition line-clamp-2 min-h-[40px]">
+              <CardContent class="p-4 space-y-2">
+                <Link :href="`/customer/products/${props.storeId}/${product.id}?from=store`" class="block text-sm font-medium text-foreground hover:text-brand-green dark:hover:text-emerald-500 transition line-clamp-2 min-h-[40px]">
                   {{ product.product_name }}
                 </Link>
 
                 <div class="flex items-center justify-between">
-                  <span class="text-lg font-semibold text-[#245c4a]">
+                  <span class="text-lg font-semibold text-brand-green dark:text-emerald-500">
                     {{ formatCurrency(product.unit_price) }}
                   </span>
-                  <span v-if="product.stock_level <= 5 && product.stock_level > 0" class="text-xs text-orange-600">
+                  <span v-if="product.stock_level <= 5 && product.stock_level > 0" class="text-xs text-orange-600 dark:text-orange-400">
                     Low stock
                   </span>
                 </div>
@@ -489,10 +520,10 @@ onMounted(() => {
                   <span>{{ product.sold_count }} sold</span>
                 </div>
 
-                <div class="mt-2 mb-4 space-y-2">
+                <div class="mt-2 space-y-2">
                   <div class="flex items-center gap-2">
                     <button
-                      class="h-8 w-8 rounded-md border border-border flex items-center justify-center text-lg font-medium hover:bg-muted transition disabled:opacity-40"
+                      class="h-8 w-8 rounded-md border border-border flex items-center justify-center text-lg font-medium hover:bg-secondary transition disabled:opacity-40"
                       :disabled="getQty(product) <= 1"
                       @click.stop="decrement(product)"
                       aria-label="Decrease quantity"
@@ -503,15 +534,16 @@ onMounted(() => {
                       :value="getQty(product)"
                       :min="1"
                       :max="product.stock_level > 0 ? product.stock_level : undefined"
-                      class="w-12 h-8 text-center text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-[#245c4a] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      @change="setQty(product, Number(($event.target as HTMLInputElement).value))"
+                      class="w-12 h-8 text-center text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-brand-green [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      @input="setQty(product, parseInt(($event.target as HTMLInputElement).value), $event)"
+                      @keydown="onQuantityKeydown"
                       @keydown.up.prevent="increment(product)"
                       @keydown.down.prevent="decrement(product)"
                       aria-label="Quantity"
                     />
 
                     <button
-                      class="h-8 w-8 rounded-md border border-border flex items-center justify-center text-lg font-medium hover:bg-muted transition disabled:opacity-40"
+                      class="h-8 w-8 rounded-md border border-border flex items-center justify-center text-lg font-medium hover:bg-secondary transition disabled:opacity-40"
                       :disabled="product.stock_level > 0 && getQty(product) >= product.stock_level"
                       @click.stop="increment(product)"
                       aria-label="Increase quantity"
@@ -524,11 +556,11 @@ onMounted(() => {
 
                   <Button
                     size="sm"
-                    class="w-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
-                    :disabled="!product.is_available"
+                    class="w-full bg-brand-green hover:opacity-90 text-white dark:bg-emerald-600"
+                    :disabled="!product.is_available || addingToCart[getQtyKey(product)]"
                     @click.stop="addToCart(product)"
                   >
-                    {{ product.is_available ? 'Add to Cart' : 'Out of Stock' }}
+                    {{ addingToCart[getQtyKey(product)] ? 'Adding...' : (product.is_available ? 'Add to Cart' : 'Out of Stock') }}
                   </Button>
                 </div>
               </CardContent>
@@ -536,7 +568,7 @@ onMounted(() => {
           </div>
 
           <div v-if="filteredProducts.length === 0 && !productsLoading" class="text-center py-12 text-muted-foreground">
-            No products found.
+            No products found for this store.
           </div>
         </div>
 
@@ -544,13 +576,13 @@ onMounted(() => {
         <div class="fixed bottom-6 right-6 z-50">
           <button
             @click="openCartModal"
-            class="relative h-14 w-14 rounded-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
+            class="relative h-14 w-14 rounded-full bg-brand-green hover:opacity-90 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 dark:bg-emerald-600"
             aria-label="Open cart"
           >
             <ShoppingCart class="h-5 w-5" />
             <span
               v-if="storeCartItems.length > 0"
-              class="absolute -top-1 -right-1 bg-[#C5A059] text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-semibold"
+              class="absolute -top-1 -right-1 bg-amber-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-semibold"
             >
               {{ storeCartItems.length }}
             </span>
@@ -573,39 +605,18 @@ onMounted(() => {
       <div 
         v-if="storeCartModalOpen" 
         :key="`cart-modal-${storeCartItems.length}-${props.storeId}`"
-        class="fixed bottom-24 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[75vh]"
+        class="fixed bottom-24 right-6 z-50 w-[90vw] sm:w-96 bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[75vh]"
       >
         <!-- Header -->
         <div class="flex items-center justify-between p-4 border-b border-border">
           <div class="flex items-center gap-2">
-            <ShoppingCart class="h-5 w-5 text-[#245c4a]" />
-            <h2 class="text-base font-semibold">Cart — {{ store.name }}</h2>
+            <ShoppingCart class="h-5 w-5 text-brand-green dark:text-emerald-500" />
+            <h2 class="text-base font-semibold text-foreground">Cart — {{ store.name }}</h2>
           </div>
-          <button @click="storeCartModalOpen = false" class="p-1 hover:bg-muted rounded-lg transition">
+          <button @click="storeCartModalOpen = false" class="p-1 hover:bg-secondary rounded-lg transition text-muted-foreground">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
-          </button>
-        </div>
-
-        <!-- Select All / Remove Selected -->
-        <div v-if="storeCartItems.length > 0" class="flex items-center justify-between px-4 py-2 border-b border-border">
-          <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
-            <input
-              type="checkbox"
-              :checked="storeAllSelected"
-              @change="toggleStoreAll(($event.target as HTMLInputElement).checked)"
-              class="h-4 w-4 rounded border-gray-300"
-            />
-            Select All
-            <span class="text-xs text-muted-foreground">({{ selectedStoreItemIds.length }})</span>
-          </label>
-          <button
-            v-if="selectedStoreItemIds.length > 0"
-            @click="removeSelectedItems"
-            class="text-sm font-medium text-red-600 hover:text-red-700 transition"
-          >
-            Remove Selected
           </button>
         </div>
 
@@ -618,7 +629,7 @@ onMounted(() => {
           <div
             v-for="item in storeCartItems"
             :key="item.id"
-            class="flex items-start gap-3 p-3 rounded-lg border border-border"
+            class="flex items-start gap-3 p-3 rounded-lg border border-border bg-background/50"
           >
             <!-- Checkbox -->
             <input
@@ -631,44 +642,33 @@ onMounted(() => {
                   selectedStoreItemIds = selectedStoreItemIds.filter(id => id !== item.id)
                 }
               }"
-              class="h-4 w-4 rounded border-gray-300 mt-1 cursor-pointer"
+              class="h-4 w-4 rounded border-border bg-background text-brand-green mt-1 cursor-pointer"
             />
-
-            <!-- Image -->
-            <div class="h-12 w-12 overflow-hidden rounded-lg bg-muted border border-border shrink-0">
-              <img
-                v-if="item.image_path"
-                :src="item.image_path && /^https?:\/\//.test(item.image_path) ? item.image_path : `/storage/${item.image_path}`"
-                :alt="item.product_name"
-                class="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
 
             <!-- Info -->
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium line-clamp-2">{{ item.product_name }}</p>
-              <p class="text-sm font-semibold text-[#245c4a] mt-1">{{ formatCurrency(item.unit_price) }}</p>
+              <p class="text-sm font-medium line-clamp-2 text-foreground">{{ item.product_name }}</p>
+              <p class="text-sm font-semibold text-brand-green dark:text-emerald-500 mt-1">{{ formatCurrency(item.unit_price) }}</p>
             </div>
 
-            <!-- Qty + Remove -->
+            <!-- Qty -->
             <div class="flex flex-col items-end gap-2 shrink-0">
               <button
                 @click="removeCartItem(item.id)"
-                class="text-xs text-red-600 hover:text-red-700 transition"
+                class="text-xs text-red-500 hover:text-red-600 transition"
               >
                 Remove
               </button>
-              <div class="flex items-center gap-1 border border-border rounded-lg">
+              <div class="flex items-center gap-1 border border-border rounded-lg bg-background">
                 <button
                   @click="updateCartItemQty(item.id, Math.max(1, item.quantity - 1))"
                   :disabled="item.quantity <= 1"
-                  class="h-7 w-7 flex items-center justify-center text-sm hover:bg-muted disabled:opacity-40 transition"
+                  class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary disabled:opacity-40 transition"
                 >−</button>
-                <span class="w-6 text-center text-sm font-medium">{{ item.quantity }}</span>
+                <span class="w-6 text-center text-sm font-medium text-foreground">{{ item.quantity }}</span>
                 <button
                   @click="updateCartItemQty(item.id, item.quantity + 1)"
-                  class="h-7 w-7 flex items-center justify-center text-sm hover:bg-muted transition"
+                  class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary transition"
                 >+</button>
               </div>
             </div>
@@ -676,20 +676,20 @@ onMounted(() => {
         </div>
 
         <!-- Footer -->
-        <div v-if="storeCartItems.length > 0" class="border-t border-border p-4 space-y-3">
+        <div v-if="storeCartItems.length > 0" class="border-t border-border p-4 space-y-3 bg-secondary/20">
           <div class="flex items-center justify-between">
             <span class="text-sm text-muted-foreground">
               {{ selectedStoreItemIds.length > 0 ? 'Selected' : 'Total' }}
             </span>
-            <span class="text-base font-semibold text-[#245c4a]">
+            <span class="text-base font-semibold text-brand-green dark:text-emerald-500">
               {{ formatCurrency(selectedStoreItemIds.length > 0 ? storeSelectedTotal : storeCartTotal) }}
             </span>
           </div>
-          <Link href="/customer/cart" class="block text-sm text-[#245c4a] hover:underline text-center font-medium">
+          <Link href="/customer/cart" class="block text-sm text-brand-green dark:text-emerald-500 hover:underline text-center font-medium">
             View full cart
           </Link>
-          <Button class="w-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white font-medium">
-            Pre-order
+          <Button class="w-full bg-brand-green hover:opacity-90 text-white dark:bg-emerald-600 font-medium">
+            Checkout Store Items
           </Button>
         </div>
       </div>
@@ -706,13 +706,8 @@ onMounted(() => {
     >
       <div
         v-if="toast"
-        class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium"
-        :class="toast.type === 'success'
-          ? 'bg-[#245c4a] text-white'
-          : 'bg-red-600 text-white'"
+        class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium bg-brand-green text-white dark:bg-emerald-600"
       >
-        <span v-if="toast.type === 'success'" class="text-lg">🛒</span>
-        <span v-else class="text-lg">⚠️</span>
         {{ toast.message }}
         <button
           class="ml-2 opacity-70 hover:opacity-100 transition-opacity"
@@ -725,14 +720,13 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-content {
-  margin-left: 250px;
+  margin-left: 256px;
   transition: margin-left 0.3s ease;
   min-height: 100vh;
-  background-color: #f9fafb;
 }
 
 .dashboard-content.sidebar-collapsed {
-  margin-left: 70px;
+  margin-left: 80px;
 }
 
 .line-clamp-2 {

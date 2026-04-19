@@ -55,7 +55,7 @@
                         </a>
                     </div>
                     <p class="mt-4 text-sm text-gray-500">
-                        Join 1000+ local businesses and 50,000+ happy customers
+                        Join 1000+ local businesses and 500000,000+ happy customers
                     </p>
                 </div>
                 <div class="relative">

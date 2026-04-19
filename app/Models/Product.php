@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
@@ -88,5 +89,10 @@ class Product extends Model
         $count = $distribution[$stars] ?? 0;
         
         return round(($count / $this->total_reviews) * 100);
+    }
+
+    public function listings(): BelongsToMany
+    {
+        return $this->belongsToMany(Listing::class)->withTimestamps();
     }
 }
