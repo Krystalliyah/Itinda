@@ -597,7 +597,7 @@ function cancelDeleteProduct() {
                 <tr
                   v-for="product in products"
                   :key="product.id"
-                  class="border-b border-border last:border-0 transition-colors hover:bg-[#F9FBF9]"
+                  class="border-b border-border last:border-0 transition-colors duration-200 hover:bg-[#f0f5f2] dark:hover:bg-[#1a2e42]"
                 >
                   <td class="px-5 py-4">
                     <div class="flex items-center gap-3">

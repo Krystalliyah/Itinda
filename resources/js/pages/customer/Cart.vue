@@ -741,7 +741,7 @@ const submitPreorder = async () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    class="h-9 w-9 text-red-600 hover:text-red-700"
+                    class="h-9 w-9 text-muted-foreground hover:text-rose-500 dark:hover:text-rose-400"
                     aria-label="Remove item"
                     @click="removeItem(item.id)"
                   >
@@ -753,7 +753,7 @@ const submitPreorder = async () => {
               <div class="flex items-center justify-between border-t border-border pt-3 mt-3">
                 <Button
                   variant="ghost"
-                  class="gap-2 text-red-600 hover:text-red-700"
+                  class="gap-2 text-muted-foreground hover:text-rose-500 dark:hover:text-rose-400"
                   :disabled="!cartItems.some(i => selectedIds.includes(i.id) && i.store.id === group.store.id)"
                   @click="removeSelectedStore(group.store.id)"
                 >
@@ -808,7 +808,7 @@ const submitPreorder = async () => {
 
             <Button
               variant="outline"
-              class="gap-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+              class="gap-2 text-muted-foreground hover:text-rose-500 dark:hover:text-rose-400 border-border hover:border-rose-300 dark:hover:border-rose-500/30"
               :disabled="cartItems.length === 0"
               @click="clearAllOpen = true"
             >

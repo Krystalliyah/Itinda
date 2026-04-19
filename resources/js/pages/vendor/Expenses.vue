@@ -853,15 +853,15 @@ const getMethodName = (method: string) => {
     <!-- Add Expense Modal -->
     <Teleport to="body">
         <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" style="background:rgba(0,0,0,0.5)">
-            <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <div class="px-5 py-4 border-b border-border flex justify-between items-center sticky top-0 bg-white">
+            <div class="bg-white dark:bg-slate-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
+                <div class="px-5 py-4 border-b border-border flex justify-between items-center flex-shrink-0 bg-white dark:bg-slate-800 rounded-t-xl z-10">
                     <h3 class="text-sm font-semibold" style="color:#245c4a">Record Expense</h3>
                     <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600">
                         <X class="h-4 w-4" />
                     </button>
                 </div>
                 
-                <form @submit.prevent="submitForm" class="p-5 space-y-4">
+                <form @submit.prevent="submitForm" class="p-5 space-y-4 overflow-y-auto flex-1">
                     <div>
                         <label class="block text-xs font-semibold text-muted-foreground mb-1.5">Title *</label>
                         <input v-model="form.title" type="text" required class="w-full px-3 py-2 rounded-xl border border-border" placeholder="e.g., Office Supplies" />
@@ -945,15 +945,15 @@ const getMethodName = (method: string) => {
     <!-- Edit Expense Modal -->
     <Teleport to="body">
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" style="background:rgba(0,0,0,0.5)">
-            <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <div class="px-5 py-4 border-b border-border flex justify-between items-center sticky top-0 bg-white">
+            <div class="bg-white dark:bg-slate-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
+                <div class="px-5 py-4 border-b border-border flex justify-between items-center flex-shrink-0 bg-white dark:bg-slate-800 rounded-t-xl z-10">
                     <h3 class="text-sm font-semibold" style="color:#245c4a">Edit Expense</h3>
                     <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600">
                         <X class="h-4 w-4" />
                     </button>
                 </div>
                 
-                <form @submit.prevent="submitForm" class="p-5 space-y-4">
+                <form @submit.prevent="submitForm" class="p-5 space-y-4 overflow-y-auto flex-1">
                     <div>
                         <label class="block text-xs font-semibold text-muted-foreground mb-1.5">Title *</label>
                         <input v-model="form.title" type="text" required class="w-full px-3 py-2 rounded-xl border border-border" />

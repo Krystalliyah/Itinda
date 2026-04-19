@@ -427,7 +427,9 @@ function formatDate(dt: string | null | undefined) {
                     <div class="pipeline">
                         <template v-for="(s, idx) in ['pending','confirmed','preparing','ready','completed'] as OrderStatus[]" :key="s">
                             <div class="pipe-step" :class="{'pipe-step--done': STATUS_ORDER.indexOf(detailOrder.status) > idx || detailOrder.status === s,'pipe-step--current': detailOrder.status === s,'pipe-step--cancelled': detailOrder.status === 'cancelled'}">
-                                <div class="pipe-dot"></div>
+                                <div class="pipe-dot">
+                                    <component :is="STATUS_CONFIG[s].icon" class="pipe-dot-icon" />
+                                </div>
                                 <span class="pipe-label">{{ STATUS_CONFIG[s].label }}</span>
                             </div>
                             <div v-if="idx < 4" class="pipe-line" :class="{'pipe-line--done': STATUS_ORDER.indexOf(detailOrder.status) > idx && detailOrder.status !== 'cancelled'}"></div>
@@ -1050,15 +1052,22 @@ function formatDate(dt: string | null | undefined) {
 
 .pipe-step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .pipe-dot {
-    width: 12px; height: 12px; border-radius: 50%;
-    background: #d4d4d4; border: 2px solid white;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #e5e5e5; border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center;
 }
+.pipe-dot-icon { width: 14px; height: 14px; color: #a3a3a3; }
 .dark .pipe-dot { background: #1e3048; border-color: #132032; }
-.pipe-step--done .pipe-dot { background: #245c4a; }
-.dark .pipe-step--done .pipe-dot { background: #6ee7b7; }
-.pipe-step--current .pipe-dot { background: #C5A059; box-shadow: 0 0 0 3px rgba(197,160,89,0.2); }
-.pipe-step--cancelled .pipe-dot { background: #ef4444; }
+.dark .pipe-dot-icon { color: #7a90a8; }
+.pipe-step--done .pipe-dot { background: #ecfdf5; border-color: #a7f3d0; }
+.pipe-step--done .pipe-dot-icon { color: #245c4a; }
+.dark .pipe-step--done .pipe-dot { background: rgba(36,92,74,0.3); border-color: rgba(110,231,183,0.3); }
+.dark .pipe-step--done .pipe-dot-icon { color: #6ee7b7; }
+.pipe-step--current .pipe-dot { background: #fffbeb; border-color: #C5A059; box-shadow: 0 0 0 3px rgba(197,160,89,0.2); }
+.pipe-step--current .pipe-dot-icon { color: #C5A059; }
+.pipe-step--cancelled .pipe-dot { background: #fef2f2; border-color: #fecaca; }
+.pipe-step--cancelled .pipe-dot-icon { color: #ef4444; }
 
 .pipe-label { font-size: 0.7rem; font-weight: 500; color: #737373; text-align: center; }
 .dark .pipe-label { color: #7a90a8; }

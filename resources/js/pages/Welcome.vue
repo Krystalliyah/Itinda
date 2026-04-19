@@ -6,13 +6,9 @@
             <div class="it-container">
                 <div class="it-nav-inner">
                     <Link href="/" class="it-nav-logo">
-                        <div class="it-nav-logo-mark">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                        <span class="it-logo-text">iTinda</span>
+                         <span class="it-logo-text">iTinda</span>
+                        <img src="/itinda-logo-2.png" alt="iTinda Logo" class="it-nav-logo-img" />
+                       
                     </Link>
 
                     <ul class="it-nav-links">
@@ -302,9 +298,11 @@
         <!-- ── FEATURES ──────────────────────────────────── -->
         <section id="features" class="it-features">
             <div class="it-container">
-                <div class="it-section-eyebrow">Platform Features</div>
-                <h2 class="it-section-title">Everything You Need<br><span class="it-title-accent">in One Platform</span></h2>
-                <p class="it-section-sub">Powerful, role-based tools built for vendors, customers, and administrators.</p>
+                <div class="it-section-heading-wrapper">
+                    <div class="it-section-eyebrow">Platform Features</div>
+                    <h2 class="it-section-title">Everything You Need<br><span class="it-title-accent">in One Platform</span></h2>
+                    <p class="it-section-sub">Powerful, role-based tools built for vendors, customers, and administrators.</p>
+                </div>
 
                 <div class="it-features-grid">
                     <div class="it-feature-card it-feature-purple">
@@ -349,9 +347,11 @@
         <!-- ── HOW IT WORKS ─────────────────────────────── -->
         <section id="how-it-works" class="it-how">
             <div class="it-container">
-                <div class="it-section-eyebrow">Simple Process</div>
-                <h2 class="it-section-title">How <span class="it-title-accent">iTinda</span> Works</h2>
-                <p class="it-section-sub">Three easy steps to start buying or selling locally.</p>
+                <div class="it-section-heading-wrapper">
+                    <div class="it-section-eyebrow">Simple Process</div>
+                    <h2 class="it-section-title">How <span class="it-title-accent">iTinda</span> Works</h2>
+                    <p class="it-section-sub">Three easy steps to start buying or selling locally.</p>
+                </div>
 
                 <div class="it-steps">
                     <div class="it-step-connector"></div>
@@ -398,9 +398,11 @@
         <!-- ── ROLE CARDS ─────────────────────────────── -->
         <section id="vendors" class="it-roles">
             <div class="it-container">
-                <div class="it-section-eyebrow">Role-Based Access</div>
-                <h2 class="it-section-title">Built for <span class="it-title-accent">Vendors</span> &amp; Customers</h2>
-                <p class="it-section-sub">Each role gets exactly the tools they need — nothing more, nothing less.</p>
+                <div class="it-section-heading-wrapper">
+                    <div class="it-section-eyebrow">Role-Based Access</div>
+                    <h2 class="it-section-title">Built for <span class="it-title-accent">Vendors</span> &amp; Customers</h2>
+                    <p class="it-section-sub">Each role gets exactly the tools they need — nothing more, nothing less.</p>
+                </div>
 
                 <div class="it-roles-grid">
                     <!-- Vendor card -->
@@ -510,12 +512,7 @@
                 <div class="it-footer-grid">
                     <div class="it-footer-brand-col">
                         <div class="it-footer-logo">
-                            <div class="it-footer-logo-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                            </div>
+                            <img src="/itinda-logo-2.png" alt="iTinda Logo" class="it-footer-logo-img" />
                             iTinda
                         </div>
                         <p class="it-footer-desc">Connecting local vendors with customers in your community — one neighborhood at a time.</p>
@@ -661,6 +658,15 @@ onUnmounted(() => {
 /* ──────────────────────────────────────────────────────────
    SHARED SECTION LABELS
    ────────────────────────────────────────────────────────── */
+.it-section-heading-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+}
+
 .it-section-eyebrow {
     font-family: 'DM Sans', sans-serif;
     font-weight: 600;
@@ -693,7 +699,7 @@ onUnmounted(() => {
     color: var(--ink-soft);
     line-height: 1.75;
     text-align: center;
-    max-width: 480px;
+    max-width: 600px;
     margin: 0 auto 56px;
 }
 
@@ -706,14 +712,14 @@ onUnmounted(() => {
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 200;
-    background: rgba(27, 67, 50, 0.96);
+    background: rgba(14, 37, 15, 0.96);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .it-nav-scrolled {
-    background: rgba(27, 67, 50, 1);
+    background: rgba(14, 37, 15, 1);
     box-shadow: 0 4px 32px rgba(0,0,0,0.18);
 }
 
@@ -732,24 +738,17 @@ onUnmounted(() => {
     flex-shrink: 0;
 }
 
-.it-nav-logo-mark {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--gold-light), var(--gold));
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-
-.it-nav-logo-mark svg {
-    width: 18px; height: 18px;
-    color: var(--pine);
+.it-nav-logo-img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
 }
 
 .it-logo-text {
     font-family: 'Fraunces', serif;
     font-weight: 700;
     font-size: 1.5rem;
-    color: #fff;
+    color: #f4e187;
     letter-spacing: 0.5px;
 }
 
@@ -2048,12 +2047,10 @@ onUnmounted(() => {
     margin-bottom: 14px;
 }
 
-.it-footer-logo-icon {
-    width: 28px; height: 28px;
-    background: rgba(246, 173, 85, 0.18);
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--gold-light);
+.it-footer-logo-img {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
 }
 
 .it-footer-desc {

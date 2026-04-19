@@ -3,23 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\Tenant;
+use App\Support\ChecksStoreReadiness;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Support\ChecksStoreReadiness;
 
 class ProductController extends Controller
 {
     use ChecksStoreReadiness;
+
     /**
      * Helper method to get product image URL from S3 or local storage
-     * 
-     * @param \App\Models\Product $product
+     *
+     * @param  Product  $product
      * @return string|null
      */
     private function getProductImageUrl($product)
     {
-        if (!$product->image_path) {
+        if (! $product->image_path) {
             return null;
         }
 
@@ -28,19 +30,24 @@ class ProductController extends Controller
             return $product->image_path;
         }
 
-        // Always check local public disk first — this handles seeded/dev images
-        // that were never uploaded to S3
+        // Try S3 first if configured
+        if (config('filesystems.default') === 's3' || config('filesystems.cloud') === 's3') {
+            try {
+                if (Storage::disk('s3')->exists($product->image_path)) {
+                    return Storage::disk('s3')->url($product->image_path);
+                }
+            } catch (\Throwable $e) {
+                // S3 not reachable — fall through to local
+            }
+        }
+
+        // Fallback to local public disk
         if (Storage::disk('public')->exists($product->image_path)) {
             return Storage::disk('public')->url($product->image_path);
         }
 
-        // File not local — try S3 if configured
-        if (config('filesystems.default') === 's3' || config('filesystems.cloud') === 's3') {
-            return Storage::disk('s3')->url($product->image_path);
-        }
-
         // Final fallback to local asset helper
-        return asset('storage/' . $product->image_path);
+        return asset('storage/'.$product->image_path);
     }
 
     /**
@@ -73,20 +80,20 @@ class ProductController extends Controller
             }
 
             $storeProducts = $store->run(function () use ($validated) {
-                $query = \App\Models\Product::query()
+                $query = Product::query()
                     ->where('is_active', true)
                     ->with('category'); // Eager load category
 
                 // Search filter
-                if (!empty($validated['search'])) {
+                if (! empty($validated['search'])) {
                     $query->where(function ($q) use ($validated) {
-                        $q->where('name', 'like', '%' . $validated['search'] . '%')
-                          ->orWhere('description', 'like', '%' . $validated['search'] . '%');
+                        $q->where('name', 'like', '%'.$validated['search'].'%')
+                            ->orWhere('description', 'like', '%'.$validated['search'].'%');
                     });
                 }
 
                 // Category filter
-                if (!empty($validated['category_id'])) {
+                if (! empty($validated['category_id'])) {
                     $query->where('category_id', $validated['category_id']);
                 }
 
@@ -154,7 +161,7 @@ class ProductController extends Controller
             'meta' => [
                 'total' => count($allProducts),
                 'filters_applied' => array_filter($validated),
-            ]
+            ],
         ]);
     }
 
@@ -171,28 +178,28 @@ class ProductController extends Controller
         abort_unless($this->isStoreReady($store), 404, 'Store not found');
 
         $product = $store->run(function () use ($productId) {
-            return \App\Models\Product::with('category')->findOrFail($productId);
+            return Product::with('category')->findOrFail($productId);
         });
 
         return response()->json([
             'success' => true,
             'data' => [
-                'id'            => $product->id,
-                'product_name'  => $product->name,
-                'description'   => $product->description ?? '',
-                'sku'           => $product->sku ?? null,
-                'category_id'   => $product->category_id,
+                'id' => $product->id,
+                'product_name' => $product->name,
+                'description' => $product->description ?? '',
+                'sku' => $product->sku ?? null,
+                'category_id' => $product->category_id,
                 'category_name' => $product->category?->name ?? null,
-                'image_url'     => $this->getProductImageUrl($product),
-                'unit_price'    => (float) $product->price,
-                'stock_level'   => $product->stock ?? 0,
-                'sold_count'    => 0,
-                'rating'        => $product->average_rating ?? 0,
+                'image_url' => $this->getProductImageUrl($product),
+                'unit_price' => (float) $product->price,
+                'stock_level' => $product->stock ?? 0,
+                'sold_count' => 0,
+                'rating' => $product->average_rating ?? 0,
                 'total_reviews' => $product->total_reviews ?? 0,
-                'is_available'  => $product->stock > 0,
-                'is_active'     => $product->is_active,
+                'is_available' => $product->stock > 0,
+                'is_active' => $product->is_active,
                 'store' => [
-                    'id'   => $store->id,
+                    'id' => $store->id,
                     'name' => $store->name,
                     'logo' => $store->logo ?? null,
                 ],
@@ -222,20 +229,20 @@ class ProductController extends Controller
         abort_unless($this->isStoreReady($store), 404, 'Store not found');
 
         $products = $store->run(function () use ($validated) {
-            $query = \App\Models\Product::query()
+            $query = Product::query()
                 ->where('is_active', true)
                 ->with('category');
 
             // Search filter
-            if (!empty($validated['search'])) {
+            if (! empty($validated['search'])) {
                 $query->where(function ($q) use ($validated) {
-                    $q->where('name', 'like', '%' . $validated['search'] . '%')
-                      ->orWhere('description', 'like', '%' . $validated['search'] . '%');
+                    $q->where('name', 'like', '%'.$validated['search'].'%')
+                        ->orWhere('description', 'like', '%'.$validated['search'].'%');
                 });
             }
 
             // Category filter
-            if (!empty($validated['category_id'])) {
+            if (! empty($validated['category_id'])) {
                 $query->where('category_id', $validated['category_id']);
             }
 
@@ -292,7 +299,7 @@ class ProductController extends Controller
                 'total' => $products->count(),
                 'store_id' => $storeId,
                 'filters_applied' => array_filter($validated),
-            ]
+            ],
         ]);
     }
 }

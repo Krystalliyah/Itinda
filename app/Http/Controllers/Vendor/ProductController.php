@@ -12,6 +12,40 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    /**
+     * Get product image URL - tries S3 first, then local storage fallback.
+     */
+    private function getProductImageUrl($product): ?string
+    {
+        if (! $product->image_path) {
+            return null;
+        }
+
+        // Already a full URL
+        if (str_starts_with($product->image_path, 'http')) {
+            return $product->image_path;
+        }
+
+        // Try S3 first if configured
+        if (config('filesystems.default') === 's3' || config('filesystems.cloud') === 's3') {
+            try {
+                if (Storage::disk('s3')->exists($product->image_path)) {
+                    return Storage::disk('s3')->url($product->image_path);
+                }
+            } catch (\Throwable $e) {
+                // S3 not reachable — fall through to local
+            }
+        }
+
+        // Fallback to local public disk
+        if (Storage::disk('public')->exists($product->image_path)) {
+            return Storage::disk('public')->url($product->image_path);
+        }
+
+        // Last resort — asset helper
+        return asset('storage/'.$product->image_path);
+    }
+
     public function index(Request $request)
     {
         $search = $request->query('search', '');
@@ -46,9 +80,7 @@ class ProductController extends Controller
                     'barcode' => $product->barcode,
                     'price' => $product->price,
                     'stock' => $product->stock,
-                    'image_url' => $product->image_path
-                        ? Storage::disk('s3')->url($product->image_path)
-                        : null,
+                    'image_url' => $this->getProductImageUrl($product),
                     'is_active' => $product->is_active,
                     'created_at' => $product->created_at,
                     'total_reviews' => $product->total_reviews ?? 0,
