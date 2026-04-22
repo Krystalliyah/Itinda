@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import { Head, useForm, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
-import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
-import AdminNav from '@/components/navigation/AdminNav.vue';
-import { useSidebar } from '@/composables/useSidebar';
-import StoreDetailsModal from '@/components/StoreDetailsModal.vue';
-import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
 import {
     CheckCircleIcon,
     ClockIcon,
@@ -19,6 +11,14 @@ import {
     TableCellsIcon,
     EyeIcon,
 } from '@heroicons/vue/24/outline';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import Header from '@/components/Header.vue';
+import AdminNav from '@/components/navigation/AdminNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
+import StoreDetailsModal from '@/components/StoreDetailsModal.vue';
+import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 interface Domain {
     id: number;

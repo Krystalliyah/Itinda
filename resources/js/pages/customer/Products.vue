@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { Link } from '@inertiajs/vue3'
 import { watchDebounced } from '@vueuse/core';
+import { ChevronDown, ShoppingCart, Star, Package } from 'lucide-vue-next'
+import { ref, computed, onMounted, watch, reactive } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
-import { useSidebar } from '@/composables/useSidebar';
-import { Link } from '@inertiajs/vue3'
+import Sidebar from '@/components/Sidebar.vue';
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { ChevronDown, ShoppingCart, Star, Package } from 'lucide-vue-next'
-import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,6 +18,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { useSidebar } from '@/composables/useSidebar';
 
 // ── Types ────────────────────────────────────────────────────
 type Category = {

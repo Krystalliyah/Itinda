@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { ChevronDown, Store, MapPin } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
-import { useSidebar } from '@/composables/useSidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import Sidebar from '@/components/Sidebar.vue';
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback
+} from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown } from 'lucide-vue-next'
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback
-} from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
+import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
@@ -196,14 +196,20 @@ onMounted(() => {
                 </DropdownMenu>
             </div>
 
-            <!-- Store Grid -->
-            <div v-if="loading" class="text-center py-12">
-                <p class="text-muted-foreground">Loading stores...</p>
+            <!-- ── Loading State ── -->
+            <div v-if="loading" class="state-center">
+                <div class="elegant-loader">
+                    <div class="loader-ring loader-ring--outer"></div>
+                    <div class="loader-ring loader-ring--inner"></div>
+                    <div class="loader-core"></div>
+                </div>
+                <p class="loading-text">Finding stores for you…</p>
             </div>
 
-            <div v-else-if="error" class="text-center py-12">
-                <p class="text-red-600 mb-4">{{ error }}</p>
-                <Button @click="fetchStores" variant="outline">
+            <!-- ── Error State ── -->
+            <div v-else-if="error" class="state-center">
+                <p class="text-red-500 font-medium mb-4">{{ error }}</p>
+                <Button @click="fetchStores" variant="outline" class="rounded-xl">
                     Try Again
                 </Button>
             </div>
@@ -289,12 +295,129 @@ onMounted(() => {
 
             <!-- Empty State -->
             <div
-            v-if="filteredStores.length === 0"
-            class="text-center py-12 text-muted-foreground"
+                v-if="!loading && !error && filteredStores.length === 0"
+                class="empty-state"
             >
-            No stores found.
+                <div class="empty-icon">
+                    <Store class="h-10 w-10" />
+                </div>
+                <p class="empty-title">No stores found</p>
+                <p class="empty-sub">Try adjusting your search or status filter</p>
             </div>
         </div>
         </main>
     </div>
 </template>
+
+<style scoped>
+.dashboard-content {
+    margin-left: 256px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+}
+.dashboard-content.sidebar-collapsed {
+    margin-left: 80px;
+}
+@media (max-width: 767px) {
+    .dashboard-content { margin-left: 0; }
+}
+
+/* ── States ── */
+.state-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 20px;
+}
+
+.elegant-loader {
+    position: relative;
+    width: 56px;
+    height: 56px;
+}
+
+.loader-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    animation: elegant-spin linear infinite;
+}
+
+.loader-ring--outer {
+    border-top-color: #245c4a;
+    animation-duration: 1.2s;
+}
+.dark .loader-ring--outer { border-top-color: #34d399; }
+
+.loader-ring--inner {
+    inset: 10px;
+    border-bottom-color: #F7E8C6;
+    animation-duration: 0.9s;
+    animation-direction: reverse;
+}
+
+.loader-core {
+    position: absolute;
+    inset: 20px;
+    border-radius: 50%;
+    background: #245c4a;
+    opacity: 0.2;
+    animation: core-pulse 1.5s ease-in-out infinite;
+}
+.dark .loader-core { background: #34d399; }
+
+@keyframes elegant-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+@keyframes core-pulse {
+    0%, 100% { transform: scale(0.8); opacity: 0.2; }
+    50%       { transform: scale(1.1);  opacity: 0.4; }
+}
+
+.loading-text {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    letter-spacing: 0.02em;
+}
+
+/* Empty state */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 32px;
+    gap: 8px;
+    margin-top: 2rem;
+}
+.empty-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(36, 92, 74, 0.08);
+    border-radius: 20px;
+    color: #245c4a;
+    margin-bottom: 12px;
+}
+.dark .empty-icon { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+.empty-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0;
+}
+.empty-sub {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin: 0;
+}
+</style>

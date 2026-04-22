@@ -1,8 +1,20 @@
 <script setup lang="ts">
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import { LayoutGrid, AlertCircle } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import VendorLayout from '@/layouts/VendorLayout.vue';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ConfirmationModal } from '@/components/ui/modal';
+import VendorLayout from '@/layouts/VendorLayout.vue';
 
 type Listing = {
   id: number;
@@ -243,64 +255,88 @@ function deleteListing() {
       </div>
     </div>
 
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl border border-border">
-        <div class="px-5 py-4 border-b border-border flex items-center justify-between">
-          <div>
-            <h2 class="text-base font-semibold" style="color:#245c4a">
-              {{ editingListing ? 'Edit Listing' : 'Create Listing' }}
-            </h2>
-            <p class="text-xs text-muted-foreground mt-0.5">
-              Vendor-defined product grouping.
-            </p>
+    <Dialog :open="showModal" @update:open="showModal = $event">
+      <DialogContent class="sm:max-w-[480px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white dark:bg-slate-900">
+        <DialogHeader class="px-6 pt-8 pb-6 bg-gradient-to-br from-[#1B4D3E] to-[#245C4A] relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-[#C5A059]/20 rounded-full blur-xl"></div>
+          
+          <div class="relative z-10 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <LayoutGrid class="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <DialogTitle class="text-xl font-bold text-white tracking-tight">
+                {{ editingListing ? 'Edit Listing' : 'Create Listing' }}
+              </DialogTitle>
+              <DialogDescription class="text-emerald-100/80 text-xs mt-0.5 font-medium uppercase tracking-wider">
+                {{ editingListing ? 'Update listing collection details' : 'Define a new product collection' }}
+              </DialogDescription>
+            </div>
           </div>
+        </DialogHeader>
 
-          <button @click="closeModal" class="text-slate-500 hover:text-slate-700 text-sm">✕</button>
+        <div class="px-6 py-6">
+          <form id="listing-form" @submit.prevent="submit" class="space-y-5">
+            <div class="space-y-2">
+              <Label for="listing-name" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70">Listing Name</Label>
+              <Input
+                id="listing-name"
+                v-model="form.name"
+                placeholder="e.g. Summer Collection"
+                class="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                required
+              />
+              <p v-if="form.errors.name" class="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" /> {{ form.errors.name }}
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <Label for="listing-desc" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70">Description</Label>
+              <textarea
+                id="listing-desc"
+                v-model="form.description"
+                placeholder="Briefly describe this collection..."
+                rows="4"
+                class="flex min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:bg-white transition-all resize-none"
+              ></textarea>
+              <p v-if="form.errors.description" class="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" /> {{ form.errors.description }}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-emerald-50/30 hover:border-emerald-100">
+              <Checkbox id="is_active" v-model:checked="form.is_active" />
+              <Label for="is_active" class="text-sm font-medium text-slate-700 cursor-pointer">Set as active collection</Label>
+            </div>
+          </form>
         </div>
 
-        <form @submit.prevent="submit" class="px-5 py-4 space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-              Listing Name
-            </label>
-            <input
-              v-model="form.name"
-              type="text"
-              class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground focus:outline-none focus:ring-2 text-sm"
-              style="--tw-ring-color: rgba(36,92,74,.35);"
-            />
-            <p v-if="form.errors.name" class="text-xs mt-1 text-rose-600">{{ form.errors.name }}</p>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-              Description
-            </label>
-            <textarea
-              v-model="form.description"
-              rows="3"
-              class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground focus:outline-none focus:ring-2 text-sm"
-              style="--tw-ring-color: rgba(36,92,74,.35);"
-            />
-            <p v-if="form.errors.description" class="text-xs mt-1 text-rose-600">{{ form.errors.description }}</p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <input v-model="form.is_active" type="checkbox" id="is_active" />
-            <label for="is_active" class="text-sm text-slate-700">Active listing</label>
-          </div>
-
-          <div class="flex items-center justify-end gap-2 pt-2">
-            <button type="button" @click="closeModal" class="px-4 py-2 rounded-xl border border-border text-sm">
-              Cancel
-            </button>
-            <button type="submit" class="px-4 py-2 rounded-xl text-sm text-white" style="background:#245c4a">
+        <DialogFooter class="px-6 py-4 bg-slate-50 flex flex-row items-center justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            @click="closeModal"
+            class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="listing-form"
+            class="h-11 px-6 rounded-xl bg-[#245C4A] text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
+          >
+            <template v-if="form.processing">
+              <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Processing...
+            </template>
+            <template v-else>
               {{ editingListing ? 'Save Changes' : 'Create Listing' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </template>
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <ConfirmationModal
       :open="showDeleteModal"

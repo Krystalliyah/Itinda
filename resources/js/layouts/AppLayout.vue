@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import AdminNav from '@/components/navigation/AdminNav.vue';
 import AdminNavIcons from '@/components/navigation/AdminNavIcons.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import { useSidebar } from '@/composables/useSidebar';
 import type { BreadcrumbItem } from '@/types';
 

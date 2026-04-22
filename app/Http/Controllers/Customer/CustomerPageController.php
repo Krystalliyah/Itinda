@@ -66,7 +66,7 @@ class CustomerPageController extends Controller
                     'name' => $t->name,
                     'domain' => $t->domains->first()?->domain,
                     'hours' => $t->operating_hours,
-                    'logo' => $t->data['logo'] ?? null,
+                    'logo' => $t->profile_photo_url,
                     'isOpen' => $this->checkStoreIsOpen($t->operating_hours),
                 ]);
         });

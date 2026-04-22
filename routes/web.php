@@ -64,10 +64,10 @@ Route::domain(config('app.domain'))->group(function () {
                 'name' => $t->name ?? 'Unnamed Store',
                 'address' => $t->address ?? 'No address provided',
                 'phone' => $t->phone ?? '',
-                'hours' => 'Open Today', 
+                'hours' => 'Open Today',
                 'isOpen' => true,
-                'logo' => $t->data['logo'] ?? null,
-                'cover' => $t->data['cover'] ?? null,
+                'logo' => $t->profile_photo_url,
+                'cover' => $t->cover_photo_url,
                 'products' => $products,
             ];
         })->values()->all();

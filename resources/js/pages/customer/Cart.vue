@@ -1,31 +1,5 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { computed, ref, onMounted } from 'vue'
-
-import Header from '@/components/Header.vue'
-import Sidebar from '@/components/Sidebar.vue'
-import CustomerNav from '@/components/navigation/CustomerNav.vue'
-import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue'
-import { useSidebar } from '@/composables/useSidebar'
-
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-
 import {
   ArrowLeft,
   ChevronDown,
@@ -35,7 +9,33 @@ import {
   Store,
   Trash2,
 } from 'lucide-vue-next'
+import { computed, ref, onMounted } from 'vue'
+
 import { toast } from 'vue-sonner'
+import Header from '@/components/Header.vue'
+import CustomerNav from '@/components/navigation/CustomerNav.vue'
+import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue'
+import Sidebar from '@/components/Sidebar.vue'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { useSidebar } from '@/composables/useSidebar'
+
 
 type StoreInfo = {
   id: number

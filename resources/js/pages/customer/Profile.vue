@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, Form, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import {
     BadgeCheck,
     Bell,
@@ -11,18 +10,18 @@ import {
     ShieldCheck,
     UserRound,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 
+import { toast } from 'vue-sonner';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
+import Header from '@/components/Header.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Card,
     CardContent,
@@ -30,9 +29,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { send } from '@/routes/verification';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useSidebar } from '@/composables/useSidebar';
-import { toast } from 'vue-sonner';
+import { send } from '@/routes/verification';
 
 const { isCollapsed } = useSidebar();
 

@@ -28,8 +28,12 @@ class StoreSettingsController extends Controller
                 'description' => $tenantRecord->description,
                 'address' => $tenantRecord->address,
                 'phone' => $tenantRecord->phone,
-                'operating_hours' => $tenantRecord->operating_hours, // raw from DB, no fallback
+                'operating_hours' => $tenantRecord->operating_hours,
                 'data' => $tenantRecord->data,
+                'profile_photo_path' => $tenantRecord->profile_photo_path,
+                'cover_photo_path' => $tenantRecord->cover_photo_path,
+                'profile_photo_url' => $tenantRecord->profile_photo_url,
+                'cover_photo_url' => $tenantRecord->cover_photo_url,
             ],
         ]);
     }
@@ -80,11 +84,13 @@ class StoreSettingsController extends Controller
             'operating_hours.*.open_time' => ['nullable', 'string'],
             'operating_hours.*.close_time' => ['nullable', 'string'],
             'website' => ['nullable', 'string', 'max:255'],
+            'profile_photo' => ['nullable', 'image', 'max:2048'],
+            'cover_photo' => ['nullable', 'image', 'max:5120'],
         ]);
 
         $existingData = is_array($tenantRecord->data) ? $tenantRecord->data : [];
 
-        $tenantRecord->update([
+        $updateData = [
             'name' => $validated['store_name'],
             'email' => $validated['email'],
             'description' => $validated['description'] ?? null,
@@ -94,7 +100,28 @@ class StoreSettingsController extends Controller
             'data' => array_merge($existingData, [
                 'website' => $validated['website'] ?? null,
             ]),
-        ]);
+        ];
+
+        // Determine disk (S3 if available, otherwise public)
+        $disk = config('filesystems.disks.s3.key') ? 's3' : 'public';
+
+        if ($request->hasFile('profile_photo')) {
+            // Delete old one if exists
+            if ($tenantRecord->profile_photo_path) {
+                \Storage::disk($disk)->delete($tenantRecord->profile_photo_path);
+            }
+            $updateData['profile_photo_path'] = $request->file('profile_photo')->store("branding/{$tenantRecord->id}", $disk);
+        }
+
+        if ($request->hasFile('cover_photo')) {
+            // Delete old one if exists
+            if ($tenantRecord->cover_photo_path) {
+                \Storage::disk($disk)->delete($tenantRecord->cover_photo_path);
+            }
+            $updateData['cover_photo_path'] = $request->file('cover_photo')->store("branding/{$tenantRecord->id}", $disk);
+        }
+
+        $tenantRecord->update($updateData);
 
         return back()->with('success', 'Store settings updated successfully.');
     }

@@ -552,8 +552,8 @@
     </div>
 </template>
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     canRegister:    Boolean,

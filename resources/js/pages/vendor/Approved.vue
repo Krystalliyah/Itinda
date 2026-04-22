@@ -2,8 +2,8 @@
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
 
 interface Props {
   subdomain: string;

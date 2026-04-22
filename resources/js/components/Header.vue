@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useSidebar } from '@/composables/useSidebar';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 const { toggleSidebar } = useSidebar();
 const page = usePage();

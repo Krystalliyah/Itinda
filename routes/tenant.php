@@ -137,6 +137,8 @@ Route::middleware([
                     'id' => $tenant->id,
                     'name' => $tenant->name,
                     'database' => 'tenant_'.$tenant->id,
+                    'profile_photo_url' => $tenant->profile_photo_url,
+                    'cover_photo_url' => $tenant->cover_photo_url,
                 ],
                 'stats' => [
                     'orders' => $activeOrders,

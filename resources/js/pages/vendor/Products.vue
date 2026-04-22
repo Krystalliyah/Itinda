@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
-import VendorLayout from '@/layouts/VendorLayout.vue';
-import { ConfirmationModal } from '@/components/ui/modal';
 import { Star } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { ConfirmationModal } from '@/components/ui/modal';
+import VendorLayout from '@/layouts/VendorLayout.vue';
 
 type Product = {
   id: number;
@@ -313,14 +313,20 @@ function onPickImage(e: Event) {
 
 function submit() {
   if (editingProduct.value) {
-    form.put(`/vendor/products/${editingProduct.value.id}`, {
+    form.transform((data) => ({
+      ...data,
+      _method: 'put',
+    })).post(`/vendor/products/${editingProduct.value.id}`, {
       forceFormData: true,
       preserveState: true,
       onError: (errors) => console.log('upload errors', errors),
       onSuccess: () => closeModal(),
     });
   } else {
-    form.post('/vendor/products', {
+    form.transform((data) => {
+      const { _method, ...rest } = data;
+      return rest;
+    }).post('/vendor/products', {
       forceFormData: true,
       preserveState: true,
       onError: (errors) => console.log('upload errors', errors),

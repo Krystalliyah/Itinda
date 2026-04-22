@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
 import {
     BadgeDollarSign,
     CalendarDays,
@@ -17,10 +16,11 @@ import {
     Trash2,
     X,
 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
@@ -428,7 +428,7 @@ const getMethodName = (method: string) => {
                                     Keep store spending clear and organized
                                 </h1>
 
-                                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
+                                <p class="mt-3 max-w-xl text-sm leading-7 !text-emerald-50 sm:text-base">
                                     Monitor operational costs, review category spending, and quickly spot pending payments.
                                 </p>
                             </div>

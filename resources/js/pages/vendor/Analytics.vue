@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import {
     BarChart3,
     Clock3,
@@ -12,10 +11,11 @@ import {
     Wallet,
     Calendar,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 interface WeeklySale {
@@ -623,7 +623,7 @@ const formatDate = (date: string) =>
 
 .hero-description {
     margin-top: 0.75rem; max-width: 36rem;
-    font-size: 0.875rem; line-height: 1.75rem; color: rgba(255,255,255,0.8);
+    font-size: 0.875rem; line-height: 1.75rem; color: #ECFDF5 !important;
 }
 
 .hero-stats {
@@ -639,7 +639,7 @@ const formatDate = (date: string) =>
 }
 .stat-label {
     font-size: 0.6875rem; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.22em; color: rgba(255,255,255,0.75);
+    text-transform: uppercase; letter-spacing: 0.22em; color: #ECFDF5 !important;
 }
 .stat-value { margin-top: 0.5rem; font-size: 1.25rem; font-weight: 600; color: white; }
 

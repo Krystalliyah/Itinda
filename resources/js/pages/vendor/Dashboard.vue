@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Head, usePage, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import VendorLayout from '@/layouts/VendorLayout.vue';
-import InputError from '@/components/InputError.vue';
-import Sidebar from '@/components/Sidebar.vue';
-import VendorNav from '@/components/navigation/VendorNav.vue';
-import { useSidebar } from '@/composables/useSidebar';
 import Header from '@/components/Header.vue';
+import InputError from '@/components/InputError.vue';
+import VendorNav from '@/components/navigation/VendorNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
+import { useSidebar } from '@/composables/useSidebar';
+import VendorLayout from '@/layouts/VendorLayout.vue';
 
 const { isCollapsed } = useSidebar();
 const page = usePage();

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { X } from 'lucide-vue-next';
-import { useSidebar } from '@/composables/useSidebar';
+import { ref } from 'vue';
 import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 defineProps<{
     role: 'admin' | 'vendor' | 'customer';

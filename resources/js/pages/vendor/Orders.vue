@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
+import { Clock, CheckCircle, ChefHat, Package, CheckCircle2, XCircle, Eye, ArrowRight, Trash2 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
-import { useSidebar } from '@/composables/useSidebar';
-import { Clock, CheckCircle, ChefHat, Package, CheckCircle2, XCircle, Eye, ArrowRight, Trash2 } from 'lucide-vue-next';
+import Sidebar from '@/components/Sidebar.vue';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({

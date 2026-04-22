@@ -131,7 +131,7 @@ class ProductController extends Controller
                     'store' => [
                         'id' => $store->id,
                         'name' => $store->name,
-                        'logo' => $store->logo ?? null,
+                        'logo' => $store->profile_photo_url,
                     ],
                 ];
             }
@@ -201,7 +201,7 @@ class ProductController extends Controller
                 'store' => [
                     'id' => $store->id,
                     'name' => $store->name,
-                    'logo' => $store->logo ?? null,
+                    'logo' => $store->profile_photo_url,
                 ],
             ],
         ]);

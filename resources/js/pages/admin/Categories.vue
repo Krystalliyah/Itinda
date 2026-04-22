@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { computed, ref, reactive } from 'vue';
-import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
-import AdminNav from '@/components/navigation/AdminNav.vue';
-import { useSidebar } from '@/composables/useSidebar';
 import {
     TagIcon,
     PlusIcon,
@@ -18,6 +12,12 @@ import {
     MagnifyingGlassIcon,
     Squares2X2Icon,
 } from '@heroicons/vue/24/outline';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, ref, reactive } from 'vue';
+import Header from '@/components/Header.vue';
+import AdminNav from '@/components/navigation/AdminNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 interface Category {
     id: number

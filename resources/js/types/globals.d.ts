@@ -1,7 +1,7 @@
-import type { AppPageProps } from './index';
 import type { Router } from '@inertiajs/core';
 import type { Page } from '@inertiajs/core';
 import type { createHeadManager } from '@inertiajs/vue3';
+import type { AppPageProps } from './index';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {

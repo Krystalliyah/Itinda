@@ -2,10 +2,10 @@
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
 // import VendorNavIcons from '@/components/navigation/VendorNavIcons.vue';
 import PlaceholderPage from '@/components/PlaceholderPage.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
