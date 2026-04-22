@@ -16,7 +16,19 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
+
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string;
+  parent_id: number | null;
+  children?: Category[];
+};
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
@@ -107,6 +119,38 @@ const fetchProducts = async () => {
     products.value = []
   } finally {
     productsLoading.value = false
+  }
+}
+
+const categories = ref<Category[]>([])
+
+const selectedCategoryLabel = computed(() => {
+  if (selectedCategory.value === 'all') return 'Category'
+  // Search parent categories
+  for (const cat of categories.value) {
+    if (cat.id === selectedCategory.value) return cat.name
+    for (const child of cat.children ?? []) {
+      if (child.id === selectedCategory.value) return `${cat.name} › ${child.name}`
+    }
+  }
+  return 'Category'
+})
+
+const fetchCategories = async () => {
+  try {
+    const response = await fetch('/customer/categories', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      categories.value = data.data || []
+    }
+  } catch (err) {
+    console.error('Error fetching categories:', err)
   }
 }
 
@@ -362,6 +406,7 @@ const openCartModal = async () => {
 onMounted(() => {
   fetchStoreDetails()
   fetchProducts()
+  fetchCategories()
   fetchCartItems()
 })
 </script>
@@ -403,6 +448,7 @@ onMounted(() => {
             </Button>
           </Link>
         </div>
+
         <div class="max-w-6xl mx-auto px-6">
           <div class="relative h-64 w-full overflow-hidden rounded-2xl shadow-lg border border-border">
             <img :src="store.cover" class="h-full w-full object-cover" />
@@ -410,7 +456,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="max-w-6xl mx-auto px-6">
+        <div class="max-w-6xl mx-auto px-6 mt-15">
           <div class="p-8 space-y-6 bg-card rounded-[28px] border border-border mt-[-2rem] relative z-10 shadow-sm">
             <h1 class="text-3xl font-semibold text-brand-green dark:text-emerald-500">{{ store.name }}</h1>
 
@@ -449,19 +495,52 @@ onMounted(() => {
           <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between mb-6">
             <Input v-model="searchProduct" placeholder="Search products..." class="w-full lg:max-w-sm bg-background" />
 
-            <div class="flex gap-3 w-full lg:w-auto">
+            <div class="flex gap-3 lg:w-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="w-36 justify-between bg-background">
-                    Category
-                    <ChevronDown class="w-4 h-4 opacity-60" />
+                  <Button 
+                    variant="outline" 
+                    class="justify-between bg-background min-w-[9rem] max-w-[12rem] h-9 px-3 text-left" 
+                    :class="{ 'border-brand-green text-brand-green': selectedCategory !== 'all' }"
+                  >
+                    <span class="truncate">{{ selectedCategoryLabel }}</span>
+                    <ChevronDown class="w-4 h-4 opacity-60 flex-shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent class="bg-card border-border">
-                  <DropdownMenuItem @click="selectedCategory = 'all'">All</DropdownMenuItem>
-                  <DropdownMenuItem @click="selectedCategory = 1">Fruits</DropdownMenuItem>
-                  <DropdownMenuItem @click="selectedCategory = 2">Dairy</DropdownMenuItem>
-                  <DropdownMenuItem @click="selectedCategory = 3">Snacks</DropdownMenuItem>
+                  <DropdownMenuItem class="filter-dropdown-item" @click="selectedCategory = 'all'">
+                    <span class="cat-dot" style="background:#94a3b8"></span>
+                    All Categories
+                  </DropdownMenuItem>
+
+                  <template v-for="cat in categories" :key="cat.id">
+                    <DropdownMenuSeparator class="filter-sep" />
+                    <DropdownMenuItem
+                      class="filter-dropdown-item filter-dropdown-item--parent"
+                      @click="selectedCategory = cat.id"
+                      :class="{ 'filter-dropdown-item--selected': selectedCategory === cat.id }"
+                    >
+                      <span
+                        class="cat-dot"
+                        :style="{ background: cat.color || '#6366f1' }"
+                      ></span>
+                      {{ cat.name }}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      v-for="child in cat.children ?? []"
+                      :key="child.id"
+                      class="filter-dropdown-item filter-dropdown-item--child"
+                      @click="selectedCategory = child.id"
+                      :class="{ 'filter-dropdown-item--selected': selectedCategory === child.id }"
+                    >
+                      <span
+                        class="cat-dot cat-dot--small"
+                        :style="{ background: child.color || cat.color || '#6366f1' }"
+                      ></span>
+                      {{ child.name }}
+                    </DropdownMenuItem>
+                  </template>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -665,7 +744,19 @@ onMounted(() => {
                   :disabled="item.quantity <= 1"
                   class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary disabled:opacity-40 transition"
                 >−</button>
-                <span class="w-6 text-center text-sm font-medium text-foreground">{{ item.quantity }}</span>
+
+                <input
+                  type="number"
+                  :value="getQty(item)"
+                  :min="1"
+                  :max="item.stock_level > 0 ? item.stock_level : undefined"
+                  class="qty-input"
+                  @input="(e) => updateCartItemQty(item.id, parseInt((e.target as HTMLInputElement).value) || 1)"
+                  @keydown.up.prevent="increment(item)"
+                  @keydown.down.prevent="decrement(item)"
+                  aria-label="Quantity"
+                />
+
                 <button
                   @click="updateCartItemQty(item.id, item.quantity + 1)"
                   class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary transition"
@@ -734,5 +825,69 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Dropdown styles */
+.filter-dropdown {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 6px !important;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+.dark .filter-dropdown {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+}
+.filter-dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem !important;
+  color: var(--foreground) !important;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.filter-dropdown-item:hover { background: var(--accent) !important; }
+.filter-dropdown-item--parent { font-weight: 600 !important; }
+.filter-dropdown-item--child {
+  padding-left: 26px !important;
+  font-weight: 400 !important;
+  color: var(--muted-foreground) !important;
+}
+.filter-dropdown-item--child:hover { color: var(--foreground) !important; }
+.filter-dropdown-item--selected { color: var(--brand-green) !important; }
+.dark .filter-dropdown-item--selected { color: #34d399 !important; }
+.filter-sep { background: var(--border) !important; margin: 4px 0 !important; }
+
+.cat-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-dot--small {
+  width: 7px;
+  height: 7px;
+}
+
+/* Allow the button to wrap content */
+.filter-dropdown-trigger {
+  white-space: normal;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.filter-dropdown-trigger span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

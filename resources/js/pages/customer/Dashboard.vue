@@ -152,6 +152,7 @@ watch(() => props.currentOrder, (order) => {
   if (order) startPolling();
   else stopPolling();
 });
+
 </script>
 
 <template>
