@@ -14,9 +14,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { useSidebar } from '@/composables/useSidebar';
+
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string;
+  parent_id: number | null;
+  children?: Category[];
+};
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
@@ -96,6 +108,37 @@ const fetchProducts = async () => {
     products.value = []
   } finally {
     productsLoading.value = false
+  }
+}
+
+const categories = ref<Category[]>([])
+
+const selectedCategoryLabel = computed(() => {
+  if (selectedCategory.value === 'all') return 'Category'
+  for (const cat of categories.value) {
+    if (cat.id === selectedCategory.value) return cat.name
+    for (const child of cat.children ?? []) {
+      if (child.id === selectedCategory.value) return `${cat.name} › ${child.name}`
+    }
+  }
+  return 'Category'
+})
+
+const fetchCategories = async () => {
+  try {
+    const response = await fetch('/customer/categories', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      categories.value = data.data || []
+    }
+  } catch (err) {
+    console.error('Error fetching categories:', err)
   }
 }
 
@@ -259,6 +302,7 @@ const openCartModal = async () => {
 onMounted(() => {
   fetchStoreDetails()
   fetchProducts()
+  fetchCategories()
   fetchCartItems()
 })
 </script>
@@ -376,17 +420,47 @@ onMounted(() => {
               <Input v-model="searchProduct" placeholder="Search products…" class="w-full sm:w-52 bg-background h-9 text-sm" />
 
               <div class="flex gap-2">
+                <!-- Category dropdown — from main branch (dynamic, hierarchical) -->
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="outline" size="sm" class="gap-1.5 bg-background text-xs h-9">
-                      Category <ChevronDown class="w-3.5 h-3.5 opacity-60" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      class="gap-1.5 bg-background text-xs h-9 min-w-[7rem] max-w-[11rem] justify-between"
+                      :class="{ 'border-brand-green text-brand-green': selectedCategory !== 'all' }"
+                    >
+                      <span class="truncate">{{ selectedCategoryLabel }}</span>
+                      <ChevronDown class="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent class="bg-card border-border">
-                    <DropdownMenuItem @click="selectedCategory = 'all'">All</DropdownMenuItem>
-                    <DropdownMenuItem @click="selectedCategory = 1">Fruits</DropdownMenuItem>
-                    <DropdownMenuItem @click="selectedCategory = 2">Dairy</DropdownMenuItem>
-                    <DropdownMenuItem @click="selectedCategory = 3">Snacks</DropdownMenuItem>
+                    <DropdownMenuItem class="filter-dropdown-item" @click="selectedCategory = 'all'">
+                      <span class="cat-dot" style="background:#94a3b8"></span>
+                      All Categories
+                    </DropdownMenuItem>
+
+                    <template v-for="cat in categories" :key="cat.id">
+                      <DropdownMenuSeparator class="filter-sep" />
+                      <DropdownMenuItem
+                        class="filter-dropdown-item filter-dropdown-item--parent"
+                        @click="selectedCategory = cat.id"
+                        :class="{ 'filter-dropdown-item--selected': selectedCategory === cat.id }"
+                      >
+                        <span class="cat-dot" :style="{ background: cat.color || '#6366f1' }"></span>
+                        {{ cat.name }}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        v-for="child in cat.children ?? []"
+                        :key="child.id"
+                        class="filter-dropdown-item filter-dropdown-item--child"
+                        @click="selectedCategory = child.id"
+                        :class="{ 'filter-dropdown-item--selected': selectedCategory === child.id }"
+                      >
+                        <span class="cat-dot cat-dot--small" :style="{ background: child.color || cat.color || '#6366f1' }"></span>
+                        {{ child.name }}
+                      </DropdownMenuItem>
+                    </template>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
@@ -581,7 +655,16 @@ onMounted(() => {
                   :disabled="item.quantity <= 1"
                   class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary disabled:opacity-40 transition"
                 >−</button>
-                <span class="w-6 text-center text-sm font-semibold text-foreground">{{ item.quantity }}</span>
+                <!-- From main: editable quantity input in cart modal -->
+                <input
+                  type="number"
+                  :value="item.quantity"
+                  :min="1"
+                  :max="item.stock_level > 0 ? item.stock_level : undefined"
+                  class="w-8 h-7 text-center text-sm font-semibold text-foreground bg-transparent border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  @input="(e) => updateCartItemQty(item.id, parseInt((e.target as HTMLInputElement).value) || 1)"
+                  aria-label="Quantity"
+                />
                 <button
                   @click="updateCartItemQty(item.id, item.quantity + 1)"
                   class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary transition"
@@ -644,5 +727,41 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Category dropdown styles — from main branch */
+.filter-dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem !important;
+  color: var(--foreground) !important;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.filter-dropdown-item:hover { background: var(--accent) !important; }
+.filter-dropdown-item--parent { font-weight: 600 !important; }
+.filter-dropdown-item--child {
+  padding-left: 26px !important;
+  font-weight: 400 !important;
+  color: var(--muted-foreground) !important;
+}
+.filter-dropdown-item--child:hover { color: var(--foreground) !important; }
+.filter-dropdown-item--selected { color: var(--brand-green) !important; }
+.dark .filter-dropdown-item--selected { color: #34d399 !important; }
+.filter-sep { background: var(--border) !important; margin: 4px 0 !important; }
+
+.cat-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-dot--small {
+  width: 7px;
+  height: 7px;
 }
 </style>
