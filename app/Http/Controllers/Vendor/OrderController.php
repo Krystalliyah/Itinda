@@ -6,6 +6,7 @@ use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOrder;
 use App\Models\Order;
+use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
@@ -20,23 +21,61 @@ class OrderController extends Controller
         'cancelled' => 'cancelled',
     ];
 
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with('items')
-            ->latest('placed_at')
-            ->get()
-            ->map(fn ($o) => $this->formatOrder($o));
+        // Stats are computed across all orders, not filtered
+        $allOrders = Order::latest('placed_at')->get();
 
         $stats = [
-            'pending' => $orders->where('status', 'pending')->count(),
-            'active' => $orders->whereIn('status', ['confirmed', 'preparing', 'ready'])->count(),
-            'completed' => $orders->where('status', 'completed')->count(),
-            'revenue' => $orders->where('status', 'completed')->sum('total_amount'),
+            'pending' => $allOrders->where('status', 'pending')->count(),
+            'active' => $allOrders->whereIn('status', ['confirmed', 'preparing', 'ready'])->count(),
+            'completed' => $allOrders->where('status', 'completed')->count(),
+            'revenue' => $allOrders->where('status', 'completed')->sum('total'),
         ];
+
+        // Build query with filters
+        $query = Order::with('items')->latest('placed_at');
+
+        // Search filter (order number)
+        if ($request->filled('search')) {
+            $query->where('order_number', 'like', '%'.$request->search.'%');
+        }
+
+        // Status filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Payment filter
+        if ($request->filled('payment')) {
+            if ($request->payment === 'paid') {
+                $query->where('status', 'completed');
+            } elseif ($request->payment === 'unpaid') {
+                $query->where('status', '!=', 'completed');
+            }
+        }
+
+        // Paginate filtered results — 25 per page
+        $paginator = $query->paginate(25)->withQueryString();
+
+        $orders = $paginator->getCollection()->map(fn ($o) => $this->formatOrder($o));
 
         return inertia('vendor/Orders', [
             'orders' => $orders->values(),
             'stats' => $stats,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status ?? 'all',
+                'payment' => $request->payment ?? 'all',
+            ],
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
         ]);
     }
 

@@ -26,11 +26,13 @@ const contentClass = computed(() => ({
     'sidebar-collapsed': isCollapsed.value
 }));
 
-// Determine the primary user role
+// Determine the primary user role for layout selection.
+// Staff users operate in the vendor context, so map them to 'vendor'.
 const userRole = computed(() => {
     const roles = page.props.auth?.roles || [];
     if (roles.includes('admin')) return 'admin';
     if (roles.includes('vendor')) return 'vendor';
+    if (roles.includes('staff')) return 'vendor';
     return 'customer';
 });
 </script>

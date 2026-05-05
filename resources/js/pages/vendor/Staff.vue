@@ -552,11 +552,14 @@ function hasBaseRole(staff: Staff) {
                 <div
                   v-for="permission in availablePermissions"
                   :key="permission.id"
-                  @click="permissionsForm.permissions.includes(permission.name) ? permissionsForm.permissions = permissionsForm.permissions.filter(p => p !== permission.name) : permissionsForm.permissions.push(permission.name)"
-                  class="group relative flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer select-none"
-                  :class="permissionsForm.permissions.includes(permission.name)
-                    ? 'bg-emerald-50/50 border-[#245C4A] dark:bg-emerald-500/5 dark:border-emerald-500'
-                    : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 dark:bg-slate-800/50 dark:border-slate-800'"
+                  @click="!permissionsForm.processing && (permissionsForm.permissions.includes(permission.name) ? permissionsForm.permissions = permissionsForm.permissions.filter(p => p !== permission.name) : permissionsForm.permissions.push(permission.name))"
+                  class="group relative flex flex-col p-4 rounded-2xl border-2 transition-all select-none"
+                  :class="[
+                    permissionsForm.processing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+                    permissionsForm.permissions.includes(permission.name)
+                      ? 'bg-emerald-50/50 border-[#245C4A] dark:bg-emerald-500/5 dark:border-emerald-500'
+                      : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 dark:bg-slate-800/50 dark:border-slate-800'
+                  ]"
                 >
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-widest" :class="permissionsForm.permissions.includes(permission.name) ? 'text-[#245C4A] dark:text-emerald-400' : 'text-slate-500'">
