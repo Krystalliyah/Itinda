@@ -177,12 +177,20 @@ const setupRealtimeListener = () => {
 // ========== END REAL-TIME UPDATES ==========
 
 // Fetch orders from API
-const fetchOrders = async () => {
+/** Pagination state */
+const currentPage = ref(1)
+const perPage = 15
+const totalOrders = ref(0)
+const totalPages = computed(() => Math.ceil(totalOrders.value / perPage))
+const hasNextPage = computed(() => currentPage.value < totalPages.value)
+const hasPrevPage = computed(() => currentPage.value > 1)
+
+const fetchOrders = async (page = currentPage.value) => {
   try {
     loading.value = true
     error.value = null
-    
-    const response = await fetch('/customer/orders-data', {
+
+    const response = await fetch(`/customer/orders-data?page=${page}&limit=${perPage}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -190,13 +198,16 @@ const fetchOrders = async () => {
         'X-Requested-With': 'XMLHttpRequest'
       }
     })
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    
+
     const data = await response.json()
-    
+
+    totalOrders.value = data.total ?? 0
+    currentPage.value = data.page ?? page
+
     orders.value = data.data.map((order: any) => ({
       id: order.id,
       customer_id: order.customer_id,
@@ -233,6 +244,11 @@ const fetchOrders = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
+  fetchOrders(page)
 }
 
 /** Filtering + sorting */
@@ -645,6 +661,32 @@ onUnmounted(() => {
               </CollapsibleContent>
             </Collapsible>
           </Card>
+
+          <!-- Pagination controls -->
+          <div v-if="totalPages > 1" class="flex items-center justify-between gap-4 pt-2">
+            <p class="text-xs text-muted-foreground">
+              Page {{ currentPage }} of {{ totalPages }}
+              <span class="ml-1">({{ totalOrders }} total)</span>
+            </p>
+            <div class="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                :disabled="!hasPrevPage || loading"
+                @click="goToPage(currentPage - 1)"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                :disabled="!hasNextPage || loading"
+                @click="goToPage(currentPage + 1)"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </main>

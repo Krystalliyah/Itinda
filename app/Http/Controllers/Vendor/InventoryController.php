@@ -75,9 +75,12 @@ class InventoryController extends Controller
 
     public function toggleAvailability(Product $product)
     {
-        $product->update(['is_active' => ! $product->is_active]);
+        $product->is_active = ! $product->is_active;
+        $product->save();
 
-        return back()->with('success', 'Availability updated.');
+        return back()->with('_toggleResult', [
+            'is_available' => (bool) $product->is_active,
+        ]);
     }
 
     public function destroy(Product $product)

@@ -55,8 +55,8 @@ class OrderController extends Controller
             }
         }
 
-        // Paginate filtered results — 25 per page
-        $paginator = $query->paginate(25)->withQueryString();
+        // Paginate filtered results — 15 per page
+        $paginator = $query->paginate(15)->withQueryString();
 
         $orders = $paginator->getCollection()->map(fn ($o) => $this->formatOrder($o));
 
