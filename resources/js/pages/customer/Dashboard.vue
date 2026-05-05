@@ -182,7 +182,7 @@ watch(() => props.currentOrder, (order) => {
             </p>
           </div>
 
-          <div class="inline-flex items-center gap-2 self-start rounded-full border border-[#D7E3DC] bg-white px-3 py-1.5 text-sm font-medium text-[#315B4F] shadow-sm">
+          <div class="inline-flex items-center gap-2 self-start rounded-full border border-[#D7E3DC] bg-white px-3 py-1.5 text-sm font-medium text-[#315B4F] shadow-sm cursor-default" title="This platform supports pickup orders only">
             <Package class="h-4 w-4 text-[#17493D]" />
             Pickup only
           </div>

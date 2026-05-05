@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Clock, CheckCircle, ChefHat, Package, CheckCircle2, XCircle, Eye, ArrowRight, Trash2 } from 'lucide-vue-next';
-import { ref, computed } from 'vue';
+import { Clock, CheckCircle, ChefHat, Package, CheckCircle2, XCircle, Eye, ArrowRight, Trash2, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { ref, computed, watch } from 'vue';
 import Header from '@/components/Header.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
 import Sidebar from '@/components/Sidebar.vue';
@@ -44,9 +44,26 @@ interface Stats {
     revenue: number;
 }
 
+interface Pagination {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+}
+
+interface Filters {
+    search: string | null;
+    status: string;
+    payment: string;
+}
+
 const props = defineProps<{
     orders: Order[];
     stats: Stats;
+    pagination: Pagination;
+    filters: Filters;
 }>();
 
 const STATUS_CONFIG: Record<OrderStatus, { label:string; color:string; bg:string; next:OrderStatus|null; icon:any }> = {
@@ -60,32 +77,68 @@ const STATUS_CONFIG: Record<OrderStatus, { label:string; color:string; bg:string
 
 const STATUS_ORDER: OrderStatus[] = ['pending','confirmed','preparing','ready','completed','cancelled'];
 
-const searchQuery   = ref('');
-const filterStatus  = ref<OrderStatus | 'all'>('all');
-const filterPayment = ref<'all'|'paid'|'unpaid'>('all');
+// Initialise from server-provided filters so browser back/forward works
+const searchQuery   = ref(props.filters.search ?? '');
+const filterStatus  = ref<OrderStatus | 'all'>(props.filters.status as OrderStatus | 'all');
+const filterPayment = ref<'all'|'paid'|'unpaid'>(props.filters.payment as 'all'|'paid'|'unpaid');
 const detailOrder   = ref<Order | null>(null);
 const confirmCancel = ref<Order | null>(null);
 
 // Constants for item display
 const INITIAL_ITEMS_SHOW = 2;
 
-const filtered = computed(() => {
-    let list = props.orders;
-    if (searchQuery.value) {
-        const q = searchQuery.value.toLowerCase();
-        list = list.filter(o => o.order_number.toLowerCase().includes(q));
-    }
-    if (filterStatus.value !== 'all')     list = list.filter(o => o.status === filterStatus.value);
-    if (filterPayment.value === 'paid')   list = list.filter(o => o.is_paid);
-    if (filterPayment.value === 'unpaid') list = list.filter(o => !o.is_paid);
-    return list;
-});
+// All filtering is server-side; props.orders is already the filtered page
+const filtered = computed(() => props.orders);
 
+// Status counts come from the full dataset via stats; show total per-page count for 'all'
 const statusCountMap = computed(() => {
-    const m: Record<string,number> = { all: props.orders.length };
+    const m: Record<string, number> = { all: props.pagination.total };
+    // Per-status counts aren't available server-side without extra queries;
+    // show current-page counts as a lightweight indicator
     STATUS_ORDER.forEach(s => { m[s] = props.orders.filter(o => o.status === s).length; });
     return m;
 });
+
+// Debounce timer for search input
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function applyFilters(overrides: Partial<{ search: string; status: string; payment: string; page: number }> = {}) {
+    const params: Record<string, string | number | undefined> = {
+        search: overrides.search ?? (searchQuery.value || undefined),
+        status: overrides.status ?? (filterStatus.value !== 'all' ? filterStatus.value : undefined),
+        payment: overrides.payment ?? (filterPayment.value !== 'all' ? filterPayment.value : undefined),
+        page: overrides.page ?? 1,
+    };
+
+    // Strip undefined so they don't appear in the URL
+    Object.keys(params).forEach(k => params[k] === undefined && delete params[k]);
+
+    router.get('/vendor/orders', params, { preserveScroll: true, preserveState: true, replace: true });
+}
+
+// Debounced search — waits 350 ms after the user stops typing
+watch(searchQuery, () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => applyFilters(), 350);
+});
+
+function setStatus(s: OrderStatus | 'all') {
+    filterStatus.value = s;
+    applyFilters({ status: s !== 'all' ? s : undefined });
+}
+
+function setPayment(p: 'all' | 'paid' | 'unpaid') {
+    filterPayment.value = p;
+    applyFilters({ payment: p !== 'all' ? p : undefined });
+}
+
+// Pagination helpers
+const hasPrevPage = computed(() => props.pagination.current_page > 1);
+const hasNextPage = computed(() => props.pagination.current_page < props.pagination.last_page);
+
+function goToPage(page: number) {
+    applyFilters({ page });
+}
 
 // Helper functions for item preview
 const getVisibleItems = (items: OrderItem[]) => {
@@ -183,7 +236,7 @@ function formatDate(dt: string | null | undefined) {
                     <!-- Status Tab Strip -->
                     <div class="tab-strip-wrap">
                         <div class="tab-strip">
-                            <button v-for="s in ['all', ...STATUS_ORDER]" :key="s" class="tab-btn" :class="{'tab-btn--active': filterStatus === s}" @click="filterStatus = s as any">
+                            <button v-for="s in ['all', ...STATUS_ORDER]" :key="s" class="tab-btn" :class="{'tab-btn--active': filterStatus === s}" @click="setStatus(s as any)">
                                 <component v-if="s !== 'all'" :is="STATUS_CONFIG[s as OrderStatus].icon" class="tab-icon" />
                                 <span>{{ s === 'all' ? 'All Orders' : STATUS_CONFIG[s as OrderStatus].label }}</span>
                                 <span class="tab-count">{{ statusCountMap[s] }}</span>
@@ -198,12 +251,12 @@ function formatDate(dt: string | null | undefined) {
                             <input v-model="searchQuery" type="text" placeholder="Search order # or customer…" class="search-input" />
                         </div>
                         <div class="filter-row">
-                            <select v-model="filterPayment" class="filter-select">
+                            <select v-model="filterPayment" class="filter-select" @change="setPayment(filterPayment)">
                                 <option value="all">All Payments</option>
                                 <option value="paid">Paid</option>
                                 <option value="unpaid">Unpaid</option>
                             </select>
-                            <span class="result-count">{{ filtered.length }} order{{ filtered.length !== 1 ? 's' : '' }}</span>
+                            <span class="result-count">{{ pagination.total }} order{{ pagination.total !== 1 ? 's' : '' }}</span>
                         </div>
                     </div>
 
@@ -407,6 +460,32 @@ function formatDate(dt: string | null | undefined) {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div v-if="pagination.last_page > 1" class="pagination-bar">
+                        <span class="pagination-info">
+                            {{ pagination.from }}–{{ pagination.to }} of {{ pagination.total }} orders
+                        </span>
+                        <div class="pagination-controls">
+                            <button
+                                class="page-btn"
+                                :disabled="!hasPrevPage"
+                                @click="goToPage(pagination.current_page - 1)"
+                                aria-label="Previous page"
+                            >
+                                <ChevronLeft class="page-btn-icon" />
+                            </button>
+                            <span class="page-indicator">{{ pagination.current_page }} / {{ pagination.last_page }}</span>
+                            <button
+                                class="page-btn"
+                                :disabled="!hasNextPage"
+                                @click="goToPage(pagination.current_page + 1)"
+                                aria-label="Next page"
+                            >
+                                <ChevronRight class="page-btn-icon" />
+                            </button>
                         </div>
                     </div>
 
@@ -1233,6 +1312,60 @@ function formatDate(dt: string | null | undefined) {
 .dark .oc-advance-btn:hover { background: #059669; color: white; border-color: #059669; }
 
 
+
+/* ─── Pagination ─── */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.dark .pagination-bar { border-top-color: #1e3048; }
+
+.pagination-info {
+    font-size: 0.8rem;
+    color: #737373;
+}
+.dark .pagination-info { color: #7a90a8; }
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.page-btn:hover:not(:disabled) { background: #f0f9f6; border-color: #245c4a; color: #245c4a; }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.dark .page-btn { background: #132032; border-color: #1e3048; color: #94a3b8; }
+.dark .page-btn:hover:not(:disabled) { background: #1a2e42; border-color: #6ee7b7; color: #6ee7b7; }
+
+.page-btn-icon { width: 16px; height: 16px; }
+
+.page-indicator {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+    min-width: 60px;
+    text-align: center;
+}
+.dark .page-indicator { color: #e2eaf4; }
 
 /* ─── Responsive ─── */
 @media (max-width: 768px) {

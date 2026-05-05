@@ -12,6 +12,7 @@
 .dashboard-wrapper {
     min-height: 100vh;
     background: var(--background);
+    cursor: default; /* prevent text cursor bleeding into non-input areas */
 }
 
 .dashboard-content {
