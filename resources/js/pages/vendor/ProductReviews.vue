@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, router, Link } from '@inertiajs/vue3';
+import { Star, StarOff, ThumbsUp, CheckCircle, XCircle, MessageSquare, Reply, X } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
-import { Star, StarOff, ThumbsUp, CheckCircle, XCircle, MessageSquare, Reply, X } from 'lucide-vue-next';
 
 // Define types for review data
 interface ReviewUser {

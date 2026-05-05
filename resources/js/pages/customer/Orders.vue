@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
+import { ChevronDown, Search, ShoppingCart, XCircle } from 'lucide-vue-next'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 import Header from '@/components/Header.vue'
-import Sidebar from '@/components/Sidebar.vue'
 import CustomerNav from '@/components/navigation/CustomerNav.vue'
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue'
-import { useSidebar } from '@/composables/useSidebar'
+import Sidebar from '@/components/Sidebar.vue'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,20 +16,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+import { Input } from '@/components/ui/input'
+import { useSidebar } from '@/composables/useSidebar'
 
-import { ChevronDown, Search, ShoppingCart, XCircle } from 'lucide-vue-next'
 
 // Status vocabulary matches customer_orders in the central DB
 type OrderStatus = 'pending' | 'preparing' | 'ready_for_pickup' | 'picked_up' | 'cancelled'

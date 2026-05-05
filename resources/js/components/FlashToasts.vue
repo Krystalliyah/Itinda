@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3'
-import { toast } from 'vue-sonner'
 import { watch, h } from 'vue'
+import { toast } from 'vue-sonner'
 
 type VendorApproved = {
   name: string

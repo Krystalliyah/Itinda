@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, Form, useForm, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import {
     BadgeCheck,
     Bell,
@@ -9,15 +8,14 @@ import {
     ShieldCheck,
     UserRound,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 import DeleteUser from '@/components/DeleteUser.vue';
-import InputError from '@/components/InputError.vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
+import InputError from '@/components/InputError.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
+import Sidebar from '@/components/Sidebar.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Card,
     CardContent,
@@ -25,8 +23,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { send } from '@/routes/verification';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useSidebar } from '@/composables/useSidebar';
+import { send } from '@/routes/verification';
 
 const { isCollapsed } = useSidebar();
 
@@ -308,10 +308,10 @@ const saveChanges = () => {
                             class="overflow-hidden border-0 bg-[#17493D] shadow-[0_18px_40px_rgba(23,73,61,0.18)] dark:bg-slate-900 dark:shadow-[0_18px_40px_rgba(15,23,42,0.75)] rounded-xl"
                         >
                             <CardHeader class="pb-4">
-                                <CardTitle class="text-lg text-white">
+                                <CardTitle class="text-lg !text-white">
                                     Account Overview
                                 </CardTitle>
-                                <CardDescription class="text-white">
+                                <CardDescription class="!text-emerald-50">
                                     A quick summary of your profile.
                                 </CardDescription>
                             </CardHeader>
@@ -321,10 +321,10 @@ const saveChanges = () => {
                                     <div class="flex items-start gap-3">
                                         <UserRound class="mt-0.5 h-4 w-4 text-white" />
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
+                                            <p class="text-xs uppercase tracking-wide !text-emerald-50/80">
                                                 Full name
                                             </p>
-                                            <p class="mt-1 text-sm font-medium" style="color:#ffffff">
+                                            <p class="mt-1 text-sm font-medium !text-white">
                                                 {{ form.name }}
                                             </p>
                                         </div>
@@ -335,10 +335,10 @@ const saveChanges = () => {
                                     <div class="flex items-start gap-3">
                                         <Mail class="mt-0.5 h-4 w-4 text-white" />
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
+                                            <p class="text-xs uppercase tracking-wide !text-emerald-50/80">
                                                 Email
                                             </p>
-                                            <p class="mt-1 text-sm font-medium text-white break-all">
+                                            <p class="mt-1 text-sm font-medium !text-white break-all">
                                                 {{ form.email }}
                                             </p>
                                         </div>
@@ -349,10 +349,10 @@ const saveChanges = () => {
                                     <div class="flex items-start gap-3">
                                         <ShieldCheck class="mt-0.5 h-4 w-4 text-white" />
                                         <div>
-                                            <p class="text-xs uppercase tracking-wide" style="color:#ffffff">
+                                            <p class="text-xs uppercase tracking-wide !text-emerald-50/80">
                                                 Account status
                                             </p>
-                                            <p class="mt-1 text-sm font-medium" style="color:#ffffff">
+                                            <p class="mt-1 text-sm font-medium !text-white">
                                                 {{ profile.email_verified_at ? 'Verified and active' : 'Pending email verification' }}
                                             </p>
                                         </div>

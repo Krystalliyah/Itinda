@@ -14,6 +14,7 @@ import {
     ShieldCheck,
     Sparkles,
     Store,
+    Upload,
 } from 'lucide-vue-next';
 
 import Header from '@/components/Header.vue';
@@ -66,35 +67,28 @@ const storeForm = useForm({
     description: tenantInfo.value?.description ?? '',
     website: tenantInfo.value?.data?.website ?? '',
     operating_hours: (tenantInfo.value?.operating_hours ?? DEFAULT_HOURS) as Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>,
+    profile_photo: null as File | null,
+    cover_photo: null as File | null,
 });
 
 const storeDomain = computed(() => tenantInfo.value?.domain ?? null);
-
-const toggles = ref({
-    acceptPreOrders: true,
-    showInventoryCount: true,
-    showPickupInstructions: true,
-    autoAcceptOrders: false,
-    receiveSmsAlerts: true,
-    receiveEmailAlerts: true,
-});
 
 const hasText = (value: unknown) => {
     return typeof value === 'string' ? value.trim().length > 0 : !!value;
 };
 
 const hasValidOperatingHours = (
-    hours: Partial<Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>> | null | undefined
+    hours: Partial<Record<DayKey, { is_open: boolean | number | string; open_time: string; close_time: string }>> | null | undefined
 ) => {
     if (!hours) return false;
 
     return ORDERED_DAYS.every((dayKey) => {
         const day = hours[dayKey];
-        if (!day || typeof day.is_open !== 'boolean') {
-            return false;
-        }
+        if (!day) return false;
 
-        if (!day.is_open) {
+        const isOpen = !!day.is_open;
+
+        if (!isOpen) {
             return true;
         }
 
@@ -120,13 +114,40 @@ const completionItems = computed(() => [
         label: 'Pick-up schedule',
         done: hasValidOperatingHours(storeForm.operating_hours),
     },
+    {
+        label: 'Store branding',
+        done: !!(profilePreview.value || tenantInfo.value?.profile_photo_url) &&
+              !!(coverPreview.value || tenantInfo.value?.cover_photo_url),
+    },
 ]);
 
 const completedCount = computed(() => completionItems.value.filter((item) => item.done).length);
 const setupProgress = computed(() => Math.round((completedCount.value / completionItems.value.length) * 100));
 
+const profilePreview = ref<string | null>(null);
+const coverPreview = ref<string | null>(null);
+
+const handleProfileUpload = (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+        storeForm.profile_photo = file;
+        profilePreview.value = URL.createObjectURL(file);
+    }
+};
+
+const handleCoverUpload = (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+        storeForm.cover_photo = file;
+        coverPreview.value = URL.createObjectURL(file);
+    }
+};
+
 const saveChanges = () => {
-    storeForm.put('/vendor/store-settings', {
+    storeForm.transform((data) => ({
+        ...data,
+        _method: 'PUT',
+    })).post('/vendor/store-settings', {
         onSuccess: () => {
             saveLabel.value = 'Changes saved';
         },
@@ -157,7 +178,7 @@ const saveOperatingHours = () => {
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
                 <!-- Hero Section -->
                 <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                    <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] dark:bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_100%)] px-5 py-7 sm:px-7 sm:py-8">
+                    <div class="bg-gradient-to-br from-[#1B4A3D] to-[#2C725E] dark:from-[#0f172a] dark:to-[#1e293b] px-5 py-7 sm:px-7 sm:py-8">
                         <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                             <div class="max-w-2xl">
                                 <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#F7E8C6]">
@@ -169,17 +190,22 @@ const saveOperatingHours = () => {
                                     {{ storeName || 'Complete Your Store Setup' }}
                                 </h1>
 
-                                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base opacity-90">
+                                <p class="mt-3 max-w-xl text-sm leading-7 !text-white sm:text-base opacity-90">
                                     {{ storeName ? 'Keep your storefront polished, informative, and easy to manage.' : 'Fill out the information below to get your store ready for customers.' }}
                                 </p>
                             </div>
 
-                            <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center bg-white/10 border border-white/10">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-white">Setup Progress</p>
-                                <p class="mt-2 text-2xl font-semibold text-white">{{ setupProgress }}% complete</p>
-                                <div class="mt-2 w-32 h-1.5 rounded-full bg-white/20">
-                                    <div class="h-1.5 rounded-full bg-[#F7E8C6]" :style="{ width: `${setupProgress}%` }"></div>
+                            <!-- Progress pill: uses full width of its container so 100% truly fills it -->
+                            <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center bg-white/10 border border-white/10 lg:min-w-[180px]">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] !text-white/80">Setup Progress</p>
+                                <p class="mt-2 text-3xl font-bold !text-white tabular-nums">{{ setupProgress }}%</p>
+                                <div class="mt-3 w-full h-2 rounded-full bg-white/20 overflow-hidden">
+                                    <div
+                                        class="h-2 rounded-full bg-[#F7E8C6] transition-all duration-500"
+                                        :style="{ width: `${setupProgress}%` }"
+                                    ></div>
                                 </div>
+                                <p class="mt-2 text-[11px] !text-white/60">{{ completedCount }} of {{ completionItems.length }} complete</p>
                             </div>
                         </div>
                     </div>
@@ -188,6 +214,107 @@ const saveOperatingHours = () => {
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
                     <!-- Main Content area -->
                     <div class="grid gap-6">
+                        <!-- Store Branding -->
+                        <section class="rounded-[28px] border border-border bg-card shadow-sm overflow-hidden">
+                            <!-- Section header -->
+                            <div class="px-4 sm:px-6 pt-5 pb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                <div>
+                                    <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                        <ImageIcon class="h-3.5 w-3.5" />
+                                        Branding
+                                    </div>
+                                    <h2 class="text-base sm:text-lg font-semibold text-foreground">Store visuals</h2>
+                                    <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
+                                        Upload your logo and cover photo to make your store stand out.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="shrink-0 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-brand-green px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 dark:bg-emerald-600"
+                                    @click="saveChanges"
+                                >
+                                    <Save class="h-4 w-4" />
+                                    Save changes
+                                </button>
+                            </div>
+
+                            <!-- Social-media-style profile card preview -->
+                            <div class="relative">
+                                <!-- Cover photo banner -->
+                                <label class="group relative block w-full h-40 sm:h-52 bg-secondary/60 cursor-pointer overflow-hidden">
+                                    <img
+                                        v-if="coverPreview || tenantInfo.cover_photo_url"
+                                        :src="coverPreview || tenantInfo.cover_photo_url"
+                                        class="absolute inset-0 h-full w-full object-cover"
+                                    />
+                                    <!-- Empty state gradient -->
+                                    <div v-else class="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                                        <ImageIcon class="h-7 w-7 opacity-30" />
+                                        <span class="text-xs opacity-50">Cover photo · 1200 × 400 px</span>
+                                    </div>
+                                    <!-- Hover overlay -->
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <span class="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-2 text-xs font-semibold text-white">
+                                            <Upload class="h-3.5 w-3.5" />
+                                            {{ coverPreview || tenantInfo.cover_photo_url ? 'Change cover photo' : 'Upload cover photo' }}
+                                        </span>
+                                    </div>
+                                    <input type="file" class="hidden" accept="image/*" @change="handleCoverUpload" />
+                                </label>
+
+                                <!-- Avatar overlapping the cover at bottom-left, like Twitter/Instagram -->
+                                <div class="absolute -bottom-10 left-5 sm:left-6">
+                                    <label class="group relative block w-20 h-20 sm:w-24 sm:h-24 rounded-full cursor-pointer ring-4 ring-card overflow-hidden bg-secondary">
+                                        <img
+                                            v-if="profilePreview || tenantInfo.profile_photo_url"
+                                            :src="profilePreview || tenantInfo.profile_photo_url"
+                                            class="absolute inset-0 h-full w-full object-cover"
+                                        />
+                                        <div v-else class="absolute inset-0 flex items-center justify-center bg-secondary dark:bg-slate-700">
+                                            <Store class="h-8 w-8 text-muted-foreground opacity-40" />
+                                        </div>
+                                        <!-- Camera overlay -->
+                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                                            <Upload class="h-4 w-4 text-white" />
+                                            <span class="text-[9px] font-semibold text-white">Change</span>
+                                        </div>
+                                        <input type="file" class="hidden" accept="image/*" @change="handleProfileUpload" />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- ── Identity Preview ── -->
+                            <div class="pt-14 px-4 sm:px-6 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                                <div class="ml-24 sm:ml-32 space-y-1.5">
+                                    <div class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                                        Marketplace Preview
+                                    </div>
+                                    <h3 class="text-2xl sm:text-3xl font-bold text-foreground tracking-tight leading-none">
+                                        {{ storeForm.store_name || 'Your Store Name' }}
+                                    </h3>
+                                    <div class="flex items-center gap-1.5 text-sm sm:text-base text-muted-foreground">
+                                        <MapPin class="h-4 w-4 text-brand-green/60" />
+                                        <span class="truncate max-w-[280px] sm:max-w-md">{{ storeForm.address || 'Pick-up address not set' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="hidden lg:block text-right pb-1">
+                                    <p class="text-[11px] text-muted-foreground/50 uppercase tracking-[0.2em] font-medium">Visual Identity</p>
+                                    <p class="text-xs text-muted-foreground/80 mt-1 italic">This is how your store appears to customers.</p>
+                                </div>
+                            </div>
+                                <div class="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground border-t border-border pt-4 px-4 sm:px-6 pb-6">
+                                    <span class="flex items-center gap-1.5">
+                                        <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+                                        Logo: {{ (profilePreview || tenantInfo.profile_photo_url) ? 'Uploaded ✓' : 'Not uploaded' }}
+                                    </span>
+                                    <span class="flex items-center gap-1.5">
+                                        <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+                                        Cover: {{ (coverPreview || tenantInfo.cover_photo_url) ? 'Uploaded ✓' : 'Not uploaded' }}
+                                    </span>
+                                </div>
+                        </section>
+
                         <!-- Basic Information -->
                         <section class="rounded-[28px] border border-border bg-card p-4 sm:p-6 shadow-sm">
                             <div class="mb-5 flex flex-col gap-3">
@@ -350,7 +477,7 @@ const saveOperatingHours = () => {
                         </section>
                     </div>
 
-                    <!-- Sidebar area (Preferences, Notifications, Public Preview) -->
+                    <!-- Sidebar area -->
                     <aside class="grid gap-6 order-first xl:order-last">
                         <!-- Store Readiness -->
                         <section class="rounded-[28px] border border-border bg-card p-4 sm:p-5 shadow-sm">
@@ -359,15 +486,19 @@ const saveOperatingHours = () => {
                                 <h3 class="text-sm sm:text-base font-semibold text-foreground">Store readiness</h3>
                             </div>
 
-                            <div class="mb-4 flex items-center justify-between">
+                            <div class="mb-3 flex items-center justify-between">
                                 <p class="text-sm text-muted-foreground">Profile completion</p>
-                                <span class="rounded-full bg-secondary px-3 py-1 text-sm font-semibold text-foreground">
-                                    {{ setupProgress }}%
+                                <span class="text-sm font-semibold text-foreground tabular-nums">
+                                    {{ completedCount }}/{{ completionItems.length }}
                                 </span>
                             </div>
 
-                            <div class="mb-5 h-2 rounded-full bg-secondary">
-                                <div class="h-2 rounded-full bg-brand-green" :style="{ width: `${setupProgress}%` }"></div>
+                            <!-- Progress bar: overflow-hidden ensures bar never visually exceeds container -->
+                            <div class="mb-5 h-2 w-full rounded-full bg-secondary overflow-hidden">
+                                <div
+                                    class="h-2 rounded-full bg-brand-green transition-all duration-500"
+                                    :style="{ width: `${setupProgress}%` }"
+                                ></div>
                             </div>
 
                             <div class="space-y-3">
@@ -376,7 +507,18 @@ const saveOperatingHours = () => {
                                     :key="item.label"
                                     class="flex items-center justify-between rounded-2xl border border-border px-4 py-3 bg-background/40"
                                 >
-                                    <span class="text-sm font-medium text-foreground">{{ item.label }}</span>
+                                    <div class="flex items-center gap-2.5">
+                                        <span
+                                            class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                                            :class="item.done ? 'bg-emerald-500/15' : 'bg-amber-500/15'"
+                                        >
+                                            <span
+                                                class="block h-2 w-2 rounded-full"
+                                                :class="item.done ? 'bg-emerald-500' : 'bg-amber-400'"
+                                            ></span>
+                                        </span>
+                                        <span class="text-sm font-medium text-foreground">{{ item.label }}</span>
+                                    </div>
                                     <span
                                         class="rounded-full px-2.5 py-1 text-xs font-semibold"
                                         :class="item.done ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'"
@@ -387,100 +529,11 @@ const saveOperatingHours = () => {
                             </div>
                         </section>
 
-                        <!-- Store Preferences -->
-                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <Settings2 class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
-                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Store preferences</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
-                                    <input v-model="toggles.acceptPreOrders" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
-                                    <span>
-                                        <span class="block font-semibold text-foreground">Accept pre-orders</span>
-                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Let customers place orders ahead of busy hours.</span>
-                                    </span>
-                                </label>
-
-                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
-                                    <input v-model="toggles.showInventoryCount" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
-                                    <span>
-                                        <span class="block font-semibold text-foreground">Show item availability</span>
-                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Display stock visibility to help customers decide faster.</span>
-                                    </span>
-                                </label>
-
-                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
-                                    <input v-model="toggles.showPickupInstructions" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
-                                    <span>
-                                        <span class="block font-semibold text-foreground">Show pick-up instructions</span>
-                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Surface order claim reminders during checkout.</span>
-                                    </span>
-                                </label>
-
-                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
-                                    <input v-model="toggles.autoAcceptOrders" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
-                                    <span>
-                                        <span class="block font-semibold text-foreground">Auto-accept orders</span>
-                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Instantly confirm orders without manual approval.</span>
-                                    </span>
-                                </label>
-                            </div>
-                        </section>
-
-                        <!-- Notifications -->
-                        <section class="rounded-[28px] border border-border bg-card p-4 sm:p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <Bell class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
-                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Notifications</h3>
-                            </div>
-
-                            <div class="space-y-3">
-                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
-                                    <input v-model="toggles.receiveSmsAlerts" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
-                                    <span>
-                                        <span class="block font-semibold text-foreground">SMS alerts</span>
-                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Receive immediate updates for new or urgent orders.</span>
-                                    </span>
-                                </label>
-
-                                <label class="flex items-start gap-3 rounded-2xl border border-border bg-secondary/30 p-4 cursor-pointer hover:bg-secondary/50 transition-colors">
-                                    <input v-model="toggles.receiveEmailAlerts" type="checkbox" class="mt-1 h-4 w-4 rounded border-border bg-background text-brand-green focus:ring-brand-green/20" />
-                                    <span>
-                                        <span class="block font-semibold text-foreground">Email digests</span>
-                                        <span class="mt-1 block text-sm leading-6 text-muted-foreground">Get daily summaries of orders, performance, and activity.</span>
-                                    </span>
-                                </label>
-                            </div>
-                        </section>
-
-                        <!-- Public Preview -->
-                        <section class="rounded-[28px] border border-border bg-secondary/10 p-4 sm:p-5 shadow-sm dark:bg-slate-900/40">
-                            <div class="mb-4 flex items-center gap-2">
-                                <ShieldCheck class="h-4 w-4 sm:h-5 sm:w-5 text-brand-green dark:text-emerald-500" />
-                                <h3 class="text-sm sm:text-base font-semibold text-foreground">Public preview</h3>
-                            </div>
-
-                            <div class="space-y-3 text-sm leading-6 text-muted-foreground">
-
-                                <div class="rounded-2xl border border-dashed border-border bg-card p-4">
-                                    <div class="flex items-start gap-3">
-                                        <ImageIcon class="mt-0.5 h-5 w-5 text-brand-green dark:text-emerald-500" />
-                                        <div>
-                                            <p class="font-semibold text-foreground">Branding reminder</p>
-                                            <p class="mt-1 text-sm text-muted-foreground">
-                                                Add a cover photo and profile logo to make your storefront feel more complete.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p class="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground opacity-60">
-                                    {{ saveLabel }}
-                                </p>
-                            </div>
-                        </section>
+                        <div class="text-center mt-2">
+                            <p class="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground opacity-60">
+                                {{ saveLabel }}
+                            </p>
+                        </div>
                     </aside>
                 </div>
             </div>

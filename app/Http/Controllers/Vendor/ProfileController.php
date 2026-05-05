@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -50,6 +51,12 @@ class ProfileController extends Controller
                 'phone' => $validated['phone'] ?? null,
                 'updated_at' => now(),
             ]);
+
+        // Keep tenant phone in sync with the profile
+        $tenant = Tenant::where('user_id', $tenantUser->id)->first();
+        if ($tenant) {
+            $tenant->update(['phone' => $validated['phone'] ?? null]);
+        }
 
         return back()->with('success', 'Profile updated successfully.');
     }

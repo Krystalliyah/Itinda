@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\StoreResource;
-use App\Models\Store;
+use App\Models\Product;
 use App\Models\Tenant;
-use Illuminate\Support\Facades\Storage;
 use App\Support\ChecksStoreReadiness;
+use Illuminate\Support\Facades\Storage;
 
 class StoreController extends Controller
 {
@@ -18,8 +18,8 @@ class StoreController extends Controller
      */
     private function getProductImageUrl($product): ?string
     {
-        if (!$product->image_path) {
-            return 'https://picsum.photos/400?random=' . $product->id;
+        if (! $product->image_path) {
+            return 'https://picsum.photos/400?random='.$product->id;
         }
 
         // Already a full URL
@@ -38,7 +38,7 @@ class StoreController extends Controller
         }
 
         // Final fallback
-        return asset('storage/' . $product->image_path);
+        return asset('storage/'.$product->image_path);
     }
 
     public function index()
@@ -78,39 +78,49 @@ class StoreController extends Controller
 
         // Run query in tenant database
         $products = $store->run(function () use ($self) {
-            return \App\Models\Product::where('is_active', true)
+            return Product::where('is_active', true)
                 ->with('category')
                 ->latest()
                 ->get()
                 ->map(function ($product) use ($self) {
                     return [
-                        'id'           => $product->id,
+                        'id' => $product->id,
                         'product_name' => $product->name,
-                        'description'  => $product->description ?? '',
-                        'category_id'  => $product->category_id,
-                        'image_url'    => $self->getProductImageUrl($product),
-                        'unit_price'   => (float) $product->price,
-                        'stock_level'  => $product->stock ?? 0,
-                        'sold_count'   => 0,
-                        'rating'       => 4.5,
+                        'description' => $product->description ?? '',
+                        'category_id' => $product->category_id,
+                        'category_name' => $product->category?->name ?? null,
+                        'image_url' => $self->getProductImageUrl($product),
+                        'unit_price' => (float) $product->price,
+                        'stock_level' => $product->stock ?? 0,
+                        'sold_count' => 0,
+                        'rating' => $product->average_rating ?? 0,
+                        'total_reviews' => $product->total_reviews ?? 0,
                         'is_available' => $product->stock > 0,
-                        'is_active'    => $product->is_active,
+                        'is_active' => $product->is_active,
                     ];
                 });
         });
 
         return response()->json([
-            'data' => $products
+            'data' => $products,
         ]);
     }
 
 
-    // In StoreController.php
+
     public function getStoresData()
     {
-        $stores = Store::select('id', 'name', 'address', 'phone', 'hours', 'is_open as isOpen', 'logo', 'cover')
-            ->get();
-        
-        return response()->json(['data' => $stores]);
+        $stores = Store::select(
+            'id',
+            'name',
+            'address',
+            'phone',
+            'hours',
+            'is_open as isOpen',
+            'logo',
+            'cover'
+        )->get();
+
+        return response()->json($stores);
     }
 }

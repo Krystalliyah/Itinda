@@ -1,8 +1,32 @@
 <script setup lang="ts">
 import { Head, useForm, router, usePage } from '@inertiajs/vue3';
+import {
+    Shield,
+    UserPlus,
+    X,
+    CheckCircle2,
+    AlertCircle,
+    UserCircle2,
+    Mail as MailIcon,
+    Fingerprint,
+    KeyRound
+} from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import VendorLayout from '@/layouts/VendorLayout.vue';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import ConfirmationModal from '@/components/ui/modal/ConfirmationModal.vue';
+import VendorLayout from '@/layouts/VendorLayout.vue';
+
 
 type Permission = {
   id: number;
@@ -264,7 +288,7 @@ function hasBaseRole(staff: Staff) {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="member in staff" :key="member.id" class="border-b border-border last:border-0 hover:bg-[#F9FBF9] transition-colors">
+              <tr v-for="member in staff" :key="member.id" class="border-b border-border last:border-0 transition-colors duration-200 hover:bg-[#f0f5f2] dark:hover:bg-[#1a2e42]">
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs" style="background:#245c4a">
@@ -344,207 +368,247 @@ function hasBaseRole(staff: Staff) {
       </div>
 
       <!-- Add Staff Modal -->
-      <Teleport to="body">
-        <template v-if="showAddModal">
-          <div class="fixed inset-0 z-50" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(3px)" @click="showAddModal = false"></div>
-          <div class="fixed inset-0 z-50 flex items-start justify-center px-4 sm:px-6 pt-12 sm:pt-16 pb-6 overflow-y-auto">
-            <div class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-              <div class="px-5 py-4 border-b border-border flex items-start justify-between flex-shrink-0" style="background:#245c4a">
-                <h3 class="text-sm font-semibold text-white">New Staff Account</h3>
-                <button @click="showAddModal = false" class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-white/25 text-white leading-none text-base">✕</button>
+      <Dialog :open="showAddModal" @update:open="showAddModal = $event">
+        <DialogContent class="sm:max-w-[480px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white dark:bg-slate-900">
+          <DialogHeader class="px-6 pt-8 pb-6 bg-gradient-to-br from-[#1B4D3E] to-[#245C4A] relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-[#C5A059]/20 rounded-full blur-xl"></div>
+            
+            <div class="relative z-10 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <UserPlus class="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle class="text-xl font-bold text-white tracking-tight">New Staff Member</DialogTitle>
+                <DialogDescription class="text-emerald-100/80 text-xs mt-0.5 font-medium uppercase tracking-wider">
+                  Create a secure dashboard access
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div class="px-6 py-6 space-y-5">
+            <form id="staff-form" @submit.prevent="submitAdd" class="space-y-4">
+              <!-- Full Name -->
+              <div class="space-y-2">
+                <Label for="staff-name" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 dark:text-emerald-400">Full Name</Label>
+                <div class="relative">
+                  <UserCircle2 class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="staff-name"
+                    v-model="addForm.name"
+                    placeholder="e.g. Maria Santos"
+                    class="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                    required
+                  />
+                </div>
+                <div v-if="addForm.errors.name" class="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                  <AlertCircle class="w-3 h-3" /> {{ addForm.errors.name }}
+                </div>
               </div>
 
-              <div class="overflow-y-auto flex-1 px-5 py-5">
-                <form id="staff-form" @submit.prevent="submitAdd" class="flex flex-col gap-4">
-                  <!-- Full Name -->
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Full Name <span style="color:#9f1239">*</span></label>
-                    <input
-                      v-model="addForm.name"
-                      type="text"
-                      placeholder="e.g. Maria Santos"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
-                      required
-                    />
-                    <div v-if="addForm.errors.name" class="text-xs text-rose-500 mt-1">{{ addForm.errors.name }}</div>
-                  </div>
-
-                  <!-- Login ID -->
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Login ID <span style="color:#9f1239">*</span></label>
-                    <input
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Login ID -->
+                <div class="space-y-2">
+                  <Label for="staff-login" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 dark:text-emerald-400">Login ID</Label>
+                  <div class="relative">
+                    <Fingerprint class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      id="staff-login"
                       v-model="addForm.login_id"
                       @input="handleLoginIdInput"
-                      type="text"
-                      placeholder="Unique login identifier"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      placeholder="Login ID"
+                      class="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                       required
                     />
-                    <div v-if="addForm.errors.login_id" class="text-xs text-rose-500 mt-1">{{ addForm.errors.login_id }}</div>
                   </div>
+                  <div v-if="addForm.errors.login_id" class="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                    <AlertCircle class="w-3 h-3" /> {{ addForm.errors.login_id }}
+                  </div>
+                </div>
 
-                  <!-- Email Address -->
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Email Address <span style="color:#9f1239">*</span></label>
-                    <input
+                <!-- Email -->
+                <div class="space-y-2">
+                  <Label for="staff-email" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 dark:text-emerald-400">Email Address</Label>
+                  <div class="relative">
+                    <MailIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      id="staff-email"
                       v-model="addForm.email"
                       type="email"
-                      inputmode="email"
-                      placeholder="staff@yourstore.com"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      placeholder="staff@store.com"
+                      class="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                       required
                     />
-                    <div v-if="addForm.errors.email" class="text-xs text-rose-500 mt-1">{{ addForm.errors.email }}</div>
                   </div>
-
-                  <!-- Password Field with Requirements -->
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Password <span style="color:#9f1239">*</span>
-                    </label>
-                    <div class="relative">
-                      <input
-                        v-model="addForm.password"
-                        type="password"
-                        placeholder="••••••••"
-                        @focus="showPasswordRequirements = true"
-                        @blur="showPasswordRequirements = false"
-                        class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
-                        :class="{
-                          'border-red-300': addForm.password && !isPasswordValid,
-                          'border-green-300': addForm.password && isPasswordValid
-                        }"
-                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
-                        required
-                      />
-                      <!-- Password strength indicator -->
-                      <div v-if="addForm.password" class="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg v-if="isPasswordValid" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <svg v-else class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </div>
-                    </div>
-                    
-                    <!-- Password Requirements Popup -->
-                    <div v-if="showPasswordRequirements && addForm.password" 
-                         class="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs">
-                      <p class="font-semibold text-gray-700 mb-2">Password must contain:</p>
-                      <ul class="space-y-1">
-                        <li v-for="error in passwordErrors" :key="error" class="text-red-600 flex items-center gap-2">
-                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          {{ error }}
-                        </li>
-                        <li v-if="passwordErrors.length === 0 && addForm.password" class="text-green-600 flex items-center gap-2">
-                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                          </svg>
-                          Password meets all requirements
-                        </li>
-                      </ul>
-                    </div>
-                    <div v-if="addForm.errors.password" class="text-xs text-rose-500 mt-1">{{ addForm.errors.password }}</div>
-                  </div>
-
-                  <!-- Confirm Password -->
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Confirm Password <span style="color:#9f1239">*</span>
-                    </label>
-                    <input
-                      v-model="addForm.password_confirmation"
-                      type="password"
-                      placeholder="Confirm password"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
-                      :class="{
-                        'border-red-300': addForm.password_confirmation && !doPasswordsMatch,
-                        'border-green-300': addForm.password_confirmation && doPasswordsMatch
-                      }"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
-                      required
-                    />
-                    <div v-if="addForm.password_confirmation && !doPasswordsMatch" class="text-xs text-rose-500 mt-1">
-                      Passwords do not match
-                    </div>
-                  </div>
-
-                  <!-- Password Requirements Summary -->
-                  <div v-if="addForm.password && !isPasswordValid" class="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg">
-                    <span class="font-semibold">⚠️ Password does not meet requirements</span>
-                    <ul class="mt-1 ml-4 list-disc">
-                      <li v-for="error in passwordErrors" :key="error">{{ error }}</li>
-                    </ul>
-                  </div>
-                </form>
-              </div>
-
-              <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-2xl">
-                <button type="button" @click="showAddModal = false" class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors">
-                  Cancel
-                </button>
-                <button type="submit" form="staff-form" :disabled="isSubmitDisabled" class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" style="background:#245c4a">
-                  <svg v-if="addForm.processing" class="animate-spin -ml-0.5 mr-1.5 w-3 h-3 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                  </svg>
-                  {{ addForm.processing ? 'Creating...' : 'Create Staff Account' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </template>
-      </Teleport>
-
-      <!-- Permissions Modal -->
-      <Teleport to="body">
-        <div v-if="showPermissionsModal" class="fixed inset-0 z-50 flex items-start justify-center px-4 sm:px-6 pt-12 sm:pt-16 pb-6 overflow-y-auto" style="background:rgba(0,0,0,0.45);backdrop-filter:blur(2px)">
-          <div class="absolute inset-0" @click="showPermissionsModal = false"></div>
-          <div class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="px-5 py-4 border-b border-emerald-50 flex justify-between items-center shrink-0" style="background:#245c4a">
-              <div>
-                <h3 class="text-sm font-semibold text-white uppercase tracking-widest">Access Controls</h3>
-                <p class="text-[10px] text-emerald-100 font-medium uppercase tracking-wider mt-0.5">{{ selectedStaff?.name }}</p>
-              </div>
-              <button @click="showPermissionsModal = false" class="text-emerald-100 hover:text-white transition-colors text-lg leading-none">✕</button>
-            </div>
-            <form @submit.prevent="submitPermissions" class="flex flex-col flex-1 overflow-hidden">
-              <div class="overflow-y-auto flex-1 px-5 py-5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-1">
-                  <div v-for="permission in availablePermissions" :key="permission.id"
-                       @click="permissionsForm.permissions.includes(permission.name) ? permissionsForm.permissions = permissionsForm.permissions.filter(p => p !== permission.name) : permissionsForm.permissions.push(permission.name)"
-                       class="flex items-start gap-3 p-3 rounded-xl border border-emerald-50 hover:border-[#245c4a] hover:bg-emerald-50/50 transition-all cursor-pointer group"
-                       :class="permissionsForm.permissions.includes(permission.name) ? 'bg-emerald-50/80 border-[#245c4a]' : 'bg-white'">
-                    <div class="mt-0.5 relative flex items-center">
-                      <input type="checkbox" :id="'perm-'+permission.id" :value="permission.name" v-model="permissionsForm.permissions" class="h-4 w-4 rounded border-emerald-200 text-[#245c4a] focus:ring-[#245c4a]/20" @click.stop />
-                    </div>
-                    <label :for="'perm-'+permission.id" class="text-xs font-bold text-slate-700 cursor-pointer flex-1 group-hover:text-[#245c4a] transition-colors" @click.stop>
-                      {{ getPermissionLabel(permission.name) }}
-                      <p class="text-[10px] text-slate-500 font-normal mt-0.5 leading-relaxed">{{ getPermissionDescription(permission.name) }}</p>
-                    </label>
+                  <div v-if="addForm.errors.email" class="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                    <AlertCircle class="w-3 h-3" /> {{ addForm.errors.email }}
                   </div>
                 </div>
               </div>
-              <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-2xl">
-                <button type="button" @click="showPermissionsModal = false" class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors">Cancel</button>
-                <button type="submit" class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50" style="background:#245c4a" :disabled="permissionsForm.processing">
-                  <svg v-if="permissionsForm.processing" class="animate-spin -ml-0.5 mr-1.5 w-3 h-3 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                  </svg>
-                  {{ permissionsForm.processing ? 'Saving...' : 'Update Permissions' }}
-                </button>
+
+              <!-- Password -->
+              <div class="space-y-2">
+                <Label for="staff-password" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 dark:text-emerald-400">Security Password</Label>
+                <div class="relative">
+                  <KeyRound class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="staff-password"
+                    v-model="addForm.password"
+                    type="password"
+                    placeholder="••••••••"
+                    @focus="showPasswordRequirements = true"
+                    @blur="showPasswordRequirements = false"
+                    class="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                    :class="{ 'border-emerald-500 ring-emerald-500/20': isPasswordValid && addForm.password }"
+                    required
+                  />
+                  <div v-if="addForm.password" class="absolute right-3 top-1/2 -translate-y-1/2">
+                    <CheckCircle2 v-if="isPasswordValid" class="w-4 h-4 text-emerald-500" />
+                    <AlertCircle v-else class="w-4 h-4 text-amber-500" />
+                  </div>
+                </div>
+
+                <!-- Password Requirements Summary -->
+                <div v-if="addForm.password && !isPasswordValid" class="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                  <p class="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <AlertCircle class="w-3 h-3" /> Requirements
+                  </p>
+                  <div class="flex flex-wrap gap-x-3 gap-y-1.5">
+                    <span v-for="error in passwordErrors" :key="error" class="text-[10px] font-medium text-amber-700/80 dark:text-amber-500 flex items-center gap-1">
+                      <div class="w-1 h-1 rounded-full bg-amber-400"></div> {{ error }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="space-y-2">
+                <Label for="staff-confirm" class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 dark:text-emerald-400">Confirm Security Password</Label>
+                <Input
+                  id="staff-confirm"
+                  v-model="addForm.password_confirmation"
+                  type="password"
+                  placeholder="Re-enter password"
+                  class="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                  :class="{ 'border-rose-500 bg-rose-50': addForm.password_confirmation && !doPasswordsMatch }"
+                  required
+                />
+                <div v-if="addForm.password_confirmation && !doPasswordsMatch" class="text-[10px] font-semibold text-rose-500 mt-1 flex items-center gap-1">
+                  <AlertCircle class="w-3 h-3" /> Passwords do not match
+                </div>
               </div>
             </form>
           </div>
-        </div>
-      </Teleport>
+
+          <DialogFooter class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex flex-row items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              @click="showAddModal = false"
+              class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="staff-form"
+              :disabled="isSubmitDisabled"
+              class="h-11 px-6 rounded-xl bg-[#245C4A] text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:pointer-events-none flex items-center gap-2"
+            >
+              <template v-if="addForm.processing">
+                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Creating...
+              </template>
+              <template v-else>
+                Create Account
+              </template>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <!-- Permissions Modal -->
+      <Dialog :open="showPermissionsModal" @update:open="showPermissionsModal = $event">
+        <DialogContent class="sm:max-w-[560px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white dark:bg-slate-900">
+          <DialogHeader class="px-6 pt-8 pb-6 bg-gradient-to-br from-[#1B4D3E] to-[#245C4A] relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+            
+            <div class="relative z-10 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <Shield class="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle class="text-xl font-bold text-white tracking-tight">Access Controls</DialogTitle>
+                <DialogDescription class="text-emerald-100/80 text-xs mt-0.5 font-medium uppercase tracking-wider">
+                  Managing access for {{ selectedStaff?.name }}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div class="px-6 py-6">
+            <form @submit.prevent="submitPermissions" class="space-y-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-1 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                <div
+                  v-for="permission in availablePermissions"
+                  :key="permission.id"
+                  @click="permissionsForm.permissions.includes(permission.name) ? permissionsForm.permissions = permissionsForm.permissions.filter(p => p !== permission.name) : permissionsForm.permissions.push(permission.name)"
+                  class="group relative flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer select-none"
+                  :class="permissionsForm.permissions.includes(permission.name)
+                    ? 'bg-emerald-50/50 border-[#245C4A] dark:bg-emerald-500/5 dark:border-emerald-500'
+                    : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 dark:bg-slate-800/50 dark:border-slate-800'"
+                >
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-widest" :class="permissionsForm.permissions.includes(permission.name) ? 'text-[#245C4A] dark:text-emerald-400' : 'text-slate-500'">
+                      {{ getPermissionLabel(permission.name) }}
+                    </span>
+                    <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                      :class="permissionsForm.permissions.includes(permission.name)
+                        ? 'bg-[#245C4A] border-[#245C4A] dark:bg-emerald-500 dark:border-emerald-500'
+                        : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700'">
+                      <CheckCircle2 v-if="permissionsForm.permissions.includes(permission.name)" class="w-3.5 h-3.5 text-white" />
+                    </div>
+                  </div>
+                  <p class="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 pr-2">
+                    {{ getPermissionDescription(permission.name) }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-start gap-3">
+                <AlertCircle class="w-4 h-4 text-[#C5A059] shrink-0 mt-0.5" />
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Permissions granted here will take effect immediately upon the staff member's next page load or action.
+                </p>
+              </div>
+            </form>
+          </div>
+
+          <DialogFooter class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex flex-row items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              @click="showPermissionsModal = false"
+              class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="submitPermissions"
+              :disabled="permissionsForm.processing"
+              class="h-11 px-6 rounded-xl bg-[#245C4A] text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:pointer-events-none flex items-center gap-2"
+            >
+              <template v-if="permissionsForm.processing">
+                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Updating...
+              </template>
+              <template v-else>
+                Save Changes
+              </template>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
 
     <ConfirmationModal

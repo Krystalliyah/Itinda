@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import { BuildingStorefrontIcon, ChartBarIcon, CubeIcon, ClipboardDocumentListIcon, UsersIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline';
+import { Head, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { computed } from 'vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -11,7 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 
 const props = defineProps<{
     tenant: { id: string; name: string };

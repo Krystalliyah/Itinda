@@ -1,13 +1,5 @@
 <script setup lang="ts">
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import {
     BuildingStorefrontIcon,
     CalendarIcon,
     CircleStackIcon,
@@ -15,6 +7,14 @@ import {
     GlobeAltIcon,
     ShieldCheckIcon,
 } from '@heroicons/vue/24/outline';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Domain {
     id: number;

@@ -1,15 +1,5 @@
 <script setup lang="ts">
 import { Head, usePage, Link } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
-import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
-import CustomerNav from '@/components/navigation/CustomerNav.vue';
-import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
-import { useSidebar } from '@/composables/useSidebar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   ChevronLeft, 
   ShoppingCart, 
@@ -35,6 +25,16 @@ import {
   Tag,
   Info
 } from 'lucide-vue-next';
+import { ref, computed, onMounted } from 'vue';
+import Header from '@/components/Header.vue';
+import CustomerNav from '@/components/navigation/CustomerNav.vue';
+import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
+import Sidebar from '@/components/Sidebar.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useSidebar } from '@/composables/useSidebar';
 
 const props = defineProps<{
   storeId: string;

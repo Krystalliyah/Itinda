@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, watch } from 'vue';
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,13 +11,14 @@ import {
   Store,
   TrendingUp,
 } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
-import { useSidebar } from '@/composables/useSidebar';
+import Sidebar from '@/components/Sidebar.vue';
 import { Button } from '@/components/ui/button';
+import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
 

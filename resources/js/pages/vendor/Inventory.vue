@@ -1,11 +1,30 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { 
+    Package, 
+    AlertCircle, 
+    TrendingUp, 
+    Boxes, 
+    DollarSign,
+    Target
+} from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
 import Header from '@/components/Header.vue';
-import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
-import { useSidebar } from '@/composables/useSidebar';
+import Sidebar from '@/components/Sidebar.vue';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ConfirmationModal } from '@/components/ui/modal';
+import { useSidebar } from '@/composables/useSidebar';
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
@@ -533,34 +552,104 @@ function getPageNumbers(): (number | string)[] {
     </main>
   </div>
 
-  <Teleport to="body">
-    <div v-if="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
-      <div class="modal">
-        <div class="modal-header">
-          <h2 class="modal-title">Edit Inventory</h2>
-          <button class="modal-close" @click="showEditModal = false">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <Dialog :open="showEditModal" @update:open="showEditModal = $event">
+      <DialogContent class="sm:max-w-[480px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white dark:bg-slate-900">
+        <DialogHeader class="px-6 pt-8 pb-6 bg-gradient-to-br from-[#1B4D3E] to-[#245C4A] relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-[#C5A059]/20 rounded-full blur-xl"></div>
+          
+          <div class="relative z-10 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <Package class="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <DialogTitle class="text-xl font-bold text-white tracking-tight">Update Inventory</DialogTitle>
+              <DialogDescription class="text-emerald-100/80 text-xs mt-0.5 font-medium uppercase tracking-wider truncate max-w-[280px]">
+                {{ editTarget?.product_name }}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div class="px-6 py-6">
+          <form id="inventory-form" @submit.prevent="saveEdit" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Stock Level -->
+              <div class="space-y-2">
+                <Label class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 flex items-center gap-1.5">
+                  <Boxes class="w-3 h-3" /> Current Stock
+                </Label>
+                <Input
+                  type="number"
+                  v-model.number="editForm.stock_level"
+                  class="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                  min="0"
+                />
+              </div>
+
+              <!-- Reorder Level -->
+              <div class="space-y-2">
+                <Label class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 flex items-center gap-1.5">
+                  <Target class="w-3 h-3" /> Reorder At
+                </Label>
+                <Input
+                  type="number"
+                  v-model.number="editForm.reorder_level"
+                  class="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <!-- Unit Price -->
+            <div class="space-y-2">
+              <Label class="text-[11px] font-bold uppercase tracking-widest text-[#245C4A]/70 flex items-center gap-1.5">
+                <DollarSign class="w-3 h-3" /> Unit Price (₱)
+              </Label>
+              <Input
+                type="number"
+                v-model.number="editForm.unit_price"
+                class="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <!-- Availability -->
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-emerald-50/30 hover:border-emerald-100">
+              <Checkbox id="is_available" v-model:checked="editForm.is_available" />
+              <div class="flex-1">
+                <Label for="is_available" class="text-sm font-bold text-slate-700 cursor-pointer block">Available for Sale</Label>
+                <p class="text-[10px] text-slate-500">Toggle visibility in your storefront listings.</p>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <DialogFooter class="px-6 py-4 bg-slate-50 flex flex-row items-center justify-end gap-3 border-t border-slate-100">
+          <button
+            type="button"
+            @click="showEditModal = false"
+            class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors"
+          >
+            Cancel
           </button>
-        </div>
-        <p class="modal-product-name">{{ editTarget?.product_name }}</p>
-        <div class="modal-grid">
-          <label class="field-label">Stock Level<input type="number" v-model.number="editForm.stock_level" class="field-input" min="0" /></label>
-          <label class="field-label">Reorder Level<input type="number" v-model.number="editForm.reorder_level" class="field-input" min="0" /></label>
-          <label class="field-label">Unit Price (₱)<input type="number" v-model.number="editForm.unit_price" class="field-input" min="0" step="0.01" /></label>
-        </div>
-        <label class="field-label availability-toggle">
-          <span>Available for sale</span>
-          <input type="checkbox" v-model="editForm.is_available" class="checkbox-input" />
-        </label>
-        <div class="modal-footer">
-          <button class="btn-ghost" @click="showEditModal = false">Cancel</button>
-          <button class="btn-primary" :disabled="editForm.processing" @click="saveEdit">
-            {{ editForm.processing ? 'Saving…' : 'Save Changes' }}
+          <button
+            type="submit"
+            form="inventory-form"
+            class="h-11 px-6 rounded-xl bg-[#245C4A] text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
+          >
+            <template v-if="editForm.processing">
+              <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Saving...
+            </template>
+            <template v-else>
+              Save Changes
+            </template>
           </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 </template>
 
 <style scoped>

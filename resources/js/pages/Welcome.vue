@@ -235,7 +235,8 @@
                                 <template v-if="store.products && store.products.length > 0">
                                     <div v-for="product in store.products" :key="product.id" class="it-bscp-card">
                                         <div class="it-bscp-img">
-                                             <svg width="24" height="24" fill="none" class="it-bscp-placeholder" viewBox="0 0 24 24" stroke="currentColor">
+                                            <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="it-bscp-product-img" @error="(e) => e.target.style.display = 'none'" />
+                                            <svg v-else width="24" height="24" fill="none" class="it-bscp-placeholder" viewBox="0 0 24 24" stroke="currentColor">
                                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                              </svg>
                                         </div>
@@ -552,8 +553,8 @@
     </div>
 </template>
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     canRegister:    Boolean,
@@ -2319,6 +2320,14 @@ onUnmounted(() => {
     justify-content: center;
     color: var(--pine-light);
     opacity: 0.6;
+    overflow: hidden;
+}
+
+.it-bscp-product-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1;
 }
 
 .it-bscp-name {

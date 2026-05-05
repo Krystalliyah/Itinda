@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const page = usePage();
 const auth = computed(() => page.props.auth as { user: any; hasStore: boolean; storeIsApproved: boolean; });

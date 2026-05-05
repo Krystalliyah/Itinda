@@ -20,8 +20,8 @@ class StoreResource extends JsonResource
             'phone' => $this->phone ?? 'NA',
             'hours' => $this->formatOperatingHours($operatingHours),
             'isOpen' => $this->checkIfOpen($operatingHours),
-            'logo' => $data['logo'] ?? 'NA',
-            'cover' => $data['cover'] ?? 'NA',
+            'logo' => $this->profile_photo_url ?? 'NA',
+            'cover' => $this->cover_photo_url ?? 'NA',
         ];
     }
 

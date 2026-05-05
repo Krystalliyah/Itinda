@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
-use App\Models\Shop;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class StoreSetupController extends Controller
 {
@@ -39,8 +40,8 @@ class StoreSetupController extends Controller
         ];
 
         // Create tenant without auto-provisioning database
-        $tenant = \App\Models\Tenant::create([
-            'id' => \Illuminate\Support\Str::slug($validated['domain_slug']),
+        $tenant = Tenant::create([
+            'id' => Str::slug($validated['domain_slug']),
             'name' => $validated['store_name'],
             'email' => $user->email,
             'user_id' => $user->id,
@@ -54,8 +55,13 @@ class StoreSetupController extends Controller
 
         // Create domain: subdomain.itinda.test
         $tenant->domains()->create([
-            'domain' => $validated['domain_slug'] . '.' . config('app.domain', 'localhost'),
+            'domain' => $validated['domain_slug'].'.'.config('app.domain', 'localhost'),
         ]);
+
+        // Sync phone to the central user record so it appears in Vendor Profile
+        if (! empty($validated['phone'])) {
+            $user->update(['phone' => $validated['phone']]);
+        }
 
         return redirect()->route('vendor.dashboard')
             ->with('success', 'Store setup submitted. Awaiting admin approval.');
