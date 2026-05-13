@@ -71,6 +71,7 @@ class HandleInertiaRequests extends Middleware
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
                 'vendor_approved' => fn () => $request->session()->get('vendor_approved'),
+                '_toggleResult' => fn () => $request->session()->get('_toggleResult'),
             ],
         ];
     }

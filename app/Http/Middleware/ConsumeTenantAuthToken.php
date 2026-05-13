@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\TenantAuthToken;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\TenantAuthToken;
 use Symfony\Component\HttpFoundation\Response;
 
 class ConsumeTenantAuthToken
@@ -37,6 +37,12 @@ class ConsumeTenantAuthToken
                 $tenantUser = User::where('email', $centralUser->email)->first();
 
                 if ($tenantUser) {
+                    // Ensure the tenant user has the vendor role — the role seeder
+                    // must have run before this point; assign if somehow missing.
+                    if (! $tenantUser->hasRole('vendor')) {
+                        $tenantUser->assignRole('vendor');
+                    }
+
                     // Log the user into the tenant context
                     auth()->login($tenantUser, remember: false);
 

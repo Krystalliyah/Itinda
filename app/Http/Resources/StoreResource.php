@@ -22,6 +22,7 @@ class StoreResource extends JsonResource
             'isOpen' => $this->checkIfOpen($operatingHours),
             'logo' => $this->profile_photo_url ?? 'NA',
             'cover' => $this->cover_photo_url ?? 'NA',
+            'is_pickup_only' => true,
         ];
     }
 

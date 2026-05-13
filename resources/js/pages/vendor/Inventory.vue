@@ -55,6 +55,14 @@ const props = defineProps<{
   stats: Stats;
 }>();
 
+// Local mutable copy so we can update rows instantly without waiting for Inertia re-render
+const localItems = ref<InventoryItem[]>([...props.inventoryItems]);
+
+// Keep in sync if Inertia pushes a fresh page (e.g. after delete)
+watch(() => props.inventoryItems, (fresh) => {
+  localItems.value = [...fresh];
+});
+
 const searchQuery = ref('');
 const selectedCategory = ref('All');
 const selectedStatus = ref('All');
@@ -73,10 +81,10 @@ const editForm = useForm({
   is_available: true,
 });
 
-const categories = computed(() => ['All', ...new Set(props.inventoryItems.map((i) => i.category))]);
+const categories = computed(() => ['All', ...new Set(localItems.value.map((i) => i.category))]);
 
 const filtered = computed(() => {
-  let items = props.inventoryItems;
+  let items = localItems.value;
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     items = items.filter(
@@ -136,19 +144,69 @@ function openEdit(item: InventoryItem) {
   editForm.stock_level   = item.stock_level;
   editForm.unit_price    = item.unit_price;
   editForm.reorder_level = item.reorder_level;
-  editForm.is_available  = item.is_available;
+  editForm.is_available  = item.is_available === true;
   showEditModal.value = true;
 }
 
 function saveEdit() {
   if (!editTarget.value) return;
-  editForm.put(`/vendor/inventory/${editTarget.value.id}`, {
-    onSuccess: () => { showEditModal.value = false; },
+  const targetId = editTarget.value.id;
+  // Ensure is_available is a strict boolean before sending — the Reka UI
+  // Checkbox emits boolean | 'indeterminate', which fails Laravel's boolean validation.
+  editForm.is_available = editForm.is_available === true;
+  editForm.put(`/vendor/inventory/${targetId}`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Patch the local row immediately so the table reflects the new values
+      const idx = localItems.value.findIndex((i) => i.id === targetId);
+      if (idx !== -1) {
+        localItems.value[idx] = {
+          ...localItems.value[idx],
+          stock_level: editForm.stock_level,
+          unit_price: editForm.unit_price,
+          reorder_level: editForm.reorder_level,
+          is_available: editForm.is_available,
+        };
+      }
+      showEditModal.value = false;
+    },
   });
 }
 
+// Track in-flight toggle requests to prevent rapid duplicate clicks
+const togglingIds = ref(new Set<number>());
+
 function toggleAvailability(item: InventoryItem) {
-  router.patch(`/vendor/inventory/${item.id}/toggle`);
+  // Block if a request for this product is already in flight
+  if (togglingIds.value.has(item.id)) return;
+
+  togglingIds.value.add(item.id);
+
+  // Optimistic update — flip locally before the server responds
+  const idx = localItems.value.findIndex((i) => i.id === item.id);
+  if (idx !== -1) {
+    localItems.value[idx] = { ...localItems.value[idx], is_available: !item.is_available };
+  }
+
+  router.patch(`/vendor/inventory/${item.id}/toggle`, {}, {
+    preserveScroll: true,
+    onSuccess: (page) => {
+      // Confirm with the value the server actually saved
+      const serverValue = (page.props as any)?.flash?._toggleResult?.is_available;
+      if (idx !== -1 && typeof serverValue === 'boolean') {
+        localItems.value[idx] = { ...localItems.value[idx], is_available: serverValue };
+      }
+    },
+    onError: () => {
+      // Revert on failure
+      if (idx !== -1) {
+        localItems.value[idx] = { ...localItems.value[idx], is_available: item.is_available };
+      }
+    },
+    onFinish: () => {
+      togglingIds.value.delete(item.id);
+    },
+  });
 }
 
 function confirmDeleteRow(item: InventoryItem) {
@@ -379,7 +437,7 @@ function getPageNumbers(): (number | string)[] {
                   </span>
                 </td>
                 <td>
-                  <button class="toggle-btn" :class="item.is_available?'toggle-btn--on':'toggle-btn--off'" @click="toggleAvailability(item)">
+                  <button class="toggle-btn" :class="item.is_available?'toggle-btn--on':'toggle-btn--off'" :disabled="togglingIds.has(item.id)" @click="toggleAvailability(item)">
                     <span class="toggle-dot"></span>{{ item.is_available ? 'Active' : 'Hidden' }}
                   </button>
                 </td>
@@ -516,7 +574,7 @@ function getPageNumbers(): (number | string)[] {
             </div>
 
             <div class="mc-footer">
-              <button class="toggle-btn" :class="item.is_available?'toggle-btn--on':'toggle-btn--off'" @click="toggleAvailability(item)">
+              <button class="toggle-btn" :class="item.is_available?'toggle-btn--on':'toggle-btn--off'" :disabled="togglingIds.has(item.id)" @click="toggleAvailability(item)">
                 <span class="toggle-dot"></span>{{ item.is_available ? 'Active' : 'Hidden' }}
               </button>
               <div class="action-row">
